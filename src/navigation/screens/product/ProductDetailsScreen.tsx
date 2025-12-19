@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../types/navigation';
-import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
-import { PrimaryButton } from '../../components/PrimaryButton';
+import { RootStackParamList } from '@/types/navigation';
+import { colors } from '@/theme/colors';
+import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
+import { PrimaryButton } from '@/components/PrimaryButton';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProductDetails'>;
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppTabParamList } from '../../types/navigation';
-import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
-import { ProductCard } from '../../components/ProductCard';
+import { AppTabParamList } from '@/types/navigation';
+import { colors } from '@/theme/colors';
+import { spacing } from '@/theme/spacing';
+import { typography } from '@/theme/typography';
+import { ProductCard } from '@/components/ProductCard';
 
 type Props = NativeStackScreenProps<AppTabParamList, 'Home'>;
 
