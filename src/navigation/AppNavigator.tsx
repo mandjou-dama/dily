@@ -3,10 +3,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
 
 import { AppTabParamList } from '../types/navigation';
-import { HomeScreen } from '../screens/home/HomeScreen';
-import { CreateProductScreen } from '../screens/product/CreateProductScreen';
-import { ChatScreen } from '../screens/chat/ChatScreen';
-import { ProfileScreen } from '../screens/profile/ProfileScreen';
+import { HomeScreen } from './screens/home/HomeScreen';
+import { CreateProductScreen } from './screens/product/CreateProductScreen';
+import { ChatScreen } from './screens/chat/ChatScreen';
+import { ProfileScreen } from './screens/profile/ProfileScreen';
 
 
 

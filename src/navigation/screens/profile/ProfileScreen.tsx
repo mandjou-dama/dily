@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppTabParamList, RootStackParamList } from '../../types/navigation';
-import { colors } from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
-import { PrimaryButton } from '../../components/PrimaryButton';
+import { AppTabParamList, RootStackParamList } from '../../../types/navigation';
+import { colors } from '../../../theme/colors';
+import { spacing } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
+import { PrimaryButton } from '../../../components/PrimaryButton';
 import { CompositeScreenProps } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { NativeStackScreenProps as StackScreenProps } from '@react-navigation/native-stack';
