@@ -1,44 +1,44 @@
 import {
   createStaticNavigation,
   StaticParamList,
-} from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthNavigator } from './AuthNavigator';
-import { AppNavigator } from './AppNavigator';
-import { ProductDetailsScreen } from './screens/product/ProductDetailsScreen';
-import { NotFound } from './screens/NotFound';
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { AuthNavigator } from "./AuthNavigator";
+import { AppNavigator } from "./AppNavigator";
+import { ProductDetailsScreen } from "./screens/product/ProductDetailsScreen";
+import { NotFound } from "./screens/NotFound";
 
 const RootStack = createNativeStackNavigator({
   screens: {
-
-    App: {
-      screen: AppNavigator,
-      options: {
-        title: 'App',
-        headerShown: false,
-      },
-    },
     Auth: {
       screen: AuthNavigator,
       options: {
-        title: 'Auth',
+        title: "Auth",
         headerShown: false,
       },
     },
+    App: {
+      screen: AppNavigator,
+      options: {
+        title: "App",
+        headerShown: false,
+      },
+    },
+
     ProductDetails: {
       screen: ProductDetailsScreen,
       options: ({ navigation }) => ({
-        presentation: 'modal',
+        presentation: "modal",
         headerShown: false,
       }),
     },
     NotFound: {
       screen: NotFound,
       options: {
-        title: '404',
+        title: "404",
       },
       linking: {
-        path: '*',
+        path: "*",
       },
     },
   },
