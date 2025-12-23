@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, {
+  Easing,
   Extrapolation,
   interpolate,
   useAnimatedScrollHandler,
@@ -19,34 +20,30 @@ import Carousel from "@/components/onboarding/onboarding-carousel";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { scheduleOnRN } from "react-native-worklets";
 import { LinearGradient } from "expo-linear-gradient";
+import { colors } from "@/theme/colors";
 
 // superlist-onboarding-flow-animation 🔽
 
 export const SLIDES: OnboardingSlide[] = [
   {
-    bgColor: "#7872E0",
-    duration: 3000,
+    bgColor: colors.white,
+    duration: 4000,
     title: "Create tasks at the speed of thought",
   },
   {
-    bgColor: "#FB5A44",
-    duration: 3000,
+    bgColor: colors.white,
+    duration: 4000,
     title: "Take notes and transform thoughts into action",
   },
   {
-    bgColor: "#7872E0",
-    duration: 3000,
+    bgColor: colors.white,
+    duration: 4000,
     title: "Start your next project in seconds using AI templates",
   },
   {
-    bgColor: "#2188DA",
-    duration: 2000,
+    bgColor: colors.white,
+    duration: 4000,
     title: "Organize your team with shared lists and tasks",
-  },
-  {
-    bgColor: "#7872E0",
-    duration: 3000,
-    title: "Get things done with a bit more fun",
   },
 ];
 
@@ -112,7 +109,7 @@ export const OnboardingScreen = () => {
   // Single tap gesture: advances to next slide when carousel is collapsed
   // maxDuration: 250ms ensures quick taps register, longer presses ignored
   const singleTap = Gesture.Tap()
-    .maxDuration(250)
+    .maxDuration(40000)
     .onStart(() => {
       // Only advance if carousel is fully collapsed (translateY >= 0)
       if (translateY.get() < 0) return;
@@ -180,6 +177,27 @@ export const OnboardingScreen = () => {
         })
       );
     });
+
+  const expandCarousel = () => {
+    // Immédiatement arrêter tout défilement
+    isDragging.set(true);
+
+    // Utiliser la MÊME animation que dans PaginationItem
+    translateY.set(
+      withTiming(
+        -TOP_CAROUSEL_OFFSET,
+        {
+          duration: 200,
+          easing: Easing.inOut(Easing.quad),
+        },
+        (finished) => {
+          if (finished) {
+            isDragging.set(true); // Garder disabled pour éviter auto-advance
+          }
+        }
+      )
+    );
+  };
 
   // Fade in sign-in buttons block as carousel expands upward
   // Input: translateY from 0 (collapsed) to -TOP_CAROUSEL_OFFSET (expanded)
@@ -260,7 +278,7 @@ export const OnboardingScreen = () => {
         style={{
           paddingBottom: insets.bottom + 10,
           flex: 1,
-          backgroundColor: "black",
+          backgroundColor: colors.background,
         }}
       >
         <Animated.View
@@ -277,7 +295,7 @@ export const OnboardingScreen = () => {
           <Text
             //   className="text-white text-center text-4xl font-bold"
             style={{
-              color: "white",
+              color: colors.primary,
               textAlign: "center",
               fontSize: 32,
               fontWeight: "bold",
@@ -288,7 +306,7 @@ export const OnboardingScreen = () => {
           <Text
             // className="text-slate-400 text-center mt-3"
             style={{
-              color: "white",
+              color: colors.primary,
               textAlign: "center",
               marginTop: 12,
             }}
@@ -298,7 +316,7 @@ export const OnboardingScreen = () => {
           <Text
             // className="text-slate-400 text-center"
             style={{
-              color: "white",
+              color: colors.primary,
               textAlign: "center",
             }}
           >
@@ -310,18 +328,18 @@ export const OnboardingScreen = () => {
             style={{
               borderCurve: "continuous",
               flexDirection: "row",
-              height: 40,
+              height: 45,
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
               borderRadius: 9999,
               marginHorizontal: 80,
               marginTop: 32,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: colors.white,
             }}
           >
-            <AntDesign name="google" size={24} color="black" />
-            <Text style={{ color: "black" }}>Continue with Google</Text>
+            <AntDesign name="google" size={24} color={colors.black} />
+            <Text style={{ color: colors.black }}>Continue with Google</Text>
           </Pressable>
           <Pressable
             onPress={simulatePress}
@@ -329,32 +347,32 @@ export const OnboardingScreen = () => {
             style={{
               borderCurve: "continuous",
               flexDirection: "row",
-              height: 40,
+              height: 45,
               alignItems: "center",
               justifyContent: "center",
               gap: 8,
               borderRadius: 9999,
               marginHorizontal: 80,
               marginTop: 12,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: colors.white,
             }}
           >
-            <AntDesign name="apple" size={24} color="black" />
-            <Text style={{ color: "black" }}>Continue with Apple</Text>
+            <AntDesign name="apple" size={24} color={colors.black} />
+            <Text style={{ color: colors.black }}>Continue with Apple</Text>
           </Pressable>
         </Animated.View>
         <Pressable
-          onPress={simulatePress}
+          onPressIn={expandCarousel}
           //   className="h-[40px] items-center justify-center rounded-full mx-20 mt-3 bg-slate-700 overflow-hidden"
           style={{
             borderCurve: "continuous",
-            height: 40,
+            height: 45,
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 9999,
             marginHorizontal: 80,
             marginTop: 12,
-            backgroundColor: "#334155",
+            backgroundColor: colors.primary,
             overflow: "hidden",
           }}
         >
@@ -369,8 +387,8 @@ export const OnboardingScreen = () => {
               rSignUpStyle,
             ]}
           >
-            <UserRound size={16} color="white" />
-            <Text style={{ color: "white" }}>Sign Up / Sign In</Text>
+            <UserRound size={16} color={colors.white} />
+            <Text style={{ color: colors.white }}>Sign Up / Sign In</Text>
           </Animated.View>
           <Animated.View
             //   className="flex-row gap-2 -mt-5"
@@ -378,13 +396,13 @@ export const OnboardingScreen = () => {
               {
                 flexDirection: "row",
                 gap: 8,
-                marginTop: -12,
+                marginTop: -16,
               },
               rContinueWithEmailStyle,
             ]}
           >
-            <Mail size={16} color="white" />
-            <Text style={{ color: "white" }}>Continue with email</Text>
+            <Mail size={16} color={colors.white} />
+            <Text style={{ color: colors.white }}>Continue with email</Text>
           </Animated.View>
         </Pressable>
 
@@ -416,8 +434,8 @@ export const OnboardingScreen = () => {
           ]}
         >
           <LinearGradient
-            colors={["rgba(0,0,0,0.6)", "transparent"]}
-            style={{ width: "100%", height: "60%" }}
+            colors={["rgba(60, 86, 39,0.4)", "transparent"]}
+            style={{ width: "100%", height: "30%" }}
           />
         </Animated.View>
       </View>

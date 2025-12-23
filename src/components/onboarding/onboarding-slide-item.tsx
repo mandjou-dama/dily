@@ -7,6 +7,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { FC } from "react";
 import { OnboardingSlide } from "@/lib/types";
+import { colors } from "@/theme/colors";
 
 // superlist-onboarding-flow-animation 🔽
 
@@ -70,18 +71,17 @@ export const SlideItem: FC<SlideItemProps> = ({
           paddingHorizontal: 32,
           borderRadius: 24,
           backgroundColor: item.bgColor,
-          shadowColor: "black",
-          shadowOffset: { width: 0, height: 12 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 3,
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.08,
+          shadowRadius: 2,
+          elevation: 0,
           borderCurve: "continuous",
         }}
       >
         <Text
-          // className="text-white text-4xl font-bold text-center mb-20"
           style={{
-            color: "white",
+            color: colors.primary,
             fontSize: 36,
             fontWeight: "700",
             textAlign: "center",
@@ -91,12 +91,11 @@ export const SlideItem: FC<SlideItemProps> = ({
           {item.title}
         </Text>
         <View
-          // className="w-3/4 aspect-[1/1.3] rounded-3xl bg-white/20"
           style={{
             width: "75%",
             aspectRatio: 1 / 1.3,
             borderRadius: 24,
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
+            // backgroundColor: "red",
           }}
         />
       </View>

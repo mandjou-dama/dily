@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { FC, useEffect } from "react";
 import Animated, {
   cancelAnimation,
@@ -181,7 +182,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         {
           height: 2,
           borderRadius: 9999,
-          backgroundColor: "#475569",
+          backgroundColor: "rgba(60, 86, 39, 0.2)",
           overflow: "hidden",
         },
       ]}
@@ -191,7 +192,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         style={[
           rBarProgressStyle,
           {
-            backgroundColor: "#FFFFFF",
+            backgroundColor: colors.primary,
             position: "absolute",
             top: 0,
             bottom: 0,
