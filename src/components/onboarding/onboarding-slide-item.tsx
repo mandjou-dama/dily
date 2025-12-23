@@ -8,6 +8,7 @@ import Animated, {
 import { FC } from "react";
 import { OnboardingSlide } from "@/lib/types";
 import { colors } from "@/theme/colors";
+import { Image } from "expo-image";
 
 // superlist-onboarding-flow-animation 🔽
 
@@ -67,8 +68,8 @@ export const SlideItem: FC<SlideItemProps> = ({
         style={{
           flex: 1,
           alignItems: "center",
-          paddingVertical: 80,
-          paddingHorizontal: 32,
+          // paddingVertical: 30,
+          // paddingHorizontal: 32,
           borderRadius: 24,
           backgroundColor: item.bgColor,
           shadowColor: colors.primary,
@@ -79,25 +80,33 @@ export const SlideItem: FC<SlideItemProps> = ({
           borderCurve: "continuous",
         }}
       >
-        <Text
+        {/* <Text
           style={{
             color: colors.primary,
-            fontSize: 36,
+            fontSize: 26,
             fontWeight: "700",
             textAlign: "center",
-            marginBottom: 80,
+            marginBottom: 30,
           }}
         >
           {item.title}
-        </Text>
+        </Text> */}
         <View
           style={{
-            width: "75%",
-            aspectRatio: 1 / 1.3,
+            width: "100%",
+            height: "100%",
+            // aspectRatio: 9 / 16,
             borderRadius: 24,
-            // backgroundColor: "red",
+            backgroundColor: colors.primary,
           }}
-        />
+        >
+          <Image
+            style={{ width: "100%", height: "100%", borderRadius: 24 }}
+            source={item.image}
+            contentFit="cover"
+            transition={1000}
+          />
+        </View>
       </View>
     </Animated.View>
   );

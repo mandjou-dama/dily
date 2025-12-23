@@ -13,6 +13,8 @@ export type OnboardingSlide = {
   duration: number;
   /** Title of the slide */
   title: string;
+  /** Image source for the slide */
+  image: string;
 };
 
 export type CarouselProps = {

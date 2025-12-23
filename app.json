@@ -3,19 +3,19 @@
     "name": "dily",
     "slug": "dily",
     "version": "1.0.0",
-    "orientation": "default",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "orientation": "portrait",
+    "icon": "./assets/ios-light.png",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "dily",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.dily"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#F7F5ED"
       },
       "package": "com.dily"
     },
@@ -27,8 +27,8 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/splash-icon.png"
+          "backgroundColor": "#F7F5ED",
+          "image": "./assets/splash-icon-light.png"
         }
       ]
     ]

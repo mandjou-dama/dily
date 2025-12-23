@@ -29,21 +29,29 @@ export const SLIDES: OnboardingSlide[] = [
     bgColor: colors.white,
     duration: 4000,
     title: "Create tasks at the speed of thought",
+    image:
+      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/IMG_5330.JPG",
   },
   {
     bgColor: colors.white,
     duration: 4000,
     title: "Take notes and transform thoughts into action",
+    image:
+      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/b8e17f1a-814c-4d82-bb3a-305f009be522.JPG",
   },
   {
     bgColor: colors.white,
     duration: 4000,
     title: "Start your next project in seconds using AI templates",
+    image:
+      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/55e70c70-0bee-49f6-b0ae-7dc45c2a2f4f.JPG",
   },
   {
     bgColor: colors.white,
     duration: 4000,
     title: "Organize your team with shared lists and tasks",
+    image:
+      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/7cac731e-289b-45e2-b2fd-a7170228c244.JPG",
   },
 ];
 
@@ -109,7 +117,8 @@ export const OnboardingScreen = () => {
   // Single tap gesture: advances to next slide when carousel is collapsed
   // maxDuration: 250ms ensures quick taps register, longer presses ignored
   const singleTap = Gesture.Tap()
-    .maxDuration(40000)
+    // .maxDuration(40000)
+    .maxDuration(250)
     .onStart(() => {
       // Only advance if carousel is fully collapsed (translateY >= 0)
       if (translateY.get() < 0) return;
@@ -295,7 +304,7 @@ export const OnboardingScreen = () => {
           <Text
             //   className="text-white text-center text-4xl font-bold"
             style={{
-              color: colors.primary,
+              color: colors.black,
               textAlign: "center",
               fontSize: 32,
               fontWeight: "bold",
@@ -306,7 +315,7 @@ export const OnboardingScreen = () => {
           <Text
             // className="text-slate-400 text-center mt-3"
             style={{
-              color: colors.primary,
+              color: colors.black,
               textAlign: "center",
               marginTop: 12,
             }}
@@ -316,7 +325,7 @@ export const OnboardingScreen = () => {
           <Text
             // className="text-slate-400 text-center"
             style={{
-              color: colors.primary,
+              color: colors.black,
               textAlign: "center",
             }}
           >
@@ -354,11 +363,11 @@ export const OnboardingScreen = () => {
               borderRadius: 9999,
               marginHorizontal: 80,
               marginTop: 12,
-              backgroundColor: colors.white,
+              backgroundColor: colors.black,
             }}
           >
-            <AntDesign name="apple" size={24} color={colors.black} />
-            <Text style={{ color: colors.black }}>Continue with Apple</Text>
+            <AntDesign name="apple" size={24} color={colors.white} />
+            <Text style={{ color: colors.white }}>Continue with Apple</Text>
           </Pressable>
         </Animated.View>
         <Pressable
