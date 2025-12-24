@@ -1,0 +1,65 @@
+import { useState } from "react";
+import { Animated, Dimensions, Platform } from "react-native";
+import BootSplash from "react-native-bootsplash";
+
+const useNativeDriver = Platform.OS !== "web";
+
+type Props = {
+  onAnimationEnd: () => void;
+};
+
+export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
+  const [opacity] = useState(() => new Animated.Value(1));
+  const [translateY] = useState(() => new Animated.Value(0));
+  const [brandOpacity] = useState(() => new Animated.Value(1));
+
+  const { container, logo, brand } = BootSplash.useHideAnimation({
+    manifest: require("../../assets/bootsplash/manifest.json"),
+
+    logo: require("../../assets/bootsplash/logo.png"),
+    darkLogo: require("../../assets/bootsplash/logo.png"),
+    // brand: require("../../assets/bootsplash/brand.png"),
+    // darkBrand: require("../../assets/bootsplash/brand.png"),
+
+    // statusBarTranslucent: true,
+    // navigationBarTranslucent: true,
+
+    animate: () => {
+      const { height } = Dimensions.get("window");
+
+      Animated.stagger(250, [
+        Animated.spring(translateY, {
+          useNativeDriver,
+          toValue: -50,
+        }),
+        Animated.spring(translateY, {
+          useNativeDriver,
+          toValue: height,
+        }),
+      ]).start();
+
+      Animated.timing(opacity, {
+        useNativeDriver,
+        toValue: 0,
+        duration: 150,
+        delay: 350,
+      }).start(() => {
+        onAnimationEnd();
+      });
+    },
+  });
+
+  return (
+    <Animated.View {...container} style={[container.style, { opacity }]}>
+      <Animated.Image
+        {...logo}
+        style={[logo.style, { transform: [{ translateY }] }]}
+      />
+
+      {/* <Animated.Image
+        {...brand}
+        style={[brand.style, { opacity: brandOpacity }]}
+      /> */}
+    </Animated.View>
+  );
+};

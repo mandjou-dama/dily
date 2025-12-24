@@ -24,13 +24,14 @@
     },
     "plugins": [
       "expo-asset",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#F7F5ED",
-          "image": "./assets/splash-icon-light.png"
-        }
-      ]
+      // [
+      //   "expo-splash-screen",
+      //   {
+      //     "backgroundColor": "#F7F5ED",
+      //     "image": "./assets/splash-icon-light.png"
+      //   }
+      // ]
+      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash" }]
     ]
   }
 }

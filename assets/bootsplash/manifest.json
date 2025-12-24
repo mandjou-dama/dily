@@ -1,0 +1,12 @@
+{
+  "background": "#f7f5ed",
+  "logo": {
+    "width": 210,
+    "height": 210
+  },
+  "brand": {
+    "width": 80,
+    "height": 80,
+    "bottom": 20
+  }
+}
