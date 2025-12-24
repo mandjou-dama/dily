@@ -1,4 +1,4 @@
-import { ChevronDown, Mail, UserRound } from "lucide-react-native";
+import { ChevronDown, Phone, UserRound } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
@@ -294,13 +294,25 @@ export const OnboardingScreen = () => {
           // className="mt-auto"
           style={[rButtonsBlockStyle, { marginTop: "auto" }]}
         >
-          <Pressable
+          {/* <Pressable
+            // hitSlop={30}
             // className="self-center mb-6"
-            style={{ alignSelf: "center", marginBottom: 24 }}
+            style={{
+              alignSelf: "center",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: 40,
+              height: 40,
+              // backgroundColor: "blue",
+              marginBottom: 0,
+              // position: "absolute",
+            }}
             onPress={slideBottomHandler}
           >
-            <ChevronDown size={26} color="grey" />
-          </Pressable>
+            <ChevronDown size={26} color={colors.primary} />
+          </Pressable> */}
+
           <Text
             //   className="text-white text-center text-4xl font-bold"
             style={{
@@ -312,6 +324,7 @@ export const OnboardingScreen = () => {
           >
             Let's get started
           </Text>
+
           <Text
             // className="text-slate-400 text-center mt-3"
             style={{
@@ -370,6 +383,7 @@ export const OnboardingScreen = () => {
             <Text style={{ color: colors.white }}>Continue with Apple</Text>
           </Pressable>
         </Animated.View>
+
         <Pressable
           onPressIn={expandCarousel}
           //   className="h-[40px] items-center justify-center rounded-full mx-20 mt-3 bg-slate-700 overflow-hidden"
@@ -390,6 +404,7 @@ export const OnboardingScreen = () => {
             style={[
               {
                 flexDirection: "row",
+                alignItems: "center",
                 gap: 8,
                 paddingTop: 0,
               },
@@ -404,14 +419,22 @@ export const OnboardingScreen = () => {
             style={[
               {
                 flexDirection: "row",
+                alignItems: "center",
                 gap: 8,
                 marginTop: -16,
               },
               rContinueWithEmailStyle,
             ]}
           >
-            <Mail size={16} color={colors.white} />
-            <Text style={{ color: colors.white }}>Continue with email</Text>
+            <Phone size={16} color={colors.white} />
+            {/* <AntDesign name="whats-app" size={24} color={colors.white} /> */}
+            <Text
+              style={{
+                color: colors.white,
+              }}
+            >
+              Continue with Phone
+            </Text>
           </Animated.View>
         </Pressable>
 

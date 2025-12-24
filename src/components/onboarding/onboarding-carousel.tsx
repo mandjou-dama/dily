@@ -1,11 +1,17 @@
 import { FC, useCallback, useMemo, useRef, useState } from "react";
-import { Platform, useWindowDimensions, ViewToken } from "react-native";
+import {
+  Platform,
+  Pressable,
+  useWindowDimensions,
+  ViewToken,
+} from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
   useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SlideItem } from "./onboarding-slide-item";
@@ -13,6 +19,8 @@ import Pagination from "./pagination";
 import { CarouselProps, OnboardingSlide } from "@/lib/types";
 import { scheduleOnRN } from "react-native-worklets";
 import { FlatList } from "react-native-gesture-handler";
+import { ChevronDown } from "lucide-react-native";
+import { colors } from "@/theme/colors";
 
 // superlist-onboarding-flow-animation 🔽
 
@@ -97,6 +105,29 @@ const Carousel: FC<CarouselProps> = ({
     };
   });
 
+  const rChevronStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(
+        translateY.get(),
+        [0, -topCarouselOffset * 0.95],
+        [0, 1],
+        Extrapolation.CLAMP
+      ),
+      pointerEvents: translateY.get() === 0 ? "none" : "auto",
+    };
+  });
+
+  // Collapse carousel when user taps chevron down button
+  // Smoothly animates translateY back to 0 (collapsed position)
+  const slideBottomHandler = () => {
+    isDragging.set(false);
+    translateY.set(
+      withTiming(0, {
+        duration: 300,
+      })
+    );
+  };
+
   // Determine if carousel is expanded past midpoint threshold
   // Used to disable horizontal scrolling when carousel is mostly expanded
   const isExpanded = useDerivedValue(() => {
@@ -129,6 +160,7 @@ const Carousel: FC<CarouselProps> = ({
           width: "100%",
           top: insets.top,
           height: screenHeight - insets.top - insets.bottom - 60,
+          // backgroundColor: "red",
         },
         rContainerStyle,
       ]}
@@ -190,6 +222,26 @@ const Carousel: FC<CarouselProps> = ({
           translateY={translateY}
           topCarouselOffset={topCarouselOffset}
         />
+      </Animated.View>
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            zIndex: 30,
+            bottom: 0,
+            left: "50%",
+            transform: [
+              {
+                translateX: "-50%",
+              },
+            ],
+          },
+          rChevronStyle,
+        ]}
+      >
+        <Pressable onPress={slideBottomHandler}>
+          <ChevronDown size={26} color={colors.primary} />
+        </Pressable>
       </Animated.View>
     </Animated.View>
   );
