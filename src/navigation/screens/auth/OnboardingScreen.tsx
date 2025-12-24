@@ -1,4 +1,4 @@
-import { ChevronDown, Phone, UserRound } from "lucide-react-native";
+import { Phone, UserRound } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
@@ -21,6 +21,10 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { scheduleOnRN } from "react-native-worklets";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "@/theme/colors";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { AuthStackParamList } from "@/types/navigation";
+
+type Props = NativeStackScreenProps<AuthStackParamList, "Onboarding">;
 
 // superlist-onboarding-flow-animation 🔽
 
@@ -62,7 +66,7 @@ const TOP_CAROUSEL_OFFSET = 230;
 // Prevents accidental toggles from small finger movements
 const SWIPE_UP_THRESHOLD = 20;
 
-export const OnboardingScreen = () => {
+export const OnboardingScreen = ({ navigation }: Props) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
 
   const insets = useSafeAreaInsets();
@@ -188,24 +192,28 @@ export const OnboardingScreen = () => {
     });
 
   const expandCarousel = () => {
-    // Immédiatement arrêter tout défilement
-    isDragging.set(true);
+    if (translateY.get() <= -TOP_CAROUSEL_OFFSET) {
+      navigation.navigate("WhatsAppLogin");
+    } else {
+      // Immédiatement arrêter tout défilement
+      isDragging.set(true);
 
-    // Utiliser la MÊME animation que dans PaginationItem
-    translateY.set(
-      withTiming(
-        -TOP_CAROUSEL_OFFSET,
-        {
-          duration: 200,
-          easing: Easing.inOut(Easing.quad),
-        },
-        (finished) => {
-          if (finished) {
-            isDragging.set(true); // Garder disabled pour éviter auto-advance
+      // Utiliser la MÊME animation que dans PaginationItem
+      translateY.set(
+        withTiming(
+          -TOP_CAROUSEL_OFFSET,
+          {
+            duration: 200,
+            easing: Easing.inOut(Easing.quad),
+          },
+          (finished) => {
+            if (finished) {
+              isDragging.set(true); // Garder disabled pour éviter auto-advance
+            }
           }
-        }
-      )
-    );
+        )
+      );
+    }
   };
 
   // Fade in sign-in buttons block as carousel expands upward
@@ -281,20 +289,19 @@ export const OnboardingScreen = () => {
   };
 
   return (
-    <GestureDetector gesture={Gesture.Race(panGesture, singleTap)}>
-      <View
-        // className="flex-1 bg-slate-900"
-        style={{
-          paddingBottom: insets.bottom + 10,
-          flex: 1,
-          backgroundColor: colors.background,
-        }}
+    <View
+      // className="flex-1 bg-slate-900"
+      style={{
+        paddingBottom: insets.bottom + 10,
+        flex: 1,
+        backgroundColor: colors.background,
+      }}
+    >
+      <Animated.View
+        // className="mt-auto"
+        style={[rButtonsBlockStyle, { marginTop: "auto" }]}
       >
-        <Animated.View
-          // className="mt-auto"
-          style={[rButtonsBlockStyle, { marginTop: "auto" }]}
-        >
-          {/* <Pressable
+        {/* <Pressable
             // hitSlop={30}
             // className="self-center mb-6"
             style={{
@@ -313,131 +320,132 @@ export const OnboardingScreen = () => {
             <ChevronDown size={26} color={colors.primary} />
           </Pressable> */}
 
-          <Text
-            //   className="text-white text-center text-4xl font-bold"
-            style={{
-              color: colors.black,
-              textAlign: "center",
-              fontSize: 32,
-              fontWeight: "bold",
-            }}
-          >
-            Let's get started
-          </Text>
+        <Text
+          //   className="text-white text-center text-4xl font-bold"
+          style={{
+            color: colors.black,
+            textAlign: "center",
+            fontSize: 32,
+            fontWeight: "bold",
+          }}
+        >
+          Let's get started
+        </Text>
 
-          <Text
-            // className="text-slate-400 text-center mt-3"
-            style={{
-              color: colors.black,
-              textAlign: "center",
-              marginTop: 12,
-            }}
-          >
-            Sign in to get things done - your task,
-          </Text>
-          <Text
-            // className="text-slate-400 text-center"
-            style={{
-              color: colors.black,
-              textAlign: "center",
-            }}
-          >
-            notes, and meetings all in one place
-          </Text>
-          <Pressable
-            onPress={simulatePress}
-            // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-8 bg-white"
-            style={{
-              borderCurve: "continuous",
-              flexDirection: "row",
-              height: 45,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              borderRadius: 9999,
-              marginHorizontal: 80,
-              marginTop: 32,
-              backgroundColor: colors.white,
-            }}
-          >
-            <AntDesign name="google" size={24} color={colors.black} />
-            <Text style={{ color: colors.black }}>Continue with Google</Text>
-          </Pressable>
-          <Pressable
-            onPress={simulatePress}
-            // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-3 bg-white"
-            style={{
-              borderCurve: "continuous",
-              flexDirection: "row",
-              height: 45,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              borderRadius: 9999,
-              marginHorizontal: 80,
-              marginTop: 12,
-              backgroundColor: colors.black,
-            }}
-          >
-            <AntDesign name="apple" size={24} color={colors.white} />
-            <Text style={{ color: colors.white }}>Continue with Apple</Text>
-          </Pressable>
-        </Animated.View>
-
+        <Text
+          // className="text-slate-400 text-center mt-3"
+          style={{
+            color: colors.black,
+            textAlign: "center",
+            marginTop: 12,
+          }}
+        >
+          Sign in to get things done - your task,
+        </Text>
+        <Text
+          // className="text-slate-400 text-center"
+          style={{
+            color: colors.black,
+            textAlign: "center",
+          }}
+        >
+          notes, and meetings all in one place
+        </Text>
         <Pressable
-          onPressIn={expandCarousel}
-          //   className="h-[40px] items-center justify-center rounded-full mx-20 mt-3 bg-slate-700 overflow-hidden"
+          onPress={simulatePress}
+          // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-8 bg-white"
           style={{
             borderCurve: "continuous",
+            flexDirection: "row",
             height: 45,
             alignItems: "center",
             justifyContent: "center",
+            gap: 8,
+            borderRadius: 9999,
+            marginHorizontal: 80,
+            marginTop: 32,
+            backgroundColor: colors.white,
+          }}
+        >
+          <AntDesign name="google" size={24} color={colors.black} />
+          <Text style={{ color: colors.black }}>Continue with Google</Text>
+        </Pressable>
+        <Pressable
+          onPress={simulatePress}
+          // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-3 bg-white"
+          style={{
+            borderCurve: "continuous",
+            flexDirection: "row",
+            height: 45,
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
             borderRadius: 9999,
             marginHorizontal: 80,
             marginTop: 12,
-            backgroundColor: colors.primary,
-            overflow: "hidden",
+            backgroundColor: colors.black,
           }}
         >
-          <Animated.View
-            //   className="flex-row gap-2 pt-0"
-            style={[
-              {
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                paddingTop: 0,
-              },
-              rSignUpStyle,
-            ]}
-          >
-            <UserRound size={16} color={colors.white} />
-            <Text style={{ color: colors.white }}>Sign Up / Sign In</Text>
-          </Animated.View>
-          <Animated.View
-            //   className="flex-row gap-2 -mt-5"
-            style={[
-              {
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                marginTop: -16,
-              },
-              rContinueWithEmailStyle,
-            ]}
-          >
-            <Phone size={16} color={colors.white} />
-            {/* <AntDesign name="whats-app" size={24} color={colors.white} /> */}
-            <Text
-              style={{
-                color: colors.white,
-              }}
-            >
-              Continue with Phone
-            </Text>
-          </Animated.View>
+          <AntDesign name="apple" size={24} color={colors.white} />
+          <Text style={{ color: colors.white }}>Continue with Apple</Text>
         </Pressable>
+      </Animated.View>
 
+      <Pressable
+        onPress={() => expandCarousel()}
+        //   className="h-[40px] items-center justify-center rounded-full mx-20 mt-3 bg-slate-700 overflow-hidden"
+        style={{
+          borderCurve: "continuous",
+          height: 45,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 9999,
+          marginHorizontal: 80,
+          marginTop: 12,
+          backgroundColor: colors.primary,
+          overflow: "hidden",
+        }}
+      >
+        <Animated.View
+          //   className="flex-row gap-2 pt-0"
+          style={[
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              paddingTop: 0,
+            },
+            rSignUpStyle,
+          ]}
+        >
+          <UserRound size={16} color={colors.white} />
+          <Text style={{ color: colors.white }}>Sign Up / Sign In</Text>
+        </Animated.View>
+        <Animated.View
+          //   className="flex-row gap-2 -mt-5"
+          style={[
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              marginTop: -16,
+            },
+            rContinueWithEmailStyle,
+          ]}
+        >
+          <Phone size={16} color={colors.white} />
+          {/* <AntDesign name="whats-app" size={24} color={colors.white} /> */}
+          <Text
+            style={{
+              color: colors.white,
+            }}
+          >
+            Continue with Phone
+          </Text>
+        </Animated.View>
+      </Pressable>
+
+      <GestureDetector gesture={Gesture.Race(panGesture, singleTap)}>
         <Carousel
           SLIDES={SLIDES}
           currentSlideIndex={currentSlideIndex}
@@ -450,28 +458,28 @@ export const OnboardingScreen = () => {
           isDragging={isDragging}
           topCarouselOffset={TOP_CAROUSEL_OFFSET}
         />
+      </GestureDetector>
 
-        <Animated.View
-          //   className="absolute inset-0 pointer-events-none"
-          style={[
-            rGradientStyle,
-            {
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-              pointerEvents: "none",
-            },
-          ]}
-        >
-          <LinearGradient
-            colors={["rgba(60, 86, 39,0.4)", "transparent"]}
-            style={{ width: "100%", height: "30%" }}
-          />
-        </Animated.View>
-      </View>
-    </GestureDetector>
+      <Animated.View
+        //   className="absolute inset-0 pointer-events-none"
+        style={[
+          rGradientStyle,
+          {
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            pointerEvents: "none",
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={["rgba(60, 86, 39,0.4)", "transparent"]}
+          style={{ width: "100%", height: "30%" }}
+        />
+      </Animated.View>
+    </View>
   );
 };
 
