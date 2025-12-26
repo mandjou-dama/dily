@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@/types/navigation";
@@ -16,24 +17,30 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Button from "@/components/Button";
 import { simulatePress } from "@/lib/simulate-press";
 import { ArrowLeft } from "lucide-react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "WhatsAppLogin">;
 
 export const WhatsAppLoginScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const phoneRef = useRef<TextInput>(null);
+
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = () => {
+    console.log("first");
+
     setIsLoading(true);
 
     setTimeout(() => {
-      Keyboard.dismiss();
+      // Keyboard.dismiss();
       setIsLoading(false);
       navigation.navigate("VerificationCode");
     }, 2000);
@@ -44,51 +51,68 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // const handleContinue
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        phoneRef.current?.focus();
+        console.log("focused");
+      }, 350);
+
+      return () => {
+        // clear the timeout set timeout
+        clearTimeout(timer);
+      };
+    }, [])
+  );
 
   return (
-    <View
-      style={{
-        flex: 1,
-        paddingTop: insets.top * 1.5,
-        paddingBottom: insets.bottom,
-        backgroundColor: colors.background,
-      }}
+    <KeyboardAvoidingView
+      behavior={"padding"}
+      keyboardVerticalOffset={0}
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <View style={[styles.container, { justifyContent: "space-between" }]}>
-        <View>
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 70,
-            }}
-          >
-            <Pressable
-              onPress={handleGoBack}
-              style={[
-                {
-                  position: "absolute",
-                  left: 0,
-                  zIndex: 50,
-                  width: 48,
-                  height: 48,
-                  borderRadius: 13,
-                  borderCurve: "continuous",
+      <View
+        style={{
+          flex: 1,
+          paddingTop: insets.top * 1.5,
+          paddingBottom: insets.bottom,
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={[styles.container, { justifyContent: "space-between" }]}>
+            <View>
+              <View
+                style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  borderWidth: 1,
-                  borderColor: "#E7E5E4",
-                },
-              ]}
-            >
-              <ArrowLeft
-                style={{ pointerEvents: "none" }}
-                size={24}
-                color={colors.primary}
-              />
-            </Pressable>
-            {/* 
+                  marginBottom: 70,
+                }}
+              >
+                <Pressable
+                  onPress={handleGoBack}
+                  style={[
+                    {
+                      position: "absolute",
+                      left: 0,
+                      zIndex: 50,
+                      width: 48,
+                      height: 48,
+                      borderRadius: 13,
+                      borderCurve: "continuous",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: "#E7E5E4",
+                    },
+                  ]}
+                >
+                  <ArrowLeft
+                    style={{ pointerEvents: "none" }}
+                    size={24}
+                    color={colors.primary}
+                  />
+                </Pressable>
+                {/* 
           <View
             style={[
               {
@@ -111,56 +135,59 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
               source={require("assets/splash-icon-light.png")}
             />
           </View> */}
-          </View>
+              </View>
 
-          <Text style={styles.title}>
-            Enter your{" "}
-            <Text
-              style={{
-                color: colors.primary,
-                textDecorationStyle: "solid",
-                textDecorationLine: "underline",
-              }}
-            >
-              WhatsApp
-            </Text>{" "}
-            number to continue
-          </Text>
+              <Text style={styles.title}>
+                Enter your{" "}
+                <Text
+                  style={{
+                    color: colors.primary,
+                    textDecorationStyle: "solid",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  WhatsApp
+                </Text>{" "}
+                number to continue
+              </Text>
 
-          <View style={styles.inputContainer}>
-            <View style={{}}>
-              <Text>+223</Text>
+              <View style={styles.inputContainer}>
+                <View style={{}}>
+                  <Text>+223</Text>
+                </View>
+                <TextInput
+                  ref={phoneRef}
+                  hitSlop={30}
+                  style={styles.input}
+                  placeholder="Your phone number"
+                  placeholderTextColor={colors.textSecondary}
+                  value={phone}
+                  onChangeText={setPhone}
+                  autoCapitalize="none"
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <Button
+                disabled={(phone.length >= 8 ? false : true) || isLoading}
+                title="Continue"
+                onPress={handleLogin}
+                isLoading={isLoading}
+              />
             </View>
-            <TextInput
-              hitSlop={30}
-              style={styles.input}
-              placeholder="Your phone number"
-              placeholderTextColor={colors.textSecondary}
-              value={phone}
-              onChangeText={setPhone}
-              autoCapitalize="none"
-              keyboardType="phone-pad"
-            />
+
+            <View style={{}}>
+              <Text style={{ textAlign: "center" }}>
+                By continuing, you agree to our{" "}
+              </Text>
+              <Text style={{ textAlign: "center", color: colors.primary }}>
+                Terms of Service and Privacy Policy
+              </Text>
+            </View>
           </View>
-
-          <Button
-            disabled={(phone.length >= 8 ? false : true) || isLoading}
-            title="Continue"
-            onPress={handleLogin}
-            isLoading={isLoading}
-          />
-        </View>
-
-        <View style={{}}>
-          <Text style={{ textAlign: "center" }}>
-            By continuing, you agree to our{" "}
-          </Text>
-          <Text style={{ textAlign: "center", color: colors.primary }}>
-            Terms of Service and Privacy Policy
-          </Text>
-        </View>
+        </TouchableWithoutFeedback>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

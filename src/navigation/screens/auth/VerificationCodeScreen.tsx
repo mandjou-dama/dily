@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
   Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@/types/navigation";
@@ -22,6 +23,7 @@ import { simulatePress } from "@/lib/simulate-press";
 import { ArrowLeft } from "lucide-react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "VerificationCode">;
 
@@ -67,48 +69,53 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        paddingTop: insets.top * 1.5,
-        paddingBottom: insets.bottom,
-        backgroundColor: colors.background,
-      }}
+    <KeyboardAvoidingView
+      behavior={"padding"}
+      keyboardVerticalOffset={0}
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <View style={[styles.container, { justifyContent: "space-between" }]}>
-        <View>
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 70,
-            }}
-          >
-            <Pressable
-              onPress={handleGoBack}
-              style={[
-                {
-                  position: "absolute",
-                  left: 0,
-                  zIndex: 50,
-                  width: 48,
-                  height: 48,
-                  borderRadius: 13,
-                  borderCurve: "continuous",
+      <View
+        style={{
+          flex: 1,
+          paddingTop: insets.top * 1.5,
+          paddingBottom: insets.bottom,
+        }}
+      >
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={[styles.container, { justifyContent: "space-between" }]}>
+            <View>
+              <View
+                style={{
                   alignItems: "center",
                   justifyContent: "center",
-                  borderWidth: 1,
-                  borderColor: "#E7E5E4",
-                },
-              ]}
-            >
-              <ArrowLeft
-                style={{ pointerEvents: "none" }}
-                size={24}
-                color={colors.primary}
-              />
-            </Pressable>
-            {/* 
+                  marginBottom: 70,
+                }}
+              >
+                <Pressable
+                  onPress={handleGoBack}
+                  style={[
+                    {
+                      position: "absolute",
+                      left: 0,
+                      zIndex: 50,
+                      width: 48,
+                      height: 48,
+                      borderRadius: 13,
+                      borderCurve: "continuous",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 1,
+                      borderColor: "#E7E5E4",
+                    },
+                  ]}
+                >
+                  <ArrowLeft
+                    style={{ pointerEvents: "none" }}
+                    size={24}
+                    color={colors.primary}
+                  />
+                </Pressable>
+                {/* 
           <View
             style={[
               {
@@ -131,80 +138,86 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
               source={require("assets/splash-icon-light.png")}
             />
           </View> */}
+              </View>
+
+              <Text style={styles.title}>
+                Enter the{" "}
+                <Text
+                  style={{
+                    color: colors.primary,
+                    textDecorationStyle: "solid",
+                    textDecorationLine: "underline",
+                  }}
+                >
+                  confirmation code
+                </Text>{" "}
+                sent to your WhatsApp
+              </Text>
+
+              <OtpInput
+                ref={phoneInputRef}
+                numberOfDigits={4}
+                focusColor={colors.primary}
+                autoFocus={true}
+                hideStick={true}
+                placeholder="2004"
+                blurOnFilled={false}
+                disabled={isLoading}
+                type="numeric"
+                secureTextEntry={false}
+                focusStickBlinkingDuration={500}
+                onTextChange={(text) => {
+                  setCode(text);
+                  if (text.length === 3) {
+                    setError(false);
+                  }
+                }}
+                onFilled={(text) =>
+                  confirmOtp(
+                    `+223${phone.toString().replace(/\s+/g, "")}`,
+                    text
+                  )
+                }
+                textInputProps={{
+                  accessibilityLabel: "One-Time Password",
+                }}
+                textProps={{
+                  accessibilityRole: "text",
+                  accessibilityLabel: "OTP digit",
+                  allowFontScaling: false,
+                }}
+                theme={{
+                  containerStyle: styles.codeContainer,
+                  pinCodeContainerStyle: styles.pinCodeContainer,
+                  pinCodeTextStyle: styles.pinCodeText,
+                  focusStickStyle: styles.focusStick,
+                  focusedPinCodeContainerStyle: styles.activePinCodeContainer,
+                  placeholderTextStyle: styles.placeholderText,
+                  disabledPinCodeContainerStyle:
+                    styles.disabledPinCodeContainer,
+                }}
+              />
+
+              <Button
+                disabled={(code.length >= 4 ? false : true) || isLoading}
+                title="Confirm"
+                isLoading={isLoading}
+                onPress={handleLogin}
+              />
+            </View>
+
+            <View style={{}}>
+              <Text style={{ textAlign: "center" }}>
+                By continuing, you agree to our{" "}
+              </Text>
+              <Text style={{ textAlign: "center", color: colors.primary }}>
+                Terms of Service and Privacy Policy
+              </Text>
+            </View>
           </View>
-
-          <Text style={styles.title}>
-            Enter the{" "}
-            <Text
-              style={{
-                color: colors.primary,
-                textDecorationStyle: "solid",
-                textDecorationLine: "underline",
-              }}
-            >
-              confirmation code
-            </Text>{" "}
-            sent to your WhatsApp
-          </Text>
-
-          <OtpInput
-            ref={phoneInputRef}
-            numberOfDigits={4}
-            focusColor={colors.primary}
-            autoFocus={true}
-            hideStick={true}
-            placeholder="2004"
-            blurOnFilled={false}
-            disabled={isLoading}
-            type="numeric"
-            secureTextEntry={false}
-            focusStickBlinkingDuration={500}
-            onTextChange={(text) => {
-              setCode(text);
-              if (text.length === 3) {
-                setError(false);
-              }
-            }}
-            onFilled={(text) =>
-              confirmOtp(`+223${phone.toString().replace(/\s+/g, "")}`, text)
-            }
-            textInputProps={{
-              accessibilityLabel: "One-Time Password",
-            }}
-            textProps={{
-              accessibilityRole: "text",
-              accessibilityLabel: "OTP digit",
-              allowFontScaling: false,
-            }}
-            theme={{
-              containerStyle: styles.codeContainer,
-              pinCodeContainerStyle: styles.pinCodeContainer,
-              pinCodeTextStyle: styles.pinCodeText,
-              focusStickStyle: styles.focusStick,
-              focusedPinCodeContainerStyle: styles.activePinCodeContainer,
-              placeholderTextStyle: styles.placeholderText,
-              disabledPinCodeContainerStyle: styles.disabledPinCodeContainer,
-            }}
-          />
-
-          <Button
-            disabled={(code.length >= 4 ? false : true) || isLoading}
-            title="Confirm"
-            isLoading={isLoading}
-            onPress={handleLogin}
-          />
-        </View>
-
-        <View style={{}}>
-          <Text style={{ textAlign: "center" }}>
-            By continuing, you agree to our{" "}
-          </Text>
-          <Text style={{ textAlign: "center", color: colors.primary }}>
-            Terms of Service and Privacy Policy
-          </Text>
-        </View>
+        </TouchableWithoutFeedback>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

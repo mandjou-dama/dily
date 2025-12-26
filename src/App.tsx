@@ -6,6 +6,7 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { Platform, StatusBar, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
@@ -40,26 +41,28 @@ export function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
-        {/* Navigation mounts immediately */}
-        <Navigation
-          theme={theme}
-          linking={{
-            enabled: "auto",
-            prefixes: [prefix],
-          }}
-        />
-
-        {/* Splash overlay */}
-        {splashVisible && (
-          <AnimatedBootSplash
-            onAnimationEnd={async () => {
-              setSplashVisible(false);
-              await BootSplash.hide({ fade: true });
+      <KeyboardProvider preload={false}>
+        <View style={{ flex: 1 }}>
+          {/* Navigation mounts immediately */}
+          <Navigation
+            theme={theme}
+            linking={{
+              enabled: "auto",
+              prefixes: [prefix],
             }}
           />
-        )}
-      </View>
+
+          {/* Splash overlay */}
+          {splashVisible && (
+            <AnimatedBootSplash
+              onAnimationEnd={async () => {
+                setSplashVisible(false);
+                await BootSplash.hide({ fade: true });
+              }}
+            />
+          )}
+        </View>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

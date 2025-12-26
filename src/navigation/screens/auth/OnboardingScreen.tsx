@@ -28,8 +28,6 @@ import OnboardingActions from "@/components/onboarding/onboarding-actions";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Onboarding">;
 
-// superlist-onboarding-flow-animation 🔽
-
 export const SLIDES: OnboardingSlide[] = [
   {
     bgColor: colors.white,

@@ -3,7 +3,13 @@ import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import { LucideIcon } from "lucide-react-native";
 import React, { memo } from "react";
-import { Text, StyleSheet, Pressable, PressableProps } from "react-native";
+import {
+  Text,
+  StyleSheet,
+  Pressable,
+  PressableProps,
+  GestureResponderEvent,
+} from "react-native";
 import { Spinner } from "./spinner";
 import { useHaptics } from "@/hooks/use-haptics";
 
@@ -15,12 +21,15 @@ interface Props extends PressableProps {
 
 const Button = ({ title, icon: Icon, onPress, disabled, isLoading }: Props) => {
   const { impact } = useHaptics();
+
+  const handlePress = (event: GestureResponderEvent) => {
+    onPress?.(event);
+    impact("light");
+  };
+
   return (
     <Pressable
-      onPress={() => {
-        onPress;
-        impact("light");
-      }}
+      onPress={handlePress}
       disabled={disabled}
       style={[styles.container, disabled && styles.disabled]}
     >
