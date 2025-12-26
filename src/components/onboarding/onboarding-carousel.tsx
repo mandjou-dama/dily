@@ -21,6 +21,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { FlatList } from "react-native-gesture-handler";
 import { ChevronDown } from "lucide-react-native";
 import { colors } from "@/theme/colors";
+import { useHaptics } from "@/hooks/use-haptics";
 
 // superlist-onboarding-flow-animation 🔽
 
@@ -47,6 +48,8 @@ const Carousel: FC<CarouselProps> = ({
   // Prevents scroll conflicts between vertical pan gesture and horizontal carousel scroll
   const [isHorizontalScrollEnabled, setIsHorizontalScrollEnabled] =
     useState(false);
+
+  const { impact } = useHaptics();
 
   // Duplicate first slide at end to enable infinite loop scrolling
   // When user reaches duplicated slide, we instantly jump back to real first slide
@@ -126,6 +129,8 @@ const Carousel: FC<CarouselProps> = ({
         duration: 300,
       })
     );
+
+    impact("light");
   };
 
   // Determine if carousel is expanded past midpoint threshold
@@ -160,7 +165,6 @@ const Carousel: FC<CarouselProps> = ({
           width: "100%",
           top: insets.top,
           height: screenHeight - insets.top - insets.bottom - 60,
-          // backgroundColor: "red",
         },
         rContainerStyle,
       ]}
@@ -227,8 +231,8 @@ const Carousel: FC<CarouselProps> = ({
         style={[
           {
             position: "absolute",
-            zIndex: 30,
-            bottom: 0,
+            zIndex: 50,
+            bottom: 20,
             left: "50%",
             transform: [
               {
@@ -239,8 +243,21 @@ const Carousel: FC<CarouselProps> = ({
           rChevronStyle,
         ]}
       >
-        <Pressable onPress={slideBottomHandler}>
-          <ChevronDown size={26} color={colors.primary} />
+        <Pressable
+          hitSlop={20}
+          style={{
+            width: 48,
+            height: 48,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onPress={slideBottomHandler}
+        >
+          <ChevronDown
+            style={{ pointerEvents: "none" }}
+            size={26}
+            color={colors.primary}
+          />
         </Pressable>
       </Animated.View>
     </Animated.View>

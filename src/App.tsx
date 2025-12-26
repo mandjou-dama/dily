@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
+import { colors } from "./theme/colors";
 
 Asset.loadAsync([
   ...NavigationAssets,

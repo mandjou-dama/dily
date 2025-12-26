@@ -61,7 +61,7 @@ export const SlideItem: FC<SlideItemProps> = ({
   return (
     <Animated.View
       // className="px-7 py-5"
-      style={[{ width, paddingHorizontal: 28, paddingVertical: 20 }, rStyle]}
+      style={[{ width, paddingHorizontal: 10, paddingVertical: 20 }, rStyle]}
     >
       <View
         // className="flex-1 items-center p-20 px-8 rounded-3xl"
@@ -70,43 +70,51 @@ export const SlideItem: FC<SlideItemProps> = ({
           alignItems: "center",
           // paddingVertical: 30,
           // paddingHorizontal: 32,
+          paddingTop: 40,
           borderRadius: 24,
-          backgroundColor: item.bgColor,
-          shadowColor: colors.primary,
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 2,
+          // backgroundColor: colors.white,
+          // shadowColor: colors.primary,
+          // shadowOffset: { width: 0, height: 3 },
+          // shadowOpacity: 0.08,
+          // shadowRadius: 2,
           elevation: 0,
           borderCurve: "continuous",
         }}
       >
-        {/* <Text
-          style={{
-            color: colors.primary,
-            fontSize: 26,
-            fontWeight: "700",
-            textAlign: "center",
-            marginBottom: 30,
-          }}
-        >
-          {item.title}
-        </Text> */}
-        <View
+        <View style={{ paddingHorizontal: 30 }}>
+          <Text
+            style={{
+              color: colors.black,
+              fontSize: 28,
+              fontWeight: "700",
+              textAlign: "center",
+              marginBottom: 10,
+            }}
+          >
+            {item.title}
+          </Text>
+          <Text
+            style={{
+              color: colors.black,
+              fontSize: 14,
+              textAlign: "center",
+            }}
+          >
+            {item.subtitle}
+          </Text>
+        </View>
+
+        <Image
           style={{
             width: "100%",
             height: "100%",
-            // aspectRatio: 9 / 16,
-            borderRadius: 24,
-            backgroundColor: colors.primary,
+            position: "absolute",
+            bottom: -30,
           }}
-        >
-          <Image
-            style={{ width: "100%", height: "100%", borderRadius: 24 }}
-            source={item.image}
-            contentFit="cover"
-            transition={1000}
-          />
-        </View>
+          source={item.image}
+          contentFit="contain"
+          transition={1000}
+        />
       </View>
     </Animated.View>
   );

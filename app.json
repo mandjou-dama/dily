@@ -32,6 +32,9 @@
       //   }
       // ]
       ["react-native-bootsplash", { "assetsDir": "assets/bootsplash" }]
-    ]
+    ],
+    "experiments": {
+      "reactCompiler": true
+    }
   }
 }

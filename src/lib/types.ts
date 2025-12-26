@@ -13,6 +13,8 @@ export type OnboardingSlide = {
   duration: number;
   /** Title of the slide */
   title: string;
+  /** Title of the slide */
+  subtitle: string;
   /** Image source for the slide */
   image: string;
 };

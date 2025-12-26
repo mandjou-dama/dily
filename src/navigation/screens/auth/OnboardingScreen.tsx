@@ -23,6 +23,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "@/theme/colors";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "@/types/navigation";
+import { useHaptics } from "@/hooks/use-haptics";
+import OnboardingActions from "@/components/onboarding/onboarding-actions";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Onboarding">;
 
@@ -32,30 +34,34 @@ export const SLIDES: OnboardingSlide[] = [
   {
     bgColor: colors.white,
     duration: 4000,
-    title: "Create tasks at the speed of thought",
-    image:
-      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/IMG_5330.JPG",
+    title: "Snap & Sell in Seconds",
+    subtitle:
+      "Just take a photo. We handle the rest. List items in under 30 seconds.",
+    image: require("assets/onboarding_2.png"),
   },
   {
     bgColor: colors.white,
     duration: 4000,
-    title: "Take notes and transform thoughts into action",
-    image:
-      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/b8e17f1a-814c-4d82-bb3a-305f009be522.JPG",
+    title: "Find Local Treasures",
+    subtitle:
+      "Discover unique items from sellers in your neighborhood. No shipping required!",
+    image: require("assets/onboarding_1.png"),
   },
   {
     bgColor: colors.white,
     duration: 4000,
-    title: "Start your next project in seconds using AI templates",
-    image:
-      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/55e70c70-0bee-49f6-b0ae-7dc45c2a2f4f.JPG",
+    title: "Safe & Secure Trading",
+    subtitle:
+      "Built-in messaging and secure payment. Trade with complete peace of mind.",
+    image: require("assets/onboarding_5.png"),
   },
   {
     bgColor: colors.white,
     duration: 4000,
-    title: "Organize your team with shared lists and tasks",
-    image:
-      "https://xmymttluoieutmeorcjb.supabase.co/storage/v1/object/public/onboarding/7cac731e-289b-45e2-b2fd-a7170228c244.JPG",
+    title: "Join Dily !",
+    subtitle:
+      "Join Mali's fastest-growing local marketplace and discover a new way to buy and sell.",
+    image: require("assets/onboarding_3.png"),
   },
 ];
 
@@ -67,6 +73,8 @@ const TOP_CAROUSEL_OFFSET = 230;
 const SWIPE_UP_THRESHOLD = 20;
 
 export const OnboardingScreen = ({ navigation }: Props) => {
+  const { impact } = useHaptics();
+
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
 
   const insets = useSafeAreaInsets();
@@ -214,6 +222,8 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         )
       );
     }
+
+    impact("light");
   };
 
   // Fade in sign-in buttons block as carousel expands upward
@@ -297,31 +307,14 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         backgroundColor: colors.background,
       }}
     >
-      <Animated.View
-        // className="mt-auto"
-        style={[rButtonsBlockStyle, { marginTop: "auto" }]}
-      >
-        {/* <Pressable
-            // hitSlop={30}
-            // className="self-center mb-6"
-            style={{
-              alignSelf: "center",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              width: 40,
-              height: 40,
-              // backgroundColor: "blue",
-              marginBottom: 0,
-              // position: "absolute",
-            }}
-            onPress={slideBottomHandler}
-          >
-            <ChevronDown size={26} color={colors.primary} />
-          </Pressable> */}
+      <OnboardingActions
+        rButtonsBlockStyle={rButtonsBlockStyle}
+        onGooglePress={simulatePress}
+        onApplePress={simulatePress}
+      />
 
+      {/* <Animated.View style={[rButtonsBlockStyle, { marginTop: "auto" }]}>
         <Text
-          //   className="text-white text-center text-4xl font-bold"
           style={{
             color: colors.black,
             textAlign: "center",
@@ -329,31 +322,29 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             fontWeight: "bold",
           }}
         >
-          Let's get started
+          Buy. Sell. Connect.
         </Text>
 
         <Text
-          // className="text-slate-400 text-center mt-3"
           style={{
             color: colors.black,
             textAlign: "center",
             marginTop: 12,
           }}
         >
-          Sign in to get things done - your task,
+          A simple way to trade items
         </Text>
+
         <Text
-          // className="text-slate-400 text-center"
           style={{
             color: colors.black,
             textAlign: "center",
           }}
         >
-          notes, and meetings all in one place
+          with people near you.
         </Text>
         <Pressable
           onPress={simulatePress}
-          // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-8 bg-white"
           style={{
             borderCurve: "continuous",
             flexDirection: "row",
@@ -361,7 +352,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            borderRadius: 9999,
+            borderRadius: 13,
             marginHorizontal: 80,
             marginTop: 32,
             backgroundColor: colors.white,
@@ -372,7 +363,6 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         </Pressable>
         <Pressable
           onPress={simulatePress}
-          // className="flex-row h-[40px] items-center justify-center gap-2 rounded-full mx-20 mt-3 bg-white"
           style={{
             borderCurve: "continuous",
             flexDirection: "row",
@@ -380,7 +370,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            borderRadius: 9999,
+            borderRadius: 13,
             marginHorizontal: 80,
             marginTop: 12,
             backgroundColor: colors.black,
@@ -389,17 +379,16 @@ export const OnboardingScreen = ({ navigation }: Props) => {
           <AntDesign name="apple" size={24} color={colors.white} />
           <Text style={{ color: colors.white }}>Continue with Apple</Text>
         </Pressable>
-      </Animated.View>
+      </Animated.View> */}
 
       <Pressable
         onPress={() => expandCarousel()}
-        //   className="h-[40px] items-center justify-center rounded-full mx-20 mt-3 bg-slate-700 overflow-hidden"
         style={{
           borderCurve: "continuous",
           height: 45,
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 9999,
+          borderRadius: 13,
           marginHorizontal: 80,
           marginTop: 12,
           backgroundColor: colors.primary,
@@ -422,7 +411,6 @@ export const OnboardingScreen = ({ navigation }: Props) => {
           <Text style={{ color: colors.white }}>Sign Up / Sign In</Text>
         </Animated.View>
         <Animated.View
-          //   className="flex-row gap-2 -mt-5"
           style={[
             {
               flexDirection: "row",
@@ -434,7 +422,6 @@ export const OnboardingScreen = ({ navigation }: Props) => {
           ]}
         >
           <Phone size={16} color={colors.white} />
-          {/* <AntDesign name="whats-app" size={24} color={colors.white} /> */}
           <Text
             style={{
               color: colors.white,
@@ -461,7 +448,6 @@ export const OnboardingScreen = ({ navigation }: Props) => {
       </GestureDetector>
 
       <Animated.View
-        //   className="absolute inset-0 pointer-events-none"
         style={[
           rGradientStyle,
           {

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { AuthStackParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
+import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -22,29 +23,48 @@ import { ArrowLeft } from "lucide-react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "WhatsAppLogin">;
+type Props = NativeStackScreenProps<AuthStackParamList, "VerificationCode">;
 
-export const WhatsAppLoginScreen = ({ navigation }: Props) => {
+export const VerificationCodeScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleLogin = () => {
-    setIsLoading(true);
+  const phoneInputRef = useRef<OtpInputRef>(null);
 
-    setTimeout(() => {
-      Keyboard.dismiss();
-      setIsLoading(false);
-      navigation.navigate("VerificationCode");
-    }, 2000);
-  };
+  const handleLogin = useCallback(() => {
+    console.log("Login", phone);
+  }, [phone]);
 
   const handleGoBack = () => {
     navigation.goBack();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  // const handleContinue
+  useEffect(() => {
+    if (error) {
+      // Small delay to ensure the input is ready
+      const timer = setTimeout(() => {
+        phoneInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [error]);
+
+  const confirmOtp = async (phone: string, code: string) => {
+    setIsLoading(true);
+
+    // mock api call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    setIsLoading(false);
+    setSuccess(true);
+  };
 
   return (
     <View
@@ -114,7 +134,7 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
           </View>
 
           <Text style={styles.title}>
-            Enter your{" "}
+            Enter the{" "}
             <Text
               style={{
                 color: colors.primary,
@@ -122,32 +142,56 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
                 textDecorationLine: "underline",
               }}
             >
-              WhatsApp
+              confirmation code
             </Text>{" "}
-            number to continue
+            sent to your WhatsApp
           </Text>
 
-          <View style={styles.inputContainer}>
-            <View style={{}}>
-              <Text>+223</Text>
-            </View>
-            <TextInput
-              hitSlop={30}
-              style={styles.input}
-              placeholder="Your phone number"
-              placeholderTextColor={colors.textSecondary}
-              value={phone}
-              onChangeText={setPhone}
-              autoCapitalize="none"
-              keyboardType="phone-pad"
-            />
-          </View>
+          <OtpInput
+            ref={phoneInputRef}
+            numberOfDigits={4}
+            focusColor={colors.primary}
+            autoFocus={true}
+            hideStick={true}
+            placeholder="2004"
+            blurOnFilled={false}
+            disabled={isLoading}
+            type="numeric"
+            secureTextEntry={false}
+            focusStickBlinkingDuration={500}
+            onTextChange={(text) => {
+              setCode(text);
+              if (text.length === 3) {
+                setError(false);
+              }
+            }}
+            onFilled={(text) =>
+              confirmOtp(`+223${phone.toString().replace(/\s+/g, "")}`, text)
+            }
+            textInputProps={{
+              accessibilityLabel: "One-Time Password",
+            }}
+            textProps={{
+              accessibilityRole: "text",
+              accessibilityLabel: "OTP digit",
+              allowFontScaling: false,
+            }}
+            theme={{
+              containerStyle: styles.codeContainer,
+              pinCodeContainerStyle: styles.pinCodeContainer,
+              pinCodeTextStyle: styles.pinCodeText,
+              focusStickStyle: styles.focusStick,
+              focusedPinCodeContainerStyle: styles.activePinCodeContainer,
+              placeholderTextStyle: styles.placeholderText,
+              disabledPinCodeContainerStyle: styles.disabledPinCodeContainer,
+            }}
+          />
 
           <Button
-            disabled={(phone.length >= 8 ? false : true) || isLoading}
-            title="Continue"
-            onPress={handleLogin}
+            disabled={(code.length >= 4 ? false : true) || isLoading}
+            title="Confirm"
             isLoading={isLoading}
+            onPress={handleLogin}
           />
         </View>
 
@@ -179,7 +223,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     height: 48,
     borderWidth: 1,
-    borderColor: "#E7E5E4",
+    borderColor: colors.border,
     borderRadius: 13,
     borderCurve: "continuous",
     paddingHorizontal: spacing.md,
@@ -191,11 +235,49 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: 30,
   },
-  input: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    // backgroundColor: "red",
-    width: "80%",
+  codeContainer: {
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.md,
+    marginBottom: 30,
+  },
+  pinCodeContainer: {
+    backgroundColor: colors.background,
+    borderCurve: "continuous",
+    // width: 48,
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E7E5E4",
+  },
+  activePinCodeContainer: {
+    backgroundColor: colors.background,
+    borderCurve: "continuous",
+    // width: 48,
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    borderColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  disabledPinCodeContainer: {
+    opacity: 0.4,
+  },
+  pinCodeText: {
+    // fontFamily: FONTS.Satoshi.Medium,
+    color: colors.black,
+    fontSize: 18,
+  },
+  focusStick: {
+    backgroundColor: colors.black,
+  },
+  placeholderText: {
+    color: colors.textSecondary,
   },
   button: {
     height: 48,

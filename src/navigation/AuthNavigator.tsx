@@ -5,6 +5,7 @@ import { AuthStackParamList } from "@/types/navigation";
 import { RegisterScreen } from "@/navigation/screens/auth/RegisterScreen";
 import { OnboardingScreen } from "@/navigation/screens/auth/OnboardingScreen";
 import { WhatsAppLoginScreen } from "./screens/auth/WhatsAppLoginScreen";
+import { VerificationCodeScreen } from "./screens/auth/VerificationCodeScreen";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -14,6 +15,10 @@ export const AuthNavigator = () => {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="WhatsAppLogin" component={WhatsAppLoginScreen} />
+      <Stack.Screen
+        name="VerificationCode"
+        component={VerificationCodeScreen}
+      />
     </Stack.Navigator>
   );
 };
