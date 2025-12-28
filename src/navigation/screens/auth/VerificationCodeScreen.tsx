@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -24,6 +30,7 @@ import { ArrowLeft } from "lucide-react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "VerificationCode">;
 
@@ -35,7 +42,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const phoneInputRef = useRef<OtpInputRef>(null);
+  const otpInputRef = useRef<OtpInputRef>(null);
 
   const handleLogin = useCallback(() => {
     console.log("Login", phone);
@@ -46,27 +53,30 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  useEffect(() => {
-    if (error) {
-      // Small delay to ensure the input is ready
-      const timer = setTimeout(() => {
-        phoneInputRef.current?.focus();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-
-    return undefined;
-  }, [error]);
-
   const confirmOtp = async (phone: string, code: string) => {
     setIsLoading(true);
 
     // mock api call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsLoading(false);
     setSuccess(true);
+
+    navigation.replace("UserInfos");
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        otpInputRef.current?.focus();
+        console.log("focused");
+      }, 350);
+
+      return () => {
+        // clear the timeout set timeout
+        clearTimeout(timer);
+      };
+    }, [])
+  );
 
   return (
     <KeyboardAvoidingView
@@ -155,7 +165,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
               </Text>
 
               <OtpInput
-                ref={phoneInputRef}
+                ref={otpInputRef}
                 numberOfDigits={4}
                 focusColor={colors.primary}
                 autoFocus={true}

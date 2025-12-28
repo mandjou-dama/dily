@@ -35,8 +35,6 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = () => {
-    console.log("first");
-
     setIsLoading(true);
 
     setTimeout(() => {

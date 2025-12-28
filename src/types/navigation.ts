@@ -3,6 +3,7 @@ export type AuthStackParamList = {
   Register: undefined;
   WhatsAppLogin: undefined;
   VerificationCode: undefined;
+  UserInfos: undefined;
 };
 
 export type AppTabParamList = {

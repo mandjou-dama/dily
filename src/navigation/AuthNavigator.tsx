@@ -6,6 +6,7 @@ import { RegisterScreen } from "@/navigation/screens/auth/RegisterScreen";
 import { OnboardingScreen } from "@/navigation/screens/auth/OnboardingScreen";
 import { WhatsAppLoginScreen } from "./screens/auth/WhatsAppLoginScreen";
 import { VerificationCodeScreen } from "./screens/auth/VerificationCodeScreen";
+import UserInfosScreen from "./screens/auth/UserInfosScreen";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -18,6 +19,14 @@ export const AuthNavigator = () => {
       <Stack.Screen
         name="VerificationCode"
         component={VerificationCodeScreen}
+      />
+
+      <Stack.Screen
+        options={{
+          gestureEnabled: false,
+        }}
+        name="UserInfos"
+        component={UserInfosScreen}
       />
     </Stack.Navigator>
   );
