@@ -149,7 +149,7 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
                 number to continue
               </Text>
 
-              <View style={styles.inputContainer}>
+              <View style={[styles.inputContainer]}>
                 <View style={{}}>
                   <Text>+223</Text>
                 </View>

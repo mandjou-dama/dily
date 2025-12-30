@@ -19,6 +19,28 @@ type SlideItemProps = {
   scrollOffsetX: SharedValue<number>;
 };
 
+const renderHighlightedText = (text: string) => {
+  return text.split("**").map((part, index) => (
+    <Text
+      key={index}
+      style={
+        index % 2 === 1
+          ? {
+              color: colors.primary,
+              fontWeight: "600",
+              textDecorationColor: colors.primary,
+              textDecorationStyle: "solid",
+              textDecorationLine: "underline",
+              fontFamily: "Clash Display",
+            }
+          : undefined
+      }
+    >
+      {part}
+    </Text>
+  ));
+};
+
 export const SlideItem: FC<SlideItemProps> = ({
   item,
   index,
@@ -60,23 +82,14 @@ export const SlideItem: FC<SlideItemProps> = ({
 
   return (
     <Animated.View
-      // className="px-7 py-5"
       style={[{ width, paddingHorizontal: 10, paddingVertical: 20 }, rStyle]}
     >
       <View
-        // className="flex-1 items-center p-20 px-8 rounded-3xl"
         style={{
           flex: 1,
           alignItems: "center",
-          // paddingVertical: 30,
-          // paddingHorizontal: 32,
           paddingTop: 40,
           borderRadius: 24,
-          // backgroundColor: colors.white,
-          // shadowColor: colors.primary,
-          // shadowOffset: { width: 0, height: 3 },
-          // shadowOpacity: 0.08,
-          // shadowRadius: 2,
           elevation: 0,
           borderCurve: "continuous",
         }}
@@ -84,7 +97,7 @@ export const SlideItem: FC<SlideItemProps> = ({
         <View style={{ paddingHorizontal: 30 }}>
           <Text
             style={{
-              color: colors.black,
+              color: colors.primary,
               fontSize: 28,
               fontWeight: "700",
               textAlign: "center",
@@ -96,11 +109,12 @@ export const SlideItem: FC<SlideItemProps> = ({
           <Text
             style={{
               color: colors.black,
-              fontSize: 14,
+              fontSize: 16,
               textAlign: "center",
+              opacity: 0.7,
             }}
           >
-            {item.subtitle}
+            {renderHighlightedText(item.subtitle)}
           </Text>
         </View>
 
@@ -119,5 +133,3 @@ export const SlideItem: FC<SlideItemProps> = ({
     </Animated.View>
   );
 };
-
-// superlist-onboarding-flow-animation 🔼

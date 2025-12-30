@@ -43,6 +43,7 @@ const Button = ({ title, icon: Icon, onPress, disabled, isLoading }: Props) => {
 const styles = StyleSheet.create({
   container: {
     height: 48,
+    width: "100%",
     backgroundColor: colors.primary,
     borderRadius: 13,
     borderCurve: "continuous",

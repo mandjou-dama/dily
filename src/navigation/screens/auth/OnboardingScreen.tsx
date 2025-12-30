@@ -34,7 +34,7 @@ export const SLIDES: OnboardingSlide[] = [
     duration: 4000,
     title: "Snap & Sell in Seconds",
     subtitle:
-      "Just take a photo. We handle the rest. List items in under 30 seconds.",
+      "Just take a photo. **We handle the rest**. List items in under 30 seconds.",
     image: require("assets/onboarding_2.png"),
   },
   {
@@ -42,7 +42,7 @@ export const SLIDES: OnboardingSlide[] = [
     duration: 4000,
     title: "Find Local Treasures",
     subtitle:
-      "Discover unique items from sellers in your neighborhood. No shipping required!",
+      "Discover unique items from sellers in your neighborhood. **No shipping required!**",
     image: require("assets/onboarding_1.png"),
   },
   {
@@ -50,7 +50,7 @@ export const SLIDES: OnboardingSlide[] = [
     duration: 4000,
     title: "Safe & Secure Trading",
     subtitle:
-      "Built-in messaging and secure payment. Trade with complete peace of mind.",
+      "Built-in messaging and secure payment. Trade with **complete peace of mind**.",
     image: require("assets/onboarding_5.png"),
   },
   {
@@ -58,7 +58,7 @@ export const SLIDES: OnboardingSlide[] = [
     duration: 4000,
     title: "Join Dily !",
     subtitle:
-      "Join Mali's fastest-growing local marketplace and discover a new way to buy and sell.",
+      "Join **Mali's fastest-growing** local marketplace and discover a new way to buy and sell.",
     image: require("assets/onboarding_3.png"),
   },
 ];

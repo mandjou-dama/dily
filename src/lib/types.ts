@@ -6,6 +6,12 @@ import { SharedValue } from "react-native-reanimated";
 /**
  * Represents a single slide in the onboarding carousel
  */
+
+export type SubtitleSegment = {
+  text: string;
+  highlight?: boolean;
+};
+
 export type OnboardingSlide = {
   /** Background color of the slide */
   bgColor: string;
@@ -13,9 +19,10 @@ export type OnboardingSlide = {
   duration: number;
   /** Title of the slide */
   title: string;
-  /** Title of the slide */
+  /** Subtitle of the slide */
   subtitle: string;
   /** Image source for the slide */
+  highlight?: string;
   image: string;
 };
 

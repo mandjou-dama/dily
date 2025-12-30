@@ -31,7 +31,13 @@
       //     "image": "./assets/splash-icon-light.png"
       //   }
       // ]
-      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash" }]
+      ["react-native-bootsplash", { "assetsDir": "assets/bootsplash" }],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Dily needs access to your photos to let you upload profile pictures and attach images to your products."
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true
