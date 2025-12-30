@@ -1,29 +1,49 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppTabParamList } from '@/types/navigation';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { typography } from '@/theme/typography';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+} from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { AppTabParamList } from "@/types/navigation";
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
 
-type Props = NativeStackScreenProps<AppTabParamList, 'Chat'>;
+type Props = NativeStackScreenProps<AppTabParamList, "Chat">;
 
 interface Message {
   id: string;
   text: string;
-  sender: 'me' | 'other';
+  sender: "me" | "other";
   timestamp: number;
 }
 
 const MOCK_MESSAGES: Message[] = [
-  { id: '1', text: 'Hi, is this still available?', sender: 'other', timestamp: 1672531200000 },
-  { id: '2', text: 'Yes, it is!', sender: 'me', timestamp: 1672531260000 },
-  { id: '3', text: 'Can you do 20€?', sender: 'other', timestamp: 1672531320000 },
+  {
+    id: "1",
+    text: "Hi, is this still available?",
+    sender: "other",
+    timestamp: 1672531200000,
+  },
+  { id: "2", text: "Yes, it is!", sender: "me", timestamp: 1672531260000 },
+  {
+    id: "3",
+    text: "Can you do 20€?",
+    sender: "other",
+    timestamp: 1672531320000,
+  },
 ];
 
 export const ChatScreen = ({ navigation }: Props) => {
   const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -31,58 +51,36 @@ export const ChatScreen = ({ navigation }: Props) => {
     const newMessage: Message = {
       id: Date.now().toString(),
       text: inputText,
-      sender: 'me',
+      sender: "me",
       timestamp: Date.now(),
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    setInputText('');
+    setInputText("");
   };
 
   const renderItem = ({ item }: { item: Message }) => {
-    const isMe = item.sender === 'me';
+    const isMe = item.sender === "me";
     return (
-      <View style={[styles.messageBubble, isMe ? styles.myMessage : styles.otherMessage]}>
-        <Text style={[styles.messageText, isMe ? styles.myMessageText : styles.otherMessageText]}>
+      <View
+        style={[
+          styles.messageBubble,
+          isMe ? styles.myMessage : styles.otherMessage,
+        ]}
+      >
+        <Text
+          style={[
+            styles.messageText,
+            isMe ? styles.myMessageText : styles.otherMessageText,
+          ]}
+        >
           {item.text}
         </Text>
       </View>
     );
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
-      </View>
-
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        inverted={false} // Usually chat is inverted but for simplicity we keep it standard order for now or we can invert if we want latest at bottom. 
-        // Let's keep standard order but scroll to end would be better. For this simple step, standard list is fine.
-      />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        style={styles.inputContainer}
-      >
-        <TextInput
-          style={styles.input}
-          placeholder="Type a message..."
-          placeholderTextColor={colors.textSecondary}
-          value={inputText}
-          onChangeText={setInputText}
-        />
-        <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+  return <View style={styles.container}></View>;
 };
 
 const styles = StyleSheet.create({
@@ -94,7 +92,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     ...typography.title,
@@ -105,42 +103,42 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   messageBubble: {
-    maxWidth: '80%',
+    maxWidth: "80%",
     padding: spacing.md,
     borderRadius: 16,
     marginBottom: spacing.xs,
   },
   myMessage: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
   },
   otherMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F2F2F2',
+    alignSelf: "flex-start",
+    backgroundColor: "#F2F2F2",
     borderBottomLeftRadius: 4,
   },
   messageText: {
     ...typography.body,
   },
   myMessageText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   otherMessageText: {
     color: colors.textPrimary,
   },
   inputContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: colors.background,
   },
   input: {
     flex: 1,
     height: 40,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: "#F2F2F2",
     borderRadius: 20,
     paddingHorizontal: spacing.md,
     marginRight: spacing.sm,
@@ -152,6 +150,6 @@ const styles = StyleSheet.create({
   sendButtonText: {
     ...typography.body,
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

@@ -1,31 +1,77 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AppTabParamList } from '@/types/navigation';
-import { colors } from '@/theme/colors';
-import { spacing } from '@/theme/spacing';
-import { typography } from '@/theme/typography';
-import { ProductCard } from '@/components/ProductCard';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+} from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { AppTabParamList } from "@/types/navigation";
+import { colors } from "@/theme/colors";
+import { spacing } from "@/theme/spacing";
+import { typography } from "@/theme/typography";
+import { ProductCard } from "@/components/ProductCard";
 
-type Props = NativeStackScreenProps<AppTabParamList, 'Home'>;
+type Props = NativeStackScreenProps<AppTabParamList, "Home">;
 
-const CATEGORIES = ['All', 'Women', 'Men', 'Kids', 'Home', 'Entertainment', 'Pet Care'];
+const CATEGORIES = [
+  "All",
+  "Women",
+  "Men",
+  "Kids",
+  "Home",
+  "Entertainment",
+  "Pet Care",
+];
 
 const PRODUCTS = [
-  { id: '1', title: 'Vintage Denim Jacket', price: '25.00 €', location: 'Paris, France' },
-  { id: '2', title: 'Nike Air Force 1', price: '45.00 €', location: 'Lyon, France' },
-  { id: '3', title: 'Wooden Coffee Table', price: '15.00 €', location: 'Marseille, France' },
-  { id: '4', title: 'Harry Potter Collection', price: '30.00 €', location: 'Bordeaux, France' },
-  { id: '5', title: 'Zara Summer Dress', price: '12.00 €', location: 'Nice, France' },
-  { id: '6', title: 'PS4 Controller', price: '20.00 €', location: 'Lille, France' },
+  {
+    id: "1",
+    title: "Vintage Denim Jacket",
+    price: "25.00 €",
+    location: "Paris, France",
+  },
+  {
+    id: "2",
+    title: "Nike Air Force 1",
+    price: "45.00 €",
+    location: "Lyon, France",
+  },
+  {
+    id: "3",
+    title: "Wooden Coffee Table",
+    price: "15.00 €",
+    location: "Marseille, France",
+  },
+  {
+    id: "4",
+    title: "Harry Potter Collection",
+    price: "30.00 €",
+    location: "Bordeaux, France",
+  },
+  {
+    id: "5",
+    title: "Zara Summer Dress",
+    price: "12.00 €",
+    location: "Nice, France",
+  },
+  {
+    id: "6",
+    title: "PS4 Controller",
+    price: "20.00 €",
+    location: "Lille, France",
+  },
 ];
 
 export const HomeScreen = ({ navigation }: Props) => {
   const renderHeader = () => (
     <View>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesContainer}
       >
         {CATEGORIES.map((category, index) => (
@@ -43,27 +89,7 @@ export const HomeScreen = ({ navigation }: Props) => {
     </View>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        data={PRODUCTS}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ProductCard
-            title={item.title}
-            price={item.price}
-            location={item.location}
-            onPress={() => console.log('Product pressed', item.id)}
-          />
-        )}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={renderHeader}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
-  );
+  return <View style={styles.container}></View>;
 };
 
 const styles = StyleSheet.create({
@@ -89,9 +115,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
     marginTop: spacing.sm,
@@ -110,6 +136,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
 });

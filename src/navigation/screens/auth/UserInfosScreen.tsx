@@ -160,6 +160,7 @@ const UserInfosScreen = ({ navigation }: any) => {
                   autoCapitalize="words"
                   keyboardType="name-phone-pad"
                   autoComplete="name"
+                  autoFocus={true}
                 />
               </View>
               <View
