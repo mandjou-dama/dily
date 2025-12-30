@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, StyleSheet, useWindowDimensions, Pressable } from "react-native";
 
@@ -114,7 +114,12 @@ export const AppNavigator = () => {
             tabBarLabel: "Discover",
             headerTitleAlign: "center",
             tabBarIcon: ({ focused }) => (
-              <HomeIcon stroke={focused ? colors.primary : colors.gray} />
+              <HomeIcon
+                style={{
+                  pointerEvents: "none",
+                }}
+                stroke={focused ? colors.primary : colors.gray}
+              />
             ),
           }}
         />
@@ -127,7 +132,12 @@ export const AppNavigator = () => {
             tabBarLabel: "Sell",
             headerTitleAlign: "center",
             tabBarIcon: ({ focused }) => (
-              <HandCoins stroke={focused ? colors.primary : colors.gray} />
+              <HandCoins
+                style={{
+                  pointerEvents: "none",
+                }}
+                stroke={focused ? colors.primary : colors.gray}
+              />
             ),
           }}
         />
@@ -140,7 +150,12 @@ export const AppNavigator = () => {
             tabBarLabel: "Chat",
             headerTitleAlign: "center",
             tabBarIcon: ({ focused }) => (
-              <MessagesSquare stroke={focused ? colors.primary : colors.gray} />
+              <MessagesSquare
+                style={{
+                  pointerEvents: "none",
+                }}
+                stroke={focused ? colors.primary : colors.gray}
+              />
             ),
           }}
         />
@@ -153,7 +168,12 @@ export const AppNavigator = () => {
             tabBarLabel: "Profile",
             headerTitleAlign: "center",
             tabBarIcon: ({ focused }) => (
-              <User stroke={focused ? colors.primary : colors.gray} />
+              <User
+                style={{
+                  pointerEvents: "none",
+                }}
+                stroke={focused ? colors.primary : colors.gray}
+              />
             ),
           }}
         />

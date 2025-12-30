@@ -15,6 +15,7 @@ import { AppTabParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
+import { Image } from "expo-image";
 
 type Props = NativeStackScreenProps<AppTabParamList, "Chat">;
 
@@ -80,13 +81,26 @@ export const ChatScreen = ({ navigation }: Props) => {
     );
   };
 
-  return <View style={styles.container}></View>;
+  return (
+    <View style={styles.container}>
+      <Image
+        style={{
+          width: 100,
+          aspectRatio: 1 / 1,
+          marginTop: 80,
+        }}
+        source={require("assets/splash-icon-light.png")}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     padding: spacing.md,

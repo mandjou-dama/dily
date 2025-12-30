@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  Image,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppTabParamList, RootStackParamList } from "@/types/navigation";
@@ -16,6 +15,7 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { CompositeScreenProps } from "@react-navigation/native";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { NativeStackScreenProps as StackScreenProps } from "@react-navigation/native-stack";
+import { Image } from "expo-image";
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<AppTabParamList, "Profile">,
@@ -38,13 +38,26 @@ export const ProfileScreen = ({ navigation }: Props) => {
     });
   };
 
-  return <View style={styles.container}></View>;
+  return (
+    <View style={styles.container}>
+      <Image
+        style={{
+          width: 100,
+          aspectRatio: 1 / 1,
+          marginTop: 80,
+        }}
+        source={require("assets/splash-icon-light.png")}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     padding: spacing.md,

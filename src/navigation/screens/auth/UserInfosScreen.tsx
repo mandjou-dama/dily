@@ -159,7 +159,7 @@ const UserInfosScreen = ({ navigation }: any) => {
                   onBlur={() => setFocusedField(null)}
                   autoCapitalize="words"
                   keyboardType="name-phone-pad"
-                  autoComplete="name"
+                  autoComplete="family-name"
                   autoFocus={true}
                 />
               </View>

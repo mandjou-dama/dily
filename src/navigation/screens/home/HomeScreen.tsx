@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Button,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppTabParamList } from "@/types/navigation";
@@ -14,6 +15,17 @@ import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import { ProductCard } from "@/components/ProductCard";
+
+import {
+  Confetti,
+  ConfettiMethods,
+  PIConfetti,
+  PIConfettiMethods,
+} from "react-native-fast-confetti";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useHaptics } from "@/hooks/use-haptics";
+import { Spinner } from "@/components/spinner";
+import { Image } from "expo-image";
 
 type Props = NativeStackScreenProps<AppTabParamList, "Home">;
 
@@ -67,6 +79,26 @@ const PRODUCTS = [
 ];
 
 export const HomeScreen = ({ navigation }: Props) => {
+  const insets = useSafeAreaInsets();
+  const { impact } = useHaptics();
+
+  const confettiRef = useRef<ConfettiMethods>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const runConfetti = () => {
+    confettiRef.current?.restart();
+    impact();
+  };
+
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     {
+  //       setIsLoading(false);
+  //     }
+  //   }, 2000);
+  // }, []);
+
   const renderHeader = () => (
     <View>
       <ScrollView
@@ -89,13 +121,49 @@ export const HomeScreen = ({ navigation }: Props) => {
     </View>
   );
 
-  return <View style={styles.container}></View>;
+  return (
+    <View style={styles.container}>
+      {/* {isLoading ? (
+        <Spinner color={colors.primary} size={24} />
+      ) : (
+        <>{runConfetti()}</>
+      )} */}
+
+      {/* <Button title="Run again" onPress={runConfetti}></Button> */}
+
+      <Image
+        style={{
+          width: 100,
+          aspectRatio: 1 / 1,
+          marginTop: 80,
+        }}
+        source={require("assets/splash-icon-light.png")}
+      />
+
+      <Confetti
+        colors={[colors.primary, "#2a9d8f", "#ffd166", "#ffafcc"]}
+        sizeVariation={0.9}
+        height={spacing.SCREEN_HEIGHT}
+        count={450}
+        ref={confettiRef}
+        isInfinite={false}
+        autoStartDelay={1000}
+        // blastDuration={150}
+        // cannonsPositions={[
+        //   { x: -400, y: 0 },
+        //   { x: 400, y: 800 },
+        // ]}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   categoriesContainer: {
     paddingHorizontal: spacing.md,
