@@ -1,20 +1,22 @@
 export type AuthStackParamList = {
-  Onboarding: undefined;
-  Register: undefined;
-  WhatsAppLogin: undefined;
-  VerificationCode: undefined;
-  UserInfos: undefined;
+  Onboarding: any;
+  Register: any;
+  WhatsAppLogin: any;
+  VerificationCode: any;
+  UserInfos: any;
 };
 
 export type AppTabParamList = {
-  Home: undefined;
-  Sell: undefined;
-  Chat: undefined;
-  Profile: undefined;
+  Home: any;
+  Sell: any;
+  Chat: any;
+  Profile: any;
 };
 
 export type RootStackParamList = {
-  Auth: undefined;
-  App: undefined;
-  ProductDetails: { id: string };
+  Auth: AuthStackParamList;
+  App: AppTabParamList;
+  // ProductDetails: { id: string };
 };
+
+export type GlobalStackParamList = RootStackParamList;

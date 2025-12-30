@@ -81,7 +81,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
   return (
     <KeyboardAvoidingView
       behavior={"padding"}
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={-20}
       style={{ flex: 1, backgroundColor: colors.background }}
     >
       <View

@@ -1,8 +1,11 @@
 import Button from "@/components/Button";
+import { Spinner } from "@/components/spinner";
+import { useHaptics } from "@/hooks/use-haptics";
+import { useImagePicker } from "@/hooks/use-image-picker";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import { AuthStackParamList } from "@/types/navigation";
+import { AuthStackParamList, GlobalStackParamList } from "@/types/navigation";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Camera, Mailbox, User } from "lucide-react-native";
@@ -27,15 +30,17 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
-type Props = NativeStackScreenProps<AuthStackParamList, "UserInfos">;
+type Props = NativeStackScreenProps<GlobalStackParamList>;
 
-const UserInfosScreen = ({ navigation }: Props) => {
+const UserInfosScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const { impact } = useHaptics();
+  const { imageUris, pickImages, isPicking } = useImagePicker();
 
   const fullnameRef = useRef<any>(null);
   const emailRef = useRef<any>(null);
 
-  const [image, setImage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [fullname, setFullname] = useState("");
   const [email, setEmail] = useState("");
 
@@ -43,9 +48,28 @@ const UserInfosScreen = ({ navigation }: Props) => {
     null
   );
 
-  useEffect(() => {
-    console.log("Focused field:", focusedField);
-  }, [focusedField]);
+  const handlePickImage = async () => {
+    impact("light");
+    const images = await pickImages({ limit: 1 });
+
+    console.log(images);
+
+    return images;
+  };
+
+  // useEffect(() => {
+  //   console.log("Focused field:", focusedField);
+  // }, [focusedField]);
+
+  const handleFinish = () => {
+    setIsLoading(true);
+
+    setTimeout(() => {
+      // Keyboard.dismiss();
+      setIsLoading(false);
+      navigation.replace("App", { screen: "Home" });
+    }, 2000);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -81,26 +105,46 @@ const UserInfosScreen = ({ navigation }: Props) => {
                 person
               </Text>
 
-              <Pressable style={styles.imageContainer}>
+              <Pressable
+                onPress={handlePickImage}
+                style={styles.imageContainer}
+              >
                 <Image
-                  style={styles.image}
+                  source={
+                    imageUris.length > 0
+                      ? { uri: imageUris[0] }
+                      : require("assets/splash-icon-light.png")
+                  }
+                  style={{ width: 110, height: 110, borderRadius: 55 }}
                   contentFit="cover"
-                  source={require("assets/splash-icon-light.png")}
                 />
-                <View style={styles.imageOverlay}></View>
 
-                <View style={styles.imageOverlayIcon}>
-                  <Camera size={32} color={colors.white} />
-                </View>
+                {imageUris.length <= 0 && (
+                  <View style={styles.imageOverlay}></View>
+                )}
+
+                {imageUris.length <= 0 && (
+                  <View style={styles.imageOverlayIcon}>
+                    {isPicking ? (
+                      <Spinner color={colors.white} />
+                    ) : (
+                      <Camera
+                        style={{ pointerEvents: "none" }}
+                        size={32}
+                        color={colors.white}
+                      />
+                    )}
+                  </View>
+                )}
               </Pressable>
 
               <View
                 style={[
                   styles.inputContainer,
-                  {
-                    borderColor:
-                      focusedField === "fullname" ? colors.primary : "#E7E5E4",
-                  },
+                  // {
+                  //   borderColor:
+                  //     focusedField === "fullname" ? colors.primary : "#E7E5E4",
+                  // },
                 ]}
               >
                 <User color={colors.primary} />
@@ -121,10 +165,10 @@ const UserInfosScreen = ({ navigation }: Props) => {
               <View
                 style={[
                   styles.inputContainer,
-                  {
-                    borderColor:
-                      focusedField === "email" ? colors.primary : "#E7E5E4",
-                  },
+                  // {
+                  //   borderColor:
+                  //     focusedField === "email" ? colors.primary : "#E7E5E4",
+                  // },
                 ]}
               >
                 <Mailbox color={colors.primary} />
@@ -144,7 +188,12 @@ const UserInfosScreen = ({ navigation }: Props) => {
               </View>
             </View>
 
-            <Button title="Terminer" />
+            <Button
+              onPress={handleFinish}
+              isLoading={isLoading}
+              disabled={fullname.length < 5 || isLoading}
+              title="Terminer"
+            />
           </View>
         </TouchableWithoutFeedback>
       </View>
@@ -210,6 +259,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderWidth: 1,
     borderRadius: 13,
+    borderColor: "#E7E5E4",
     borderCurve: "continuous",
     paddingHorizontal: spacing.md,
     flexDirection: "row",
