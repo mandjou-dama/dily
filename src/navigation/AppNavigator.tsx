@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, StyleSheet, useWindowDimensions, Pressable } from "react-native";
 
 import { AppTabParamList } from "@/types/navigation";
-import { HomeScreen } from "@/navigation/screens/home/HomeScreen";
+import HomeScreen from "@/navigation/screens/home/HomeScreen";
 import { CreateProductScreen } from "@/navigation/screens/product/CreateProductScreen";
 import { ChatScreen } from "@/navigation/screens/chat/ChatScreen";
 import { ProfileScreen } from "@/navigation/screens/profile/ProfileScreen";
