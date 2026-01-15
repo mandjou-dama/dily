@@ -119,6 +119,7 @@ export const AppNavigator = () => {
                   pointerEvents: "none",
                 }}
                 stroke={focused ? colors.primary : colors.gray}
+                strokeWidth={1.5}
               />
             ),
           }}
@@ -137,6 +138,7 @@ export const AppNavigator = () => {
                   pointerEvents: "none",
                 }}
                 stroke={focused ? colors.primary : colors.gray}
+                strokeWidth={1.5}
               />
             ),
           }}
@@ -155,6 +157,7 @@ export const AppNavigator = () => {
                   pointerEvents: "none",
                 }}
                 stroke={focused ? colors.primary : colors.gray}
+                strokeWidth={1.5}
               />
             ),
           }}
@@ -173,6 +176,7 @@ export const AppNavigator = () => {
                   pointerEvents: "none",
                 }}
                 stroke={focused ? colors.primary : colors.gray}
+                strokeWidth={1.5}
               />
             ),
           }}

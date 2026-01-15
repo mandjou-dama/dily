@@ -10,17 +10,17 @@ import { NotFound } from "./screens/NotFound";
 
 const RootStack = createNativeStackNavigator({
   screens: {
-    Auth: {
-      screen: AuthNavigator,
-      options: {
-        title: "Auth",
-        headerShown: false,
-      },
-    },
     App: {
       screen: AppNavigator,
       options: {
         title: "App",
+        headerShown: false,
+      },
+    },
+    Auth: {
+      screen: AuthNavigator,
+      options: {
+        title: "Auth",
         headerShown: false,
       },
     },

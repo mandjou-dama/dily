@@ -28,20 +28,110 @@ import React, { useState } from "react";
 import { colors } from "@/theme/colors";
 import { colorKit } from "reanimated-color-picker";
 import { Image } from "expo-image";
+import ProductCard from "@/components/product-card";
+import { spacing } from "@/theme/spacing";
 
 type Props = NativeStackScreenProps<AppTabParamList, "Home">;
 
 type MarqueeItemProps = {
-  icon: React.ReactNode;
-  text: string;
+  icon?: React.ReactNode;
+  text?: string;
 };
 
 const TabItems = ["All", "Designers", "Electronics"];
 
+const ProductData = [
+  {
+    user: {
+      name: "Aïcha Traoré",
+      image: "https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg",
+    },
+    product: {
+      name: "Vintage Denim Jacket",
+      image:
+        "https://images.pexels.com/photos/6311392/pexels-photo-6311392.jpeg",
+      price: 85,
+      size: "M",
+      state: "Like new",
+    },
+  },
+  {
+    user: {
+      name: "Mamadou Diallo",
+      image: "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg",
+    },
+    product: {
+      name: "Nike Air Force 1",
+      image:
+        "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg",
+      price: 120,
+      size: "42",
+      state: "Used",
+    },
+  },
+  {
+    user: {
+      name: "Fatou Koné",
+      image: "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg",
+    },
+    product: {
+      name: "Minimalist Leather Handbag",
+      image:
+        "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg",
+      price: 150,
+      size: "One size",
+      state: "New",
+    },
+  },
+  {
+    user: {
+      name: "Ibrahim Touré",
+      image:
+        "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg",
+    },
+    product: {
+      name: "Oversized Hoodie",
+      image:
+        "https://images.pexels.com/photos/8532616/pexels-photo-8532616.jpeg",
+      price: 60,
+      size: "L",
+      state: "Good condition",
+    },
+  },
+  {
+    user: {
+      name: "Sira Coulibaly",
+      image: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg",
+    },
+    product: {
+      name: "Summer Floral Dress",
+      image:
+        "https://images.pexels.com/photos/1488463/pexels-photo-1488463.jpeg",
+      price: 95,
+      size: "S",
+      state: "Like new",
+    },
+  },
+  {
+    user: {
+      name: "Yacouba Sanogo",
+      image: "https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg",
+    },
+    product: {
+      name: "Casual Canvas Sneakers",
+      image:
+        "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg",
+      price: 70,
+      size: "43",
+      state: "Used",
+    },
+  },
+];
+
 const Header = () => {
   return (
     <View style={styles.marqueeContainer}>
-      <Marquee spacing={48} speed={0.6}>
+      <Marquee spacing={18} speed={0.6}>
         <View style={styles.marqueeRow}>
           <MarqueeItem
             icon={<Car size={18} color="black" strokeWidth={1} />}
@@ -68,6 +158,11 @@ const MarqueeItem = ({ icon, text }: MarqueeItemProps) => {
     <View style={styles.marqueeItem}>
       {icon}
       <Text style={styles.marqueeText}>{text}</Text>
+      {/* <Image
+        contentFit="cover"
+        style={styles.marqueeImage}
+        source={require("assets/banner_1.png")}
+      /> */}
     </View>
   );
 };
@@ -95,7 +190,6 @@ export default function HomeScreen({ navigation }: Props) {
   const getFocusedTab = (label: TabName) => {
     if (ref.current) {
       ref.current.jumpToTab(label);
-      console.log(ref.current.getCurrentIndex());
     }
     return null;
   };
@@ -115,7 +209,14 @@ export default function HomeScreen({ navigation }: Props) {
           />
 
           <View style={styles.iconRow}>
-            <Search size={20} color="black" strokeWidth={1.5} />
+            <Pressable onPress={() => console.log("Search")}>
+              <Search
+                style={{ pointerEvents: "none" }}
+                size={20}
+                color="black"
+                strokeWidth={1.5}
+              />
+            </Pressable>
             <ShoppingBag size={20} color="black" strokeWidth={1.5} />
           </View>
         </View>
@@ -140,11 +241,14 @@ export default function HomeScreen({ navigation }: Props) {
                   onPress={() => getFocusedTab(item)}
                   labelStyle={[
                     styles.tabText,
-                    props.focusedTab && styles.tabTextActive,
+                    // props.focusedTab && styles.tabTextActive,
                   ]}
                   activeColor={colors.primary}
                   inactiveColor={colors.black + "80"}
                   pressOpacity={0.8}
+                  style={{
+                    flex: index === 0 ? 0.15 : index === 1 ? 0.28 : 0.35,
+                  }}
                   // delayHoverIn={200}
                 />
               ))}
@@ -154,7 +258,9 @@ export default function HomeScreen({ navigation }: Props) {
         headerContainerStyle={styles.noShadow}
       >
         <Tabs.Tab name="All">
-          <Content />
+          <View style={{ flex: 1 }}>
+            <AllContent />
+          </View>
         </Tabs.Tab>
 
         <Tabs.Tab name="Designers">
@@ -168,6 +274,33 @@ export default function HomeScreen({ navigation }: Props) {
     </>
   );
 }
+
+const AllContent = () => {
+  return (
+    <Tabs.FlashList
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+      masonry
+      numColumns={2}
+      data={ProductData}
+      renderItem={({ item }) => (
+        <ProductCard
+          user={{
+            name: item.user.name,
+            image: item.user.image,
+          }}
+          product={{
+            name: item.product.name,
+            image: item.product.image,
+            price: item.product.price,
+            size: item.product.size,
+            state: item.product.state,
+          }}
+        />
+      )}
+    />
+  );
+};
 
 const Content = () => {
   return (
@@ -198,7 +331,7 @@ const Content = () => {
 
 const styles = StyleSheet.create({
   marqueeContainer: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     borderBottomWidth: 0.8,
     borderBottomColor: colorKit.setAlpha("#1e1e1e", 0.07).hex(),
     backgroundColor: colors.background,
@@ -206,7 +339,7 @@ const styles = StyleSheet.create({
   marqueeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 48,
+    // gap: 100,
   },
   marqueeItem: {
     flexDirection: "row",
@@ -220,6 +353,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     fontWeight: "300",
     color: "black",
+  },
+  marqueeImage: {
+    height: 35,
+    width: 250,
   },
 
   /** Top bar */
@@ -251,8 +388,8 @@ const styles = StyleSheet.create({
   /** Tabs */
   tabBar: {
     flexDirection: "row",
-    // gap: 30,
-    // paddingHorizontal: 16,
+    gap: 0,
+    paddingHorizontal: 0,
     // paddingVertical: 16,
     borderBottomWidth: 0.8,
     borderBottomColor: colorKit.setAlpha("#1e1e1e", 0.07).hex(),
@@ -269,13 +406,15 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   tabTextActive: {
-    fontWeight: "600",
+    fontWeight: "300",
     color: colors.primary,
   },
 
   /** Scroll */
   scrollContent: {
     backgroundColor: colors.background,
+    marginTop: 4,
+    paddingHorizontal: 4,
   },
 
   /** Hero */
