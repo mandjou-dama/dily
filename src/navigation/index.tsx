@@ -5,8 +5,8 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthNavigator } from "./AuthNavigator";
 import { AppNavigator } from "./AppNavigator";
-import { ProductDetailsScreen } from "./screens/product/ProductDetailsScreen";
-import { NotFound } from "./screens/NotFound";
+import { ProductDetailsScreen } from "../screens/product/ProductDetailsScreen";
+import { NotFound } from "../screens/NotFound";
 
 const RootStack = createNativeStackNavigator({
   screens: {

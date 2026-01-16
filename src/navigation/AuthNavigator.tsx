@@ -2,11 +2,11 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { AuthStackParamList } from "@/types/navigation";
-import { RegisterScreen } from "@/navigation/screens/auth/RegisterScreen";
-import { OnboardingScreen } from "@/navigation/screens/auth/OnboardingScreen";
-import { WhatsAppLoginScreen } from "./screens/auth/WhatsAppLoginScreen";
-import { VerificationCodeScreen } from "./screens/auth/VerificationCodeScreen";
-import UserInfosScreen from "./screens/auth/UserInfosScreen";
+import { RegisterScreen } from "@/screens/auth/RegisterScreen";
+import { OnboardingScreen } from "@/screens/auth/OnboardingScreen";
+import { WhatsAppLoginScreen } from "../screens/auth/WhatsAppLoginScreen";
+import { VerificationCodeScreen } from "../screens/auth/VerificationCodeScreen";
+import UserInfosScreen from "../screens/auth/UserInfosScreen";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 

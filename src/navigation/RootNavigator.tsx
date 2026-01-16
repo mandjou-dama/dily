@@ -5,7 +5,7 @@ import { RootStackParamList } from "../types/navigation";
 import { AuthNavigator } from "./AuthNavigator";
 import { AppNavigator } from "./AppNavigator";
 
-import { ProductDetailsScreen } from "./screens/product/ProductDetailsScreen";
+import { ProductDetailsScreen } from "../screens/product/ProductDetailsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
