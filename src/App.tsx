@@ -8,6 +8,12 @@ import { Platform, StatusBar, useColorScheme, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
+import {
+  focusManager,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
@@ -20,6 +26,15 @@ Asset.loadAsync([
 ]);
 
 const prefix = createURL("/");
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export function App() {
   const colorScheme = useColorScheme();
@@ -41,28 +56,30 @@ export function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider preload={false}>
-        <View style={{ flex: 1 }}>
-          {/* Navigation mounts immediately */}
-          <Navigation
-            theme={theme}
-            linking={{
-              enabled: "auto",
-              prefixes: [prefix],
-            }}
-          />
-
-          {/* Splash overlay */}
-          {splashVisible && (
-            <AnimatedBootSplash
-              onAnimationEnd={async () => {
-                setSplashVisible(false);
-                await BootSplash.hide({ fade: true });
+      <QueryClientProvider client={queryClient}>
+        <KeyboardProvider preload={false}>
+          <View style={{ flex: 1 }}>
+            {/* Navigation mounts immediately */}
+            <Navigation
+              theme={theme}
+              linking={{
+                enabled: "auto",
+                prefixes: [prefix],
               }}
             />
-          )}
-        </View>
-      </KeyboardProvider>
+
+            {/* Splash overlay */}
+            {splashVisible && (
+              <AnimatedBootSplash
+                onAnimationEnd={async () => {
+                  setSplashVisible(false);
+                  await BootSplash.hide({ fade: true });
+                }}
+              />
+            )}
+          </View>
+        </KeyboardProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

@@ -1,53 +1,51 @@
+import {
+  TEST_USER_ID,
+  useToggleLike,
+  PRODUCTS_QUERY_KEY,
+  useProducts,
+} from "@/services/products.service";
+import { useQueryClient } from "@tanstack/react-query";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { Image as ExpoImage } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { HeartIcon } from "lucide-react-native";
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 
-type User = {
-  name: string;
-  image: any;
-};
-
-type Product = {
-  name: string;
-  image: any;
-  price: string;
-  size: string;
-  state: string;
-};
-
-type Like = {
-  liked: boolean;
-  number: number;
-};
-
 interface Props {
-  user: User;
-  product: Product;
-  like: Like;
+  user: {
+    name: string;
+    image: any;
+  };
+  productId: string;
 }
 
-const ProductCard = ({ user, product, like }: Props) => {
+const ProductCard = ({ productId }: { productId: string }) => {
+  const { data: products } = useProducts();
+  const toggleLike = useToggleLike();
   const [ratio, setRatio] = React.useState<number | null>(null);
 
-  const [liked, setLiked] = useState<boolean>(like.liked);
-  const [heartCount, setHeartCount] = useState<number>(like.number);
+  const item = products?.find((p) => p.id.toString() === productId);
+  if (!item) return null;
+
+  const { user, product, like } = item;
 
   const handleLike = () => {
-    setLiked(!liked);
-    setHeartCount(heartCount + (liked ? -1 : 1));
+    toggleLike.mutate({
+      productId,
+      userId: TEST_USER_ID,
+      currentlyLiked: like.liked,
+    });
   };
 
   return (
     <View style={styles.container}>
-      <View style={{}}>
+      <View>
         <ExpoImage
           contentFit="cover"
           source={product.image}
-          transition={1000}
+          transition={300}
           onLoad={(e) => {
             const { width, height } = e.source;
             setRatio(width / height);
@@ -56,45 +54,34 @@ const ProductCard = ({ user, product, like }: Props) => {
         />
 
         <LinearGradient
-          colors={["rgba(0, 0, 0, 0.7)", "transparent"]}
+          colors={["rgba(0,0,0,0.7)", "transparent"]}
           style={styles.gradient}
         />
 
         <Pressable hitSlop={20} onPress={handleLike} style={styles.heart}>
           <HeartIcon
-            fill={liked ? colors.primary : "transparent"}
+            style={{ pointerEvents: "none" }}
+            fill={like.liked ? colors.primary : "transparent"}
             color={colors.primary}
             strokeWidth={1.5}
             size={20}
           />
-          <Text style={styles.heartCount}>{heartCount}</Text>
+          <Text style={styles.heartCount}>{like.number}</Text>
         </Pressable>
       </View>
 
       <View style={styles.productInfo}>
         <View style={styles.user}>
           <ExpoImage
-            transition={1000}
             source={user.image}
             style={{ width: 15, height: 15, borderRadius: 100 }}
           />
           <Text style={styles.userName}>{user.name}</Text>
         </View>
+
         <Text numberOfLines={2} style={styles.productName}>
           {product.name}
         </Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Text style={styles.productState}>{product.state}</Text>
-          <Text
-            style={[
-              styles.productState,
-              { fontWeight: "600", color: colors.primary },
-            ]}
-          >
-            •
-          </Text>
-          <Text style={[styles.productState]}>size {product.size}</Text>
-        </View>
 
         <Text style={styles.productPrice}>{product.price} F CFA</Text>
       </View>

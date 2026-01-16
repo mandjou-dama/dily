@@ -1,70 +1,86 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase";
+import { ProductData } from "@/mock/products";
 
-type Variables = {
+export const PRODUCTS_QUERY_KEY = ["products"];
+export const TEST_USER_ID = "test-user-1";
+
+type ToggleLikeVars = {
   productId: string;
   currentlyLiked: boolean;
+  userId: string;
 };
+
+export function useProducts() {
+  return useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: async () => ProductData,
+    initialData: ProductData,
+  });
+}
 
 export function useToggleLike() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ productId, currentlyLiked }: Variables) => {
+    mutationFn: async ({ productId, currentlyLiked }: ToggleLikeVars) => {
       if (currentlyLiked) {
         const { error } = await supabase
           .from("likes")
           .delete()
-          .eq("product_id", productId);
+          .eq("product_id", productId)
+          .eq("user_id", TEST_USER_ID);
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("likes")
-          .insert({ product_id: productId });
+        const { error } = await supabase.from("likes").insert({
+          product_id: productId,
+          user_id: TEST_USER_ID,
+        });
 
         if (error) throw error;
       }
     },
 
     onMutate: async ({ productId, currentlyLiked }) => {
-      // 1. Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["products"] });
+      await queryClient.cancelQueries({ queryKey: PRODUCTS_QUERY_KEY });
 
-      // 2. Snapshot previous value
-      const previousProducts = queryClient.getQueryData<any[]>(["products"]);
+      const previousProducts =
+        queryClient.getQueryData<typeof ProductData>(PRODUCTS_QUERY_KEY);
 
-      // 3. Optimistically update
-      queryClient.setQueryData(["products"], (old: any[] | undefined) => {
-        if (!old) return old;
+      queryClient.setQueryData<typeof ProductData>(
+        PRODUCTS_QUERY_KEY,
+        (old) => {
+          if (!old) return old;
 
-        return old.map((product) =>
-          product.id === productId
-            ? {
-                ...product,
-                likedByMe: !currentlyLiked,
-                likesCount: currentlyLiked
-                  ? product.likesCount - 1
-                  : product.likesCount + 1,
-              }
-            : product
-        );
-      });
+          return old.map((item) =>
+            item.id.toString() === productId
+              ? {
+                  ...item,
+                  like: {
+                    liked: !currentlyLiked,
+                    number: currentlyLiked
+                      ? Math.max(0, item.like.number - 1)
+                      : item.like.number + 1,
+                  },
+                }
+              : item
+          );
+        }
+      );
 
-      // 4. Return context for rollback
       return { previousProducts };
     },
 
-    onError: (_error, _variables, context) => {
-      // 5. Rollback on failure
+    onError: (_err, _vars, context) => {
       if (context?.previousProducts) {
-        queryClient.setQueryData(["products"], context.previousProducts);
+        queryClient.setQueryData(PRODUCTS_QUERY_KEY, context.previousProducts);
       }
     },
 
     onSettled: () => {
-      // 6. Always refetch to stay in sync
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      // No refetch needed since products are mocked
     },
   });
 }
