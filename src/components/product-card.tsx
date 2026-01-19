@@ -12,6 +12,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { HeartIcon } from "lucide-react-native";
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
+import { MessageType } from "./notify/type";
+import { createAnimatedComponent } from "react-native-reanimated";
+import { useNavigation } from "@react-navigation/native";
+
+const AnimatedImage = createAnimatedComponent(ExpoImage);
 
 interface Props {
   user: {
@@ -21,7 +26,22 @@ interface Props {
   productId: string;
 }
 
+const notifPayload: MessageType = {
+  text: "Welcome",
+  options: {
+    description: "This is a normal notification",
+    action: {
+      label: "OK",
+      onClick: () => {
+        console.log("Notification action clicked");
+      },
+    },
+  },
+};
+
 const ProductCard = ({ productId }: { productId: string }) => {
+  const navigation = useNavigation();
+
   const { data: products } = useProducts();
   const toggleLike = useToggleLike();
   const [ratio, setRatio] = React.useState<number | null>(null);
@@ -40,9 +60,13 @@ const ProductCard = ({ productId }: { productId: string }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <Pressable
+      onPress={() => navigation.navigate("ProductDetails")}
+      style={styles.container}
+    >
       <View>
-        <ExpoImage
+        <AnimatedImage
+          sharedTransitionTag="product-image"
           contentFit="cover"
           source={product.image}
           transition={300}
@@ -58,7 +82,11 @@ const ProductCard = ({ productId }: { productId: string }) => {
           style={styles.gradient}
         />
 
-        <Pressable hitSlop={20} onPress={handleLike} style={styles.heart}>
+        <Pressable
+          hitSlop={20}
+          onPress={() => console.log("liked")}
+          style={styles.heart}
+        >
           <HeartIcon
             style={{ pointerEvents: "none" }}
             fill={like.liked ? colors.primary : "transparent"}
@@ -85,7 +113,7 @@ const ProductCard = ({ productId }: { productId: string }) => {
 
         <Text style={styles.productPrice}>{product.price} F CFA</Text>
       </View>
-    </View>
+    </Pressable>
   );
 };
 

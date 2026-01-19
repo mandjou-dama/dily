@@ -18,6 +18,8 @@ import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
 import { colors } from "./theme/colors";
+import { NotifyProvider } from "./components/notify";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 Asset.loadAsync([
   ...NavigationAssets,
@@ -56,30 +58,32 @@ export function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <KeyboardProvider preload={false}>
-          <View style={{ flex: 1 }}>
-            {/* Navigation mounts immediately */}
-            <Navigation
-              theme={theme}
-              linking={{
-                enabled: "auto",
-                prefixes: [prefix],
-              }}
-            />
-
-            {/* Splash overlay */}
-            {splashVisible && (
-              <AnimatedBootSplash
-                onAnimationEnd={async () => {
-                  setSplashVisible(false);
-                  await BootSplash.hide({ fade: true });
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <KeyboardProvider preload={false}>
+            <NotifyProvider>
+              {/* Navigation mounts immediately */}
+              <Navigation
+                theme={theme}
+                linking={{
+                  enabled: "auto",
+                  prefixes: [prefix],
                 }}
               />
-            )}
-          </View>
-        </KeyboardProvider>
-      </QueryClientProvider>
+
+              {/* Splash overlay */}
+              {splashVisible && (
+                <AnimatedBootSplash
+                  onAnimationEnd={async () => {
+                    setSplashVisible(false);
+                    await BootSplash.hide({ fade: true });
+                  }}
+                />
+              )}
+            </NotifyProvider>
+          </KeyboardProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

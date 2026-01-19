@@ -28,7 +28,7 @@ const RootStack = createNativeStackNavigator({
     ProductDetails: {
       screen: ProductDetailsScreen,
       options: ({ navigation }) => ({
-        presentation: "modal",
+        // presentation: "pageSheet",
         headerShown: false,
       }),
     },

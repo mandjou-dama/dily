@@ -1,12 +1,19 @@
 import { Bell, Search } from "lucide-react-native";
-import { View, Text, StyleSheet, Pressable, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "react-native-collapsible-tab-view";
 import { Marquee } from "@/components/header-marquee";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppTabParamList } from "@/types/navigation";
-import React, { useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { colors } from "@/theme/colors";
 import { colorKit } from "reanimated-color-picker";
 import { Image } from "expo-image";
@@ -14,21 +21,17 @@ import ProductCard from "@/components/product-card";
 import { spacing } from "@/theme/spacing";
 import { setHeaderLogoLayout } from "@/components/header-logo-layout.ts";
 import { TopTabs } from "@/components/top-tab";
-import { useScrollToTop } from "@react-navigation/native";
+import { useFocusEffect, useScrollToTop } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import Button from "@/components/Button";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { ProductData } from "@/mock/products";
 import { useProducts } from "@/services/products.service";
 
+import { useNotify } from "@/components/notify";
+import { MessageType } from "@/components/notify/type";
+
 type Props = NativeStackScreenProps<AppTabParamList, "Home">;
-
-type MarqueeItemProps = {
-  icon?: React.ReactNode;
-  text?: string;
-};
-
-const TabItems = ["All", "Designers", "Electronics"];
 
 const FixedHeader = () => {
   const insets = useSafeAreaInsets();
@@ -58,9 +61,9 @@ const FixedHeader = () => {
 
         <View style={styles.iconRow}>
           <Pressable>
-            <Search size={20} color="black" strokeWidth={1.5} />
+            <Search size={20} color={colors.primary} strokeWidth={1.5} />
           </Pressable>
-          <Bell size={20} color="black" strokeWidth={1.5} />
+          <Bell size={20} color={colors.primary} strokeWidth={1.5} />
         </View>
       </View>
     </View>
@@ -171,9 +174,24 @@ const CollapsibleProduct = () => {
   );
 };
 
+const notifPayload: MessageType = {
+  text: "Welcome",
+  options: {
+    description: "This is a normal notification",
+    action: {
+      label: "OK",
+      onClick: () => {
+        console.log("Notification action clicked");
+      },
+    },
+  },
+};
+
 export default function HomeScreen({ navigation }: Props) {
   const containerRef = useRef(null);
   useScrollToTop(containerRef);
+
+  const { notify } = useNotify();
   return (
     <View
       style={{
@@ -182,6 +200,10 @@ export default function HomeScreen({ navigation }: Props) {
       }}
     >
       <FixedHeader />
+      {/* <Button
+        title="Notify"
+        onPress={() => notify(notifPayload.text, notifPayload.options)}
+      /> */}
       <Tabs.Container
         ref={containerRef}
         renderHeader={() => <CollapsibleProduct />}
@@ -212,11 +234,22 @@ export default function HomeScreen({ navigation }: Props) {
 }
 
 const AllContent = () => {
+  const [products, setProducts] = useState<any>();
+  const [loading, setLoading] = useState(true);
+
   const tabBarHeight = useBottomTabBarHeight();
   const listRef = useRef<any>(null);
   useScrollToTop(listRef);
+  const { notify } = useNotify();
 
-  const { data: products } = useProducts();
+  useEffect(() => {
+    setTimeout(() => {
+      setLoading(false);
+      setProducts(ProductData);
+    }, 1000);
+  }, []);
+
+  // const { data: products } = useProducts();
 
   return (
     <Tabs.FlashList
@@ -231,7 +264,20 @@ const AllContent = () => {
       numColumns={2}
       masonry
       data={products}
-      renderItem={({ item }) => <ProductCard productId={item.id.toString()} />}
+      ListEmptyComponent={
+        <View
+          style={{
+            marginTop: 50,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size={24} color={colors.primary} />
+        </View>
+      }
+      renderItem={({ item }: { item: any }) => (
+        <ProductCard productId={item.id.toString()} />
+      )}
     />
   );
 };
@@ -305,7 +351,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 0.8,
-    borderBottomColor: colorKit.setAlpha("#1e1e1e", 0.07).hex(),
+    borderBottomColor: colorKit.setAlpha("#3C5627", 0.07).hex(),
   },
   title: {
     fontSize: 18,

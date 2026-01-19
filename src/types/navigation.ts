@@ -16,7 +16,7 @@ export type AppTabParamList = {
 export type RootStackParamList = {
   Auth: AuthStackParamList;
   App: AppTabParamList;
-  // ProductDetails: { id: string };
+  ProductDetails: { id: string };
 };
 
 export type GlobalStackParamList = RootStackParamList;

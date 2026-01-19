@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/services/supabase";
 import { ProductData } from "@/mock/products";
+import { MessageType } from "@/components/notify/type";
+import { useNotify } from "@/components/notify";
 
 export const PRODUCTS_QUERY_KEY = ["products"];
 export const TEST_USER_ID = "test-user-1";
@@ -12,16 +14,9 @@ type ToggleLikeVars = {
   userId: string;
 };
 
-export function useProducts() {
-  return useQuery({
-    queryKey: PRODUCTS_QUERY_KEY,
-    queryFn: async () => ProductData,
-    initialData: ProductData,
-  });
-}
-
 export function useToggleLike() {
   const queryClient = useQueryClient();
+  const { notify } = useNotify();
 
   return useMutation({
     mutationFn: async ({ productId, currentlyLiked }: ToggleLikeVars) => {
@@ -77,6 +72,7 @@ export function useToggleLike() {
       if (context?.previousProducts) {
         queryClient.setQueryData(PRODUCTS_QUERY_KEY, context.previousProducts);
       }
+      notify(notifPayload.text, notifPayload.options);
     },
 
     onSettled: () => {
@@ -84,3 +80,24 @@ export function useToggleLike() {
     },
   });
 }
+
+export function useProducts() {
+  return useQuery({
+    queryKey: PRODUCTS_QUERY_KEY,
+    queryFn: async () => ProductData,
+    initialData: ProductData,
+  });
+}
+
+const notifPayload: MessageType = {
+  text: "Ouupsss",
+  options: {
+    description: "Something went wrong. Try again.",
+    action: {
+      label: "OK",
+      onClick: () => {
+        console.log("Notification action clicked");
+      },
+    },
+  },
+};

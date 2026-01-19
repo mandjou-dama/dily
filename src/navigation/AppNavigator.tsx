@@ -49,7 +49,7 @@ export const AppNavigator = () => {
   // define the order of tabs exactly as you rendered them:
   const tabOrder = useMemo<TabEnum[]>(
     () => [TabEnum.Home, TabEnum.Sell, TabEnum.Chat, TabEnum.Profile],
-    []
+    [],
   );
 
   const left: Record<TabEnum, number> = {
@@ -83,7 +83,7 @@ export const AppNavigator = () => {
             height: tabBarHeight,
             overflow: "hidden",
             paddingBottom: tabBarPaddingBottom,
-            borderColor: colorKit.setAlpha("#1e1e1e", 0.2).hex(),
+            borderColor: colorKit.setAlpha("#3C5627", 0.2).hex(),
             backgroundColor: colors.background,
           },
           tabBarButton: (props) => (
