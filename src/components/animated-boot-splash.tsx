@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Animated, Dimensions, Platform } from "react-native";
 import BootSplash from "react-native-bootsplash";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const useNativeDriver = Platform.OS !== "web";
 
@@ -13,6 +14,8 @@ export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
   const [translateY] = useState(new Animated.Value(0));
   const [scale] = useState(new Animated.Value(1));
   const [opacity] = useState(new Animated.Value(1));
+
+  const { top } = useSafeAreaInsets();
 
   const { container, logo } = BootSplash.useHideAnimation({
     manifest: require("../../assets/bootsplash/manifest.json"),
@@ -36,7 +39,7 @@ export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
 
       const targetTranslateX = 16 + 70 / 2 - SCREEN_W / 2;
 
-      const targetTranslateY = 3 + 44 + 39.33 / 2 - SCREEN_H / 2; // 44 = safe area top
+      const targetTranslateY = -SCREEN_H / 2 + top + 22;
 
       const targetScale = 70 / SPLASH_LOGO_WIDTH;
 
@@ -44,18 +47,21 @@ export const AnimatedBootSplash = ({ onAnimationEnd }: Props) => {
         Animated.spring(translateX, {
           toValue: targetTranslateX,
           useNativeDriver,
+          bounciness: 0,
         }),
         Animated.spring(translateY, {
-          toValue: targetTranslateY + 20.5,
+          toValue: targetTranslateY,
           useNativeDriver,
+          bounciness: 0,
         }),
         Animated.spring(scale, {
           toValue: targetScale,
           useNativeDriver,
+          bounciness: 0,
         }),
         Animated.timing(opacity, {
           toValue: 0,
-          delay: 350,
+          delay: 180,
           duration: 100,
           useNativeDriver,
         }),

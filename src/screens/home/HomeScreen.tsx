@@ -40,22 +40,22 @@ const FixedHeader = () => {
     <View style={[styles.safeHeader, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <Image
+          onLayout={(e) => {
+            const { x, y, width, height } = e.nativeEvent.layout;
+
+            // setHeaderLogoLayout({
+            //   x,
+            //   y: y + insets.top,
+            //   width,
+            //   height,
+            // });
+          }}
           source={require("assets/splash-icon-light.png")}
           style={{
             width: 70,
             aspectRatio: 16 / 9,
             marginBottom: -7,
             marginTop: -5,
-          }}
-          onLayout={(e) => {
-            const { x, y, width, height } = e.nativeEvent.layout;
-
-            setHeaderLogoLayout({
-              x,
-              y: y + insets.top,
-              width,
-              height,
-            });
           }}
         />
 

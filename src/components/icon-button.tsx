@@ -14,7 +14,12 @@ export const IconButton = memo(
   }) => {
     return (
       <Pressable style={styles.button} onPress={onPress}>
-        <Icon size={20} strokeWidth={1} {...iconProps} />
+        <Icon
+          style={{ pointerEvents: "none" }}
+          size={20}
+          strokeWidth={1}
+          {...iconProps}
+        />
       </Pressable>
     );
   },
@@ -22,7 +27,7 @@ export const IconButton = memo(
 
 const styles = StyleSheet.create({
   button: {
-    width: 50 - 12,
+    width: 50 - 15,
     aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",

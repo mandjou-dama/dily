@@ -21,11 +21,7 @@ import { colors } from "./theme/colors";
 import { NotifyProvider } from "./components/notify";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-Asset.loadAsync([
-  ...NavigationAssets,
-  require("./assets/newspaper.png"),
-  require("./assets/bell.png"),
-]);
+Asset.loadAsync([...NavigationAssets, require("assets/splash-icon-light.png")]);
 
 const prefix = createURL("/");
 
@@ -47,7 +43,7 @@ export function App() {
   useEffect(() => {
     // Status bar config
     StatusBar.setBarStyle(
-      colorScheme === "dark" ? "light-content" : "dark-content"
+      colorScheme === "dark" ? "light-content" : "dark-content",
     );
 
     if (Platform.OS === "android") {

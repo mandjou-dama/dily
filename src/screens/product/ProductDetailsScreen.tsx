@@ -1,19 +1,10 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Pressable,
-  FlatList,
-} from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import { PrimaryButton } from "@/components/PrimaryButton";
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -41,6 +32,7 @@ import Animated, {
 import { BlurView } from "expo-blur";
 import { FlashList } from "@shopify/flash-list";
 import { IconButton } from "@/components/icon-button";
+import Button from "@/components/Button";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ProductDetails">;
 
@@ -48,22 +40,8 @@ const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 
-const FULL_HEADER_HEIGHT = 350;
+const FULL_HEADER_HEIGHT = 450;
 const COLLAPSED_HEADER_HEIGHT = 0;
-
-const DATA = {
-  name: "Solarin",
-  username: "S0LARIN",
-  profileImage:
-    "https://pbs.twimg.com/profile_images/1840756205716635648/3HOkBe_W_400x400.jpg",
-  coverImage:
-    "https://pbs.twimg.com/profile_banners/1674810013007659014/1752253038/1500x500",
-  postCount: "491",
-  bio: "18, I write design code —Web, Mobile",
-  link: "github.com/Solarin-Johnson",
-  followers: "1.4K",
-  following: "222",
-};
 
 // In a real app, we would fetch product details using route.params.id
 // For now, we use mock data
@@ -86,30 +64,39 @@ const product = {
 
 const HeaderImage = ({ scrollY }: { scrollY: SharedValue<number> }) => {
   const { top } = useSafeAreaInsets();
-  const swapDistance = FULL_HEADER_HEIGHT - top - COLLAPSED_HEADER_HEIGHT;
+  // const swapDistance = FULL_HEADER_HEIGHT - top - COLLAPSED_HEADER_HEIGHT;
+  const swapDistance = FULL_HEADER_HEIGHT;
 
   const intensity = useDerivedValue<number | undefined>(() =>
     interpolate(
       Math.abs(scrollY.value),
       [0, FULL_HEADER_HEIGHT],
-      [0, 32],
+      [0, 42],
       Extrapolation.CLAMP,
     ),
   );
 
   const animatedStyle = useAnimatedStyle(() => ({
-    height: interpolate(
-      scrollY.value,
-      [0, swapDistance],
-      [FULL_HEADER_HEIGHT, COLLAPSED_HEADER_HEIGHT],
-      Extrapolation.CLAMP,
-    ),
+    // height: interpolate(
+    //   scrollY.value,
+    //   [0, swapDistance],
+    //   [FULL_HEADER_HEIGHT, COLLAPSED_HEADER_HEIGHT],
+    //   Extrapolation.CLAMP,
+    // ),
     transform: [
       {
         scale: interpolate(
           -scrollY.value,
           [0, FULL_HEADER_HEIGHT],
           [1, 1.3],
+          Extrapolation.CLAMP,
+        ),
+      },
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [0, swapDistance],
+          [0, -swapDistance],
           Extrapolation.CLAMP,
         ),
       },
@@ -126,21 +113,21 @@ const HeaderImage = ({ scrollY }: { scrollY: SharedValue<number> }) => {
 
   const headerStyle = [
     styles.headerImage,
-    { marginTop: top + 16 + 30, zIndex: -2 },
+    { marginTop: top + 16 + 30, zIndex: 2, height: FULL_HEADER_HEIGHT },
     animatedStyle,
   ];
 
   return (
     <>
-      <Animated.View style={headerStyle} pointerEvents="box-none">
+      <Animated.View style={headerStyle} pointerEvents={"box-none"}>
         <ProductImage intensity={intensity} style={underlayHeaderImgStyle} />
       </Animated.View>
-      <Animated.View
-        style={[...headerStyle, { zIndex: -1 }]}
+      {/* <Animated.View
+        style={[...headerStyle, { zIndex: 1 }]}
         pointerEvents="box-none"
       >
         <ProductImage intensity={intensity} style={fixedHeaderImgStyle} />
-      </Animated.View>
+      </Animated.View> */}
     </>
   );
 };
@@ -152,24 +139,30 @@ const ProductImage = ({
   style?: object;
   intensity: SharedValue<number | undefined>;
 }) => (
-  <Animated.View
-    style={[
-      StyleSheet.absoluteFillObject,
-      { height: FULL_HEADER_HEIGHT, overflow: "hidden" },
-      style,
-    ]}
-    pointerEvents="none"
-  >
-    <Image
-      source={ProductData[0].product.image}
-      style={StyleSheet.absoluteFillObject}
-      contentFit="cover"
-    />
+  <>
+    <Animated.View
+      style={[
+        StyleSheet.absoluteFillObject,
+        {
+          height: FULL_HEADER_HEIGHT,
+          overflow: "hidden",
+        },
+        style,
+      ]}
+      pointerEvents="none"
+    >
+      <Image
+        source={{ uri: ProductData[0].product.image }}
+        style={[styles.image]}
+        contentFit="cover"
+      />
+    </Animated.View>
     <AnimatedBlurView
       intensity={intensity}
-      style={StyleSheet.absoluteFillObject}
+      style={[StyleSheet.absoluteFillObject, {}]}
+      pointerEvents={"none"}
     />
-  </Animated.View>
+  </>
 );
 
 const MainContent = ({ scrollY }: { scrollY: SharedValue<number> }) => {
@@ -186,7 +179,26 @@ const MainContent = ({ scrollY }: { scrollY: SharedValue<number> }) => {
     ],
   }));
 
-  return <View></View>;
+  return (
+    <View style={styles.content}>
+      <View style={styles.titleRow}>
+        <Text style={styles.price}>{product.price}</Text>
+        <Text style={styles.location}>{product.location}</Text>
+      </View>
+      <Text style={styles.title}>{product.title}</Text>
+      <View style={styles.divider} />
+      <Text style={styles.sectionTitle}>Description</Text>
+      <Text style={styles.description}>{product.description}</Text>
+      <View style={styles.divider} />
+      <View style={styles.sellerContainer}>
+        <View style={styles.sellerAvatar} />
+        <View>
+          <Text style={styles.sellerName}>{product.seller.name}</Text>
+          <Text style={styles.sellerRating}>★ {product.seller.rating}</Text>
+        </View>
+      </View>
+    </View>
+  );
 };
 
 export const ProductDetailsScreen = ({ route }: Props) => {
@@ -229,6 +241,7 @@ export const ProductDetailsScreen = ({ route }: Props) => {
             color: colors.primary,
           }}
           icon={ArrowLeft}
+          onPress={() => navigation.goBack()}
         />
 
         <View
@@ -259,106 +272,19 @@ export const ProductDetailsScreen = ({ route }: Props) => {
         renderItem={renderItem}
         style={styles.container}
         onScroll={scrollHandler}
-        contentContainerStyle={{ paddingTop: FULL_HEADER_HEIGHT }}
+        scrollEventThrottle={16}
+        contentContainerStyle={{
+          paddingTop: FULL_HEADER_HEIGHT + 30,
+          backgroundColor: colors.background,
+        }}
         showsVerticalScrollIndicator={false}
       />
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
+        <Button title="Place a bid" />
+      </View>
     </>
   );
-
-  // return (
-  //   <View
-  //     style={[
-  //       styles.container,
-  //       { paddingBottom: insets.bottom, paddingTop: insets.top },
-  //     ]}
-  //   >
-  //     <View style={styles.header}>
-  //       <Pressable hitSlop={20} onPress={() => navigation.goBack()}>
-  //         <ArrowLeft
-  //           style={{ pointerEvents: "none" }}
-  //           size={20}
-  //           strokeWidth={1}
-  //           color={colors.primary}
-  //         />
-  //       </Pressable>
-
-  //       <View
-  //         style={{
-  //           flexDirection: "row",
-  //           gap: spacing.md,
-  //           alignItems: "center",
-  //         }}
-  //       >
-  //         <Pressable hitSlop={20} onPress={() => navigation.goBack()}>
-  //           <Share
-  //             style={{ pointerEvents: "none" }}
-  //             size={20}
-  //             strokeWidth={1}
-  //             color={colors.primary}
-  //           />
-  //         </Pressable>
-  //         <Pressable hitSlop={20} onPress={() => navigation.goBack()}>
-  //           <Heart
-  //             style={{ pointerEvents: "none" }}
-  //             size={20}
-  //             strokeWidth={1}
-  //             color={colors.primary}
-  //           />
-  //         </Pressable>
-  //       </View>
-  //     </View>
-
-  //     <ScrollView showsVerticalScrollIndicator={false}>
-  //       <ScrollView
-  //         horizontal
-  //         pagingEnabled
-  //         showsHorizontalScrollIndicator={false}
-  //         style={styles.gallery}
-  //       >
-  //         {product.images.map((img, index) => (
-  //           <AnimatedImage
-  //             sharedTransitionTag="product-image"
-  //             key={index}
-  //             source={{ uri: img }}
-  //             style={styles.image}
-  //             contentFit="cover"
-  //           />
-  //         ))}
-  //       </ScrollView>
-
-  //       <View style={styles.content}>
-  //         <View style={styles.titleRow}>
-  //           <Text style={styles.price}>{product.price}</Text>
-  //           <Text style={styles.location}>{product.location}</Text>
-  //         </View>
-
-  //         <Text style={styles.title}>{product.title}</Text>
-
-  //         <View style={styles.divider} />
-
-  //         <Text style={styles.sectionTitle}>Description</Text>
-  //         <Text style={styles.description}>{product.description}</Text>
-
-  //         <View style={styles.divider} />
-
-  //         <View style={styles.sellerContainer}>
-  //           <View style={styles.sellerAvatar} />
-  //           <View>
-  //             <Text style={styles.sellerName}>{product.seller.name}</Text>
-  //             <Text style={styles.sellerRating}>★ {product.seller.rating}</Text>
-  //           </View>
-  //         </View>
-  //       </View>
-  //     </ScrollView>
-
-  //     <View style={styles.footer}>
-  //       <PrimaryButton
-  //         title="Message Seller"
-  //         onPress={() => console.log("Message seller")}
-  //       />
-  //     </View>
-  //   </View>
-  // );
 };
 
 const styles = StyleSheet.create({
@@ -375,6 +301,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderBottomColor: colorKit.setAlpha("#3C5627", 0.07).hex(),
     width: "100%",
+    zIndex: 5,
   },
   headerImage: {
     width: "100%",
@@ -396,13 +323,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  backButtonText: {
-    ...typography.body,
-    color: colors.primary,
   },
   gallery: {
     height: 360,
@@ -472,8 +392,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopWidth: 0.8,
     backgroundColor: colors.background,
+    borderTopColor: colorKit.setAlpha("#3C5627", 0.07).hex(),
   },
 });
