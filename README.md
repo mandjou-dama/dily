@@ -7,8 +7,8 @@ The app provides an intuitive and smooth experience for **buyers** and **sellers
 
 ## 📱 Screenshots
 
-![Screenshot_1](./assets/demo_2.png)
-![Screenshot_2](./assets/demo_1.png)
+![Screenshot_1](./assets/demo/demo_2.png)
+![Screenshot_2](./assets/demo/demo_1.png)
 
 ---
 
