@@ -1,65 +1,109 @@
-# Starter Template with React Navigation
+# 🛍️ Dily
 
-This is a minimal starter template for React Native apps using Expo and React Navigation.
-
-It includes the following:
-
-- Example [Native Stack](https://reactnavigation.org/docs/native-stack-navigator) with a nested [Bottom Tab](https://reactnavigation.org/docs/bottom-tab-navigator)
-- Web support with [React Native for Web](https://necolas.github.io/react-native-web/)
-- TypeScript support and configured for React Navigation
-- Automatic [deep link](https://reactnavigation.org/docs/deep-linking) and [URL handling configuration](https://reactnavigation.org/docs/configuring-links)
-- Theme support [based on system appearance](https://reactnavigation.org/docs/themes/#using-the-operating-system-preferences)
-- Expo [Development Build](https://docs.expo.dev/develop/development-builds/introduction/) with [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/)
-
-## Getting Started
-
-1. Create a new project using this template:
-
-   ```sh
-   npx create-expo-app@latest --template react-navigation/template
-   ```
-
-2. Edit the `app.json` file to configure the `name`, `slug`, `scheme` and bundle identifiers (`ios.bundleIdentifier` and `android.bundleIdentifier`) for your app.
-
-3. Edit the `src/App.tsx` file to start working on your app.
-
-## Running the app
-
-- Install the dependencies:
-
-  ```sh
-  npm install
-  ```
-
-- Start the development server:
-
-  ```sh
-  npm start
-  ```
-
-- Build and run iOS and Android development builds:
-
-  ```sh
-  npm run ios
-  # or
-  npm run android
-  ```
-
-- In the terminal running the development server, press `i` to open the iOS simulator, `a` to open the Android device or emulator, or `w` to open the web browser.
-
-## Notes
-
-This project uses a [development build](https://docs.expo.dev/develop/development-builds/introduction/) and cannot be run with [Expo Go](https://expo.dev/go). To run the app with Expo Go, edit the `package.json` file, remove the `expo-dev-client` package and `--dev-client` flag from the `start` script.
-
-We highly recommend using the development builds for normal development and testing.
-
-The `ios` and `android` folder are gitignored in the project by default as they are automatically generated during the build process ([Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/)). This means that you should not edit these folders directly and use [config plugins](https://docs.expo.dev/config-plugins/) instead. However, if you need to edit these folders, you can remove them from the `.gitignore` file so that they are tracked by git.
-
-## Resources
-
-- [React Navigation documentation](https://reactnavigation.org/)
-- [Expo documentation](https://docs.expo.dev/)
+A modern mobile application built with **React Native (Expo)** that allows users to seamlessly discover, sell, and chat about products.  
+The app provides an intuitive and smooth experience for **buyers** and **sellers** to connect, featuring a clean interface with real-time updates powered by **Supabase**.
 
 ---
 
-Demo assets are from [lucide.dev](https://lucide.dev/)
+## 📱 Screenshots
+
+*Add some previews of the app in action here:*
+
+<!--
+![Discover](./screenshots/discover.png)
+![Sell](./screenshots/sell.png)
+![Chat](./screenshots/chat.png)
+-->
+
+---
+
+## ✨ Features
+
+### 👤 User Authentication
+- [x] Login with WhatsApp for a fast and frictionless experience
+- [x] OTP Verification Code support
+- [x] Seamless Profile setup
+
+### 🏠 Discover (Buyers)
+- [x] Browse and search for products seamlessly
+- [x] Smooth and performant lists powered by FlashList
+
+### 💵 Sell (Sellers)
+- [x] Create product listings
+- [x] Attach product images and descriptions
+
+### 💬 Chat
+- [x] Integrated messaging system to contact sellers directly
+- [x] Real-time communication
+
+### ⚙️ Profile
+- [x] Manage your personal information
+- [x] View and handle your listings
+
+---
+
+## 🛠️ Tech Stack
+
+- **Mobile Framework:** React Native (Expo SDK 54, TypeScript)
+- **Experimental:** React Compiler (React 19 beta)
+- **Backend & Auth:** Supabase (Postgres + Auth)
+- **State & Data Fetching:** TanStack Query (React Query)
+- **Navigation:** React Navigation v7
+- **UI & Animations:** React Native Reanimated, Expo Blur / Glass Effect, Shopify React Native Skia
+- **Storage:** React Native MMKV, Expo Secure Store
+- **Other Tools:** FlashList (for high-performance lists), Lucide React Native (icons), Keyboard Controller
+
+---
+
+## 📐 Architecture
+
+- Built as a well-structured React Native project using the Expo managed workflow.
+- **Modular Directory Structure:** `src/components`, `src/screens`, `src/navigation`, `src/hooks`, `src/services`, `src/theme`, `src/lib`.
+- Integrated with a modern backend-as-a-service (Supabase) for authentication and data management.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js >= 18
+- Expo CLI
+- Supabase account/project (for backend services)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/mandjou-dama/dily.git
+cd dily
+
+# Install dependencies using pnpm
+pnpm install
+
+# Start the development server
+pnpm start
+# or 
+npx expo start --dev-client
+
+# Run on specific platforms
+npm run ios
+# or
+npm run android
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**Mandjou Dama**
+
+- GitHub: [@mandjoudama](https://github.com/mandjou-dama)
+- LinkedIn: [Mandjou Dama](https://www.linkedin.com/in/mandjoudama/)
+- Twitter (X): [@mandjoudama](https://x.com/mandjou_code)
