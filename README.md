@@ -7,7 +7,7 @@ The app provides an intuitive and smooth experience for **buyers** and **sellers
 
 ## 📱 Screenshots
 
-*Add some previews of the app in action here:*
+_Add some previews of the app in action here:_
 
 <!--
 ![Discover](./screenshots/discover.png)
@@ -20,25 +20,30 @@ The app provides an intuitive and smooth experience for **buyers** and **sellers
 ## ✨ Features
 
 ### 👤 User Authentication
+
 - [x] Login with WhatsApp for a fast and frictionless experience
 - [x] OTP Verification Code support
 - [x] Seamless Profile setup
 
 ### 🏠 Discover (Buyers)
-- [x] Browse and search for products seamlessly
-- [x] Smooth and performant lists powered by FlashList
+
+- [] Browse and search for products seamlessly
+- [] Smooth and performant lists powered by FlashList
 
 ### 💵 Sell (Sellers)
-- [x] Create product listings
-- [x] Attach product images and descriptions
+
+- [] Create product listings
+- [] Attach product images and descriptions
 
 ### 💬 Chat
-- [x] Integrated messaging system to contact sellers directly
-- [x] Real-time communication
+
+- [] Integrated messaging system to contact sellers directly
+- [] Real-time communication
 
 ### ⚙️ Profile
-- [x] Manage your personal information
-- [x] View and handle your listings
+
+- [] Manage your personal information
+- [] View and handle your listings
 
 ---
 
@@ -83,7 +88,7 @@ pnpm install
 
 # Start the development server
 pnpm start
-# or 
+# or
 npx expo start --dev-client
 
 # Run on specific platforms
