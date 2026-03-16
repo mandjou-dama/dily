@@ -77,12 +77,12 @@ const HeaderImage = ({ scrollY }: { scrollY: SharedValue<number> }) => {
   );
 
   const animatedStyle = useAnimatedStyle(() => ({
-    // height: interpolate(
-    //   scrollY.value,
-    //   [0, swapDistance],
-    //   [FULL_HEADER_HEIGHT, COLLAPSED_HEADER_HEIGHT],
-    //   Extrapolation.CLAMP,
-    // ),
+    height: interpolate(
+      scrollY.value,
+      [0, swapDistance],
+      [FULL_HEADER_HEIGHT, 3],
+      Extrapolation.CLAMP,
+    ),
     transform: [
       {
         scale: interpolate(
@@ -92,20 +92,10 @@ const HeaderImage = ({ scrollY }: { scrollY: SharedValue<number> }) => {
           Extrapolation.CLAMP,
         ),
       },
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [0, swapDistance],
-          [0, -swapDistance],
-          Extrapolation.CLAMP,
-        ),
-      },
     ],
   }));
 
-  const fixedHeaderImgStyle = useAnimatedStyle(() => ({
-    opacity: scrollY.value >= swapDistance ? 1 : 0,
-  }));
+  const animatedContainerStyle = useAnimatedStyle(() => ({}));
 
   const underlayHeaderImgStyle = useAnimatedStyle(() => ({
     opacity: scrollY.value < swapDistance ? 1 : 0,
@@ -113,22 +103,22 @@ const HeaderImage = ({ scrollY }: { scrollY: SharedValue<number> }) => {
 
   const headerStyle = [
     styles.headerImage,
-    { marginTop: top + 16 + 30, zIndex: 2, height: FULL_HEADER_HEIGHT },
+    {
+      // marginTop: top + 16 + 30,
+      zIndex: 2,
+      height: FULL_HEADER_HEIGHT,
+    },
     animatedStyle,
   ];
 
   return (
-    <>
+    <Animated.View
+      style={[{ overflow: "hidden", top: 0 }, animatedContainerStyle]}
+    >
       <Animated.View style={headerStyle} pointerEvents={"box-none"}>
         <ProductImage intensity={intensity} style={underlayHeaderImgStyle} />
       </Animated.View>
-      {/* <Animated.View
-        style={[...headerStyle, { zIndex: 1 }]}
-        pointerEvents="box-none"
-      >
-        <ProductImage intensity={intensity} style={fixedHeaderImgStyle} />
-      </Animated.View> */}
-    </>
+    </Animated.View>
   );
 };
 
@@ -224,6 +214,7 @@ export const ProductDetailsScreen = ({ route }: Props) => {
               height: 1500,
             }}
           >
+            <HeaderImage scrollY={scrollY} />
             <MainContent scrollY={scrollY} />
           </View>
         );
@@ -265,7 +256,7 @@ export const ProductDetailsScreen = ({ route }: Props) => {
           />
         </View>
       </View>
-      <HeaderImage scrollY={scrollY} />
+
       <AnimatedFlashList
         data={SECTIONS}
         keyExtractor={(item: any) => item.id}
@@ -274,7 +265,7 @@ export const ProductDetailsScreen = ({ route }: Props) => {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         contentContainerStyle={{
-          paddingTop: FULL_HEADER_HEIGHT + 30,
+          paddingTop: 0,
           backgroundColor: colors.background,
         }}
         showsVerticalScrollIndicator={false}
@@ -305,8 +296,8 @@ const styles = StyleSheet.create({
   },
   headerImage: {
     width: "100%",
-    position: "absolute",
-    top: 0,
+    // position: "absolute",
+    // top: 0,
     overflow: "hidden",
   },
   headerNav: {

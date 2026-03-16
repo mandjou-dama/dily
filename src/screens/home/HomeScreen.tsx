@@ -206,6 +206,9 @@ export default function HomeScreen({ navigation }: Props) {
       /> */}
       <Tabs.Container
         ref={containerRef}
+        // allowHeaderOverscroll
+        snapThreshold={0.3}
+        lazy
         renderHeader={() => <CollapsibleProduct />}
         headerContainerStyle={{
           backgroundColor: colors.background,
