@@ -7,13 +7,11 @@ The app provides an intuitive and smooth experience for **buyers** and **sellers
 
 ## 📱 Screenshots
 
-_Add some previews of the app in action here:_
 
-<!--
 ![Discover](./screenshots/discover.png)
 ![Sell](./screenshots/sell.png)
 ![Chat](./screenshots/chat.png)
--->
+
 
 ---
 
@@ -21,29 +19,29 @@ _Add some previews of the app in action here:_
 
 ### 👤 User Authentication
 
-- [x] Login with WhatsApp for a fast and frictionless experience
-- [x] OTP Verification Code support
-- [x] Seamless Profile setup
+- [ ] Login with WhatsApp for a fast and frictionless experience
+- [ ] OTP Verification Code support
+- [ ] Seamless Profile setup
 
 ### 🏠 Discover (Buyers)
 
-- [] Browse and search for products seamlessly
-- [] Smooth and performant lists powered by FlashList
+- [ ] Browse and search for products seamlessly
+- [ ] Smooth and performant lists powered by FlashList
 
 ### 💵 Sell (Sellers)
 
-- [] Create product listings
-- [] Attach product images and descriptions
+- [ ] Create product listings
+- [ ] Attach product images and descriptions
 
 ### 💬 Chat
 
-- [] Integrated messaging system to contact sellers directly
-- [] Real-time communication
+- [ ] Integrated messaging system to contact sellers directly
+- [ ] Real-time communication
 
 ### ⚙️ Profile
 
-- [] Manage your personal information
-- [] View and handle your listings
+- [ ] Manage your personal information
+- [ ] View and handle your listings
 
 ---
 
