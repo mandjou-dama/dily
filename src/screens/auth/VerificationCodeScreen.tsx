@@ -1,14 +1,11 @@
 import React, {
   useCallback,
-  useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   Pressable,
   Keyboard,
@@ -21,13 +18,10 @@ import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import { OtpInput, OtpInputRef } from "react-native-otp-entry";
 import {
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Button from "@/components/Button";
-import { simulatePress } from "@/lib/simulate-press";
 import { ArrowLeft } from "lucide-react-native";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useFocusEffect } from "@react-navigation/native";
@@ -45,7 +39,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
   const otpInputRef = useRef<OtpInputRef>(null);
 
   const handleLogin = useCallback(() => {
-    console.log("Login", phone);
+    // TODO: verify the OTP with Supabase (supabase.auth.verifyOtp)
   }, [phone]);
 
   const handleGoBack = () => {
@@ -68,7 +62,6 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
     useCallback(() => {
       const timer = setTimeout(() => {
         otpInputRef.current?.focus();
-        console.log("focused");
       }, 350);
 
       return () => {

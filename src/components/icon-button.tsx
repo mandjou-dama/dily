@@ -25,6 +25,8 @@ export const IconButton = memo(
   },
 );
 
+IconButton.displayName = "IconButton";
+
 const styles = StyleSheet.create({
   button: {
     width: 50 - 15,

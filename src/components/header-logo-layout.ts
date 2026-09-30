@@ -1,4 +1,4 @@
-// headerLogoLayout.ts
+// header-logo-layout.ts
 export type LogoLayout = {
   x: number;
   y: number;

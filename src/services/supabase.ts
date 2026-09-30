@@ -3,14 +3,12 @@ import "react-native-url-polyfill/auto";
 import { AppState } from "react-native";
 
 import { createClient } from "@supabase/supabase-js";
-// Avoid relying on the '@env' module declaration to prevent
-// "Cannot find module '@env' or its corresponding type declarations." errors.
-// Read env vars from process.env as a fallback for builds/environments
-// where '@env' types aren't available.
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 import * as SessionStorage from "./storage";
+
+// Expo only inlines env vars prefixed with EXPO_PUBLIC_ into the JS bundle.
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // Better to throw early if env vars are missing
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {

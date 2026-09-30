@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View, StyleSheet, useWindowDimensions, Pressable } from "react-native";
+import { StyleSheet, useWindowDimensions, Pressable } from "react-native";
 
 import { AppTabParamList } from "@/types/navigation";
 import HomeScreen from "@/screens/home/HomeScreen";

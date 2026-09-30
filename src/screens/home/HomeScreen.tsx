@@ -7,26 +7,21 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
-import { FlashList } from "@shopify/flash-list";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "react-native-collapsible-tab-view";
-import { Marquee } from "@/components/header-marquee";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppTabParamList } from "@/types/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { colors } from "@/theme/colors";
 import { colorKit } from "reanimated-color-picker";
 import { Image } from "expo-image";
 import ProductCard from "@/components/product-card";
 import { spacing } from "@/theme/spacing";
-import { setHeaderLogoLayout } from "@/components/header-logo-layout.ts";
 import { TopTabs } from "@/components/top-tab";
-import { useFocusEffect, useScrollToTop } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useScrollToTop } from "@react-navigation/native";
 import Button from "@/components/Button";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { ProductData } from "@/mock/products";
-import { useProducts } from "@/services/products.service";
 
 import { useNotify } from "@/components/notify";
 import { MessageType } from "@/components/notify/type";
@@ -94,7 +89,7 @@ const CollapsibleSearch = () => {
           // onFocus={() => setFocusedField("fullname")}
           // onBlur={() => setFocusedField(null)}
           returnKeyType="search"
-          onSubmitEditing={() => console.log("Search")}
+          // TODO: wire search to the products query
         />
       </View>
     </View>

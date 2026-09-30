@@ -1,10 +1,8 @@
 import {
   TEST_USER_ID,
   useToggleLike,
-  PRODUCTS_QUERY_KEY,
   useProducts,
 } from "@/services/products.service";
-import { useQueryClient } from "@tanstack/react-query";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { Image as ExpoImage } from "expo-image";
@@ -84,7 +82,7 @@ const ProductCard = ({ productId }: { productId: string }) => {
 
         <Pressable
           hitSlop={20}
-          onPress={() => console.log("liked")}
+          // TODO: wire to useToggleLike once auth provides the user id
           style={styles.heart}
         >
           <HeartIcon

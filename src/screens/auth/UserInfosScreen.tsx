@@ -5,11 +5,11 @@ import { useImagePicker } from "@/hooks/use-image-picker";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import { AuthStackParamList, GlobalStackParamList } from "@/types/navigation";
+import { GlobalStackParamList } from "@/types/navigation";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Camera, Mailbox, User } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -17,8 +17,6 @@ import {
   TouchableWithoutFeedback,
   TextInput,
   Pressable,
-  TextInputProps,
-  Keyboard,
   Platform,
 } from "react-native";
 import {
@@ -26,7 +24,6 @@ import {
   KeyboardController,
 } from "react-native-keyboard-controller";
 import {
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
@@ -51,8 +48,6 @@ const UserInfosScreen = ({ navigation }: any) => {
   const handlePickImage = async () => {
     impact("light");
     const images = await pickImages({ limit: 1 });
-
-    console.log(images);
 
     return images;
   };

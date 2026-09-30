@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect } from "react";
+import React, { useCallback, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -14,14 +14,11 @@ import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import {
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Button from "@/components/Button";
-import { simulatePress } from "@/lib/simulate-press";
 import { ArrowLeft } from "lucide-react-native";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -53,7 +50,6 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
     useCallback(() => {
       const timer = setTimeout(() => {
         phoneRef.current?.focus();
-        console.log("focused");
       }, 350);
 
       return () => {

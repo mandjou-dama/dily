@@ -1,6 +1,6 @@
 import { colors } from "@/theme/colors";
 import React, { FC } from "react";
-import { Pressable, TouchableOpacity } from "react-native";
+import { Pressable } from "react-native";
 import Reanimated, {
   interpolateColor,
   SharedValue,

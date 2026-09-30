@@ -6,7 +6,6 @@ import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import {
-  SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -14,9 +13,7 @@ import { Image } from "expo-image";
 import { ProductData } from "@/mock/products";
 import {
   ArrowLeft,
-  ArrowLeftToLine,
   Heart,
-  HeartCrack,
   Share,
 } from "lucide-react-native";
 import { colorKit } from "reanimated-color-picker";
@@ -132,7 +129,7 @@ const ProductImage = ({
   <>
     <Animated.View
       style={[
-        StyleSheet.absoluteFillObject,
+        StyleSheet.absoluteFill,
         {
           height: FULL_HEADER_HEIGHT,
           overflow: "hidden",
@@ -149,7 +146,7 @@ const ProductImage = ({
     </Animated.View>
     <AnimatedBlurView
       intensity={intensity}
-      style={[StyleSheet.absoluteFillObject, {}]}
+      style={[StyleSheet.absoluteFill, {}]}
       pointerEvents={"none"}
     />
   </>

@@ -4,12 +4,11 @@ import { Asset } from "expo-asset";
 import { createURL } from "expo-linking";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { Platform, StatusBar, useColorScheme, View } from "react-native";
+import { Platform, StatusBar, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import {
-  focusManager,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
@@ -17,7 +16,6 @@ import {
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
-import { colors } from "./theme/colors";
 import { NotifyProvider } from "./components/notify";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 

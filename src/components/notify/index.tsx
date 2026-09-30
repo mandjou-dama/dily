@@ -3,7 +3,6 @@ import React, {
   useContext,
   ReactNode,
   useState,
-  useEffect,
 } from "react";
 import { View, StyleSheet } from "react-native";
 import Banner from "./banner";

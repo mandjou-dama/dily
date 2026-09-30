@@ -3,9 +3,8 @@
   "compilerOptions": {
     "moduleResolution": "bundler",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }

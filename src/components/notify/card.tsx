@@ -1,14 +1,13 @@
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Animated, {
   SharedValue,
   useAnimatedStyle,
   withSpring,
 } from "react-native-reanimated";
 import { BlurView } from "expo-blur";
-import { Image } from "expo-image";
 import { MessageType } from "./type";
 import { colors } from "@/theme/colors";
-import { Bug, TriangleAlert } from "lucide-react-native";
+import { TriangleAlert } from "lucide-react-native";
 
 type CardGlobalProps = {
   shown: SharedValue<boolean>;
@@ -129,7 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   expandedContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     margin: 1,
     overflow: "hidden",
     borderRadius: 24,

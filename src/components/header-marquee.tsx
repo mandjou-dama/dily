@@ -116,15 +116,15 @@ export const Marquee = React.memo(
           : 1;
 
         if (reverse) {
-          anim.value -= speed * frameDelta;
+          anim.set((v) => v - speed * frameDelta);
         } else {
-          anim.value += speed * frameDelta;
+          anim.set((v) => v + speed * frameDelta);
         }
       }, true);
 
       useDerivedValue(() => {
         if (position) {
-          position.value = anim.value;
+          position.set(anim.get());
         }
       });
 
@@ -180,10 +180,10 @@ export const Marquee = React.memo(
           scheduleOnRN(stop);
         })
         .onChange((e) => {
-          anim.value += -(direction === "horizontal" ? e.changeX : e.changeY);
+          anim.set((v) => v - (direction === "horizontal" ? e.changeX : e.changeY));
         })
         .onFinalize((e) => {
-          anim.value = withDecay(
+          anim.set(withDecay(
             {
               velocity: -(direction === "horizontal"
                 ? e.velocityX
@@ -194,7 +194,7 @@ export const Marquee = React.memo(
                 scheduleOnRN(start);
               }
             }
-          );
+          ));
         });
 
       return (
@@ -202,7 +202,7 @@ export const Marquee = React.memo(
           key={direction}
           style={style}
           onLayout={(ev) => {
-            parentMeasurement.value = ev.nativeEvent.layout;
+            parentMeasurement.set(ev.nativeEvent.layout);
           }}
           pointerEvents="box-none"
         >
@@ -219,7 +219,7 @@ export const Marquee = React.memo(
               >
                 <View
                   onLayout={(ev) => {
-                    textMeasurement.value = ev.nativeEvent.layout;
+                    textMeasurement.set(ev.nativeEvent.layout);
                   }}
                 >
                   {children}

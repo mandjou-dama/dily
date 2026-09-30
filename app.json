@@ -6,8 +6,12 @@
     "orientation": "portrait",
     "icon": "./assets/ios-light.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "scheme": "dily",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.dily"
@@ -27,7 +31,10 @@
       [
         "react-native-bootsplash",
         {
-          "assetsDir": "assets/bootsplash"
+          "logo": "./assets/splash-icon-light.png",
+          "logoWidth": 210,
+          "background": "#f7f5ed",
+          "assetsOutput": "assets/bootsplash"
         }
       ],
       [
@@ -36,7 +43,10 @@
           "photosPermission": "Dily needs access to your photos to let you upload profile pictures and attach images to your products."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-image",
+      "./plugins/with-min-pod-deployment-target",
+      "./plugins/with-scene-lifecycle"
     ],
     "experiments": {
       "reactCompiler": true

@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from "react";
+import { FC, useCallback, useMemo, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -31,6 +31,14 @@ import { useHaptics } from "@/hooks/use-haptics";
 const AnimatedFlatList = Animated.createAnimatedComponent(
   FlatList<OnboardingSlide>
 );
+
+// Viewability config: only trigger when slide is 100% visible (pagingEnabled ensures this)
+// minimumViewTime: 0 means immediate callback, no delay needed for paged scrolling
+// Module-level so FlatList always receives the same object (it must not change between renders)
+const VIEWABILITY_CONFIG = {
+  itemVisiblePercentThreshold: 100,
+  minimumViewTime: 0,
+};
 
 const Carousel: FC<CarouselProps> = ({
   setCurrentSlideIndex,
@@ -70,13 +78,6 @@ const Carousel: FC<CarouselProps> = ({
     },
     [setCurrentSlideIndex]
   );
-
-  // Viewability config: only trigger when slide is 100% visible (pagingEnabled ensures this)
-  // minimumViewTime: 0 means immediate callback, no delay needed for paged scrolling
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 100,
-    minimumViewTime: 0,
-  }).current;
 
   const handleScrollToIndex = useCallback((index: number) => {
     horizontalListRef.current?.scrollToIndex({
@@ -193,7 +194,7 @@ const Carousel: FC<CarouselProps> = ({
         scrollEventThrottle={16}
         onScroll={scrollHandler}
         onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
+        viewabilityConfig={VIEWABILITY_CONFIG}
         // Infinite loop: when user reaches duplicated first slide (last item)
         // Instantly jump back to real first slide without animation
         onEndReached={() => {

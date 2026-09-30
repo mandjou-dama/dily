@@ -15,8 +15,6 @@ const OnboardingActions = ({
   onGooglePress,
   onApplePress,
 }: Props) => {
-  console.log("OnboardingActions render"); // ← debug
-
   return (
     <Animated.View style={[rButtonsBlockStyle, { marginTop: "auto" }]}>
       <Text

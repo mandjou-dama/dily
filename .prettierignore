@@ -1,0 +1,6 @@
+ios/
+android/
+assets/
+public/
+pnpm-lock.yaml
+.expo/

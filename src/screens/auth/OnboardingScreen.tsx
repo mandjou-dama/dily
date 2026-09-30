@@ -1,7 +1,7 @@
 import { Phone, UserRound } from "lucide-react-native";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import { FlatList, Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
   Extrapolation,
@@ -15,9 +15,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { OnboardingSlide } from "@/lib/types";
 import { simulatePress } from "@/lib/simulate-press";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Carousel from "@/components/onboarding/onboarding-carousel";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import { scheduleOnRN } from "react-native-worklets";
 import { LinearGradient } from "expo-linear-gradient";
 import { colors } from "@/theme/colors";
@@ -124,6 +122,21 @@ export const OnboardingScreen = ({ navigation }: Props) => {
     });
   }, []);
 
+  // Slide requested by the tap gesture. Gesture callbacks must not capture the
+  // list ref (React Compiler), so the scroll itself happens in an effect.
+  // Wrapped in an object so requesting the same index twice still scrolls.
+  const [requestedSlide, setRequestedSlide] = useState<{ index: number } | null>(
+    null,
+  );
+
+  const requestSlide = useCallback((index: number) => {
+    setRequestedSlide({ index });
+  }, []);
+
+  useEffect(() => {
+    if (requestedSlide) handleScrollToIndex(requestedSlide.index);
+  }, [requestedSlide, handleScrollToIndex]);
+
   // Single tap gesture: advances to next slide when carousel is collapsed
   // maxDuration: 250ms ensures quick taps register, longer presses ignored
   const singleTap = Gesture.Tap()
@@ -132,7 +145,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
     .onStart(() => {
       // Only advance if carousel is fully collapsed (translateY >= 0)
       if (translateY.get() < 0) return;
-      scheduleOnRN(handleScrollToIndex, currentSlideIndex + 1);
+      scheduleOnRN(requestSlide, currentSlideIndex + 1);
       isDragging.set(false);
     });
 

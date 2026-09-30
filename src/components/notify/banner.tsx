@@ -1,5 +1,4 @@
 import {
-  BackHandler,
   Platform,
   Pressable,
   StyleSheet,
@@ -22,8 +21,7 @@ import { MessageType } from "./type";
 import { BlurView } from "expo-blur";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { CardExpanded, CardHandle, CardPeek } from "./card";
-import { isLiquidGlassAvailable, GlassView } from "expo-glass-effect";
-import { scheduleOnRN } from "react-native-worklets";
+import { GlassView } from "expo-glass-effect";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/theme/colors";
 
@@ -87,42 +85,42 @@ export default function Banner({
   });
 
   useEffect(() => {
-    mounted.value = true;
+    mounted.set(true);
     return () => {
-      mounted.value = false;
+      mounted.set(false);
     };
   }, [message]);
 
   const toggleExpand = (expand: boolean) => {
     "worklet";
     const target = expand ? EXPANDED_HEIGHT : HEIGHT;
-    height.value = withSpring(target);
+    height.set(withSpring(target));
   };
 
   const panGesture = Gesture.Pan()
     .minDistance(0)
     .maxPointers(1)
     .onBegin(() => {
-      isDragging.value = true;
+      isDragging.set(true);
     })
     .onUpdate((e) => {
       if (hidden.value || hasExceededThreshold.value) return;
       if (e.translationY > 0) {
-        translateY.value = e.translationY * RESISTANCE_FACTOR;
+        translateY.set(e.translationY * RESISTANCE_FACTOR);
         if (translateY.value > DRAG_THRESHOLD && expandedChild) {
-          hasExceededThreshold.value = true;
+          hasExceededThreshold.set(true);
         }
       } else {
-        translateY.value = e.translationY;
+        translateY.set(e.translationY);
       }
     })
     .onEnd((e) => {
-      isDragging.value = false;
+      isDragging.set(false);
       if (hasExceededThreshold.value) return;
       if (translateY.value < -THRESHOLD || e.velocityY < -VELOCITY_THRESHOLD) {
-        hidden.value = true;
+        hidden.set(true);
       } else {
-        translateY.value = withSpring(0);
+        translateY.set(withSpring(0));
       }
     });
 
@@ -131,17 +129,17 @@ export default function Banner({
     (current) => {
       if (hidden.value) return;
       if (current) {
-        scheduleHide.value = 0;
+        scheduleHide.set(0);
       } else if (!hasExceededThreshold.value) {
-        scheduleHide.value = withTiming(
+        scheduleHide.set(withTiming(
           1,
           { duration: HIDE_DELAY },
           (finished) => {
             if (finished) {
-              hidden.value = true;
+              hidden.set(true);
             }
           }
-        );
+        ));
       }
     }
   );
@@ -150,7 +148,7 @@ export default function Banner({
     () => hidden.value,
     (current) => {
       if (current) {
-        hasExceededThreshold.value = false;
+        hasExceededThreshold.set(false);
       }
     }
   );
@@ -160,11 +158,11 @@ export default function Banner({
     (current) => {
       if (hidden.value) return;
       if (current) {
-        translateY.value = withSpring(EXPANDED_TOP);
+        translateY.set(withSpring(EXPANDED_TOP));
         // scheduleOnRN(snapFeedback);
         toggleExpand(true);
       } else {
-        translateY.value = withSpring(0);
+        translateY.set(withSpring(0));
         toggleExpand(false);
       }
     }
@@ -225,7 +223,7 @@ export default function Banner({
   const Wrapper = isLiquidGlass ? AnimatedGlassView : Animated.View;
 
   const handlePress = () => {
-    hidden.value = true;
+    hidden.set(true);
     options?.action?.onClick();
   };
 
@@ -234,9 +232,9 @@ export default function Banner({
   return (
     <>
       <AnimatedPressable
-        style={[StyleSheet.absoluteFillObject, overlayAnimatedStyle]}
+        style={[StyleSheet.absoluteFill, overlayAnimatedStyle]}
         onPress={() => {
-          hidden.value = true;
+          hidden.set(true);
         }}
       >
         {isLiquidGlass ? (
@@ -311,7 +309,7 @@ const styles = StyleSheet.create({
     // paddingBottom: HANDLE_HEIGHT / 2,
   },
   expanded: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 24,
     borderCurve: "continuous",
     overflow: "hidden",
