@@ -9,7 +9,6 @@ The app provides an intuitive and smooth experience for **buyers** and **sellers
 
 ![Screenshot_1](./assets/demo/demo_2.png)
 
-
 ---
 
 ## ✨ Features

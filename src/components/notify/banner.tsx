@@ -131,17 +131,15 @@ export default function Banner({
       if (current) {
         scheduleHide.set(0);
       } else if (!hasExceededThreshold.value) {
-        scheduleHide.set(withTiming(
-          1,
-          { duration: HIDE_DELAY },
-          (finished) => {
+        scheduleHide.set(
+          withTiming(1, { duration: HIDE_DELAY }, (finished) => {
             if (finished) {
               hidden.set(true);
             }
-          }
-        ));
+          }),
+        );
       }
-    }
+    },
   );
 
   useAnimatedReaction(
@@ -150,7 +148,7 @@ export default function Banner({
       if (current) {
         hasExceededThreshold.set(false);
       }
-    }
+    },
   );
 
   useAnimatedReaction(
@@ -165,7 +163,7 @@ export default function Banner({
         translateY.set(withSpring(0));
         toggleExpand(false);
       }
-    }
+    },
   );
 
   const animatedStyle = useAnimatedStyle(() => {

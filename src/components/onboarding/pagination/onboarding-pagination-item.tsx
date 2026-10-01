@@ -57,7 +57,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
       adjustedIndex,
       [index - 1, index, index + 1],
       [inactiveWidth, activeWidth, inactiveWidth],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     // Handle infinite loop: when scrolling from last slide (index 4) to first (index 0)
@@ -69,7 +69,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         adjustedIndex,
         [totalSlides - 1, totalSlides],
         [inactiveWidth, activeWidth],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       );
 
       width = Math.max(width, loopFromLastWidth);
@@ -81,7 +81,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         adjustedIndex,
         [totalSlides - 1, totalSlides],
         [activeWidth, inactiveWidth],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       );
 
       width = adjustedIndex >= totalSlides - 1 ? loopToFirstWidth : width;
@@ -109,7 +109,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
       slideProgress.get(),
       [0, 1],
       [0, 100],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -120,7 +120,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         barWidth.get(),
         [0, activeWidth],
         [0, 1],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       ),
     };
   }, []);
@@ -150,7 +150,7 @@ export const PaginationItem: FC<PaginationItemProps> = ({
         slideProgress.set(0);
         slideProgress.set(withTiming(1, { duration: slideDuration }));
       }
-    }
+    },
   );
 
   // Auto-advance to next slide when progress completes, or expand carousel on last slide
@@ -164,14 +164,14 @@ export const PaginationItem: FC<PaginationItemProps> = ({
           withTiming(-topCarouselOffset, {
             duration: 200,
             easing: Easing.inOut(Easing.quad),
-          })
+          }),
         );
       }
       // Auto-advance to next slide when progress completes (unless user is dragging)
       if (!isDragging.get() && slideProgress === 1) {
         scheduleOnRN(handleScrollToIndex, currentSlideIndex + 1);
       }
-    }
+    },
   );
 
   return (

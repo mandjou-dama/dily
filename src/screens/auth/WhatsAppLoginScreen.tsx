@@ -13,9 +13,7 @@ import { AuthStackParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Button from "@/components/Button";
 import { ArrowLeft } from "lucide-react-native";
@@ -56,7 +54,7 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
         // clear the timeout set timeout
         clearTimeout(timer);
       };
-    }, [])
+    }, []),
   );
 
   return (

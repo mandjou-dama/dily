@@ -59,9 +59,9 @@ export function useToggleLike() {
                       : item.like.number + 1,
                   },
                 }
-              : item
+              : item,
           );
-        }
+        },
       );
 
       return { previousProducts };

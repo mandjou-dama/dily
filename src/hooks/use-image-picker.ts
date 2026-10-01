@@ -31,7 +31,7 @@ export const useImagePicker = () => {
         if (!permission.granted) {
           Alert.alert(
             "Permission required",
-            "Permission to access the media library is required."
+            "Permission to access the media library is required.",
           );
           return null;
         }
@@ -56,7 +56,7 @@ export const useImagePicker = () => {
         setIsPicking(false);
       }
     },
-    []
+    [],
   );
 
   const reset = () => setImages([]);

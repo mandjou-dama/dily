@@ -34,7 +34,7 @@ export const TabIndicator: FC<Props> = ({
     const translateX = interpolate(
       indexDecimal.value,
       [0, 1],
-      [0, tabBarItemWidth]
+      [0, tabBarItemWidth],
     );
 
     return {

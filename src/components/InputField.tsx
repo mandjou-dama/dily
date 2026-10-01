@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { colors } from '../theme/colors';
-import { spacing } from '../theme/spacing';
-import { typography } from '../theme/typography';
+import React from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TextInputProps,
+} from "react-native";
+import { colors } from "../theme/colors";
+import { spacing } from "../theme/spacing";
+import { typography } from "../theme/typography";
 
 interface InputFieldProps extends TextInputProps {
   label?: string;
@@ -29,7 +35,7 @@ const styles = StyleSheet.create({
     ...typography.small,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   input: {
     height: 48,

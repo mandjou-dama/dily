@@ -23,9 +23,7 @@ import {
   KeyboardAvoidingView,
   KeyboardController,
 } from "react-native-keyboard-controller";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = NativeStackScreenProps<GlobalStackParamList>;
 
@@ -42,7 +40,7 @@ const UserInfosScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState("");
 
   const [focusedField, setFocusedField] = useState<"fullname" | "email" | null>(
-    null
+    null,
   );
 
   const handlePickImage = async () => {

@@ -29,7 +29,7 @@ import { useHaptics } from "@/hooks/use-haptics";
 // Required for useAnimatedScrollHandler to work with FlatList scroll events
 // See: https://docs.swmansion.com/react-native-reanimated/docs/core/createAnimatedComponent
 const AnimatedFlatList = Animated.createAnimatedComponent(
-  FlatList<OnboardingSlide>
+  FlatList<OnboardingSlide>,
 );
 
 // Viewability config: only trigger when slide is 100% visible (pagingEnabled ensures this)
@@ -76,7 +76,7 @@ const Carousel: FC<CarouselProps> = ({
         }
       }
     },
-    [setCurrentSlideIndex]
+    [setCurrentSlideIndex],
   );
 
   const handleScrollToIndex = useCallback((index: number) => {
@@ -103,7 +103,7 @@ const Carousel: FC<CarouselProps> = ({
         translateY.get(),
         [0, -topCarouselOffset * 0.25],
         [1, 0],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       ),
       pointerEvents: translateY.get() === 0 ? "auto" : "none",
     };
@@ -115,7 +115,7 @@ const Carousel: FC<CarouselProps> = ({
         translateY.get(),
         [0, -topCarouselOffset * 0.95],
         [0, 1],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       ),
       pointerEvents: translateY.get() === 0 ? "none" : "auto",
     };
@@ -128,7 +128,7 @@ const Carousel: FC<CarouselProps> = ({
     translateY.set(
       withTiming(0, {
         duration: 300,
-      })
+      }),
     );
 
     impact("light");
@@ -154,7 +154,7 @@ const Carousel: FC<CarouselProps> = ({
       } else {
         scheduleOnRN(setIsHorizontalScrollEnabled, true);
       }
-    }
+    },
   );
 
   return (

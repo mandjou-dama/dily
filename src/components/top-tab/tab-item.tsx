@@ -29,7 +29,7 @@ export const TabItem: FC<Props> = ({
     const color = interpolateColor(
       indexDecimal.value,
       [index - 1, index, index + 1], // Input range: previous tab, current tab, next tab
-      [colors.black + "80", colors.primary, colors.black + "80"] // Output colors: inactive gray, active white, inactive gray
+      [colors.black + "80", colors.primary, colors.black + "80"], // Output colors: inactive gray, active white, inactive gray
     );
     return { color };
   });

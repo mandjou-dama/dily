@@ -23,7 +23,7 @@ export const Spinner = ({ size = 20, color = colors.white }: SpinnerProps) => {
         duration: 500,
         easing: Easing.linear,
       }),
-      -1 // Infinite loop
+      -1, // Infinite loop
     );
   }, []);
 

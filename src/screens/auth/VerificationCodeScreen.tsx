@@ -1,8 +1,4 @@
-import React, {
-  useCallback,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -17,9 +13,7 @@ import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
 import { OtpInput, OtpInputRef } from "react-native-otp-entry";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Button from "@/components/Button";
 import { ArrowLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -68,7 +62,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
         // clear the timeout set timeout
         clearTimeout(timer);
       };
-    }, [])
+    }, []),
   );
 
   return (
@@ -178,7 +172,7 @@ export const VerificationCodeScreen = ({ navigation }: Props) => {
                 onFilled={(text) =>
                   confirmOtp(
                     `+223${phone.toString().replace(/\s+/g, "")}`,
-                    text
+                    text,
                   )
                 }
                 textInputProps={{
