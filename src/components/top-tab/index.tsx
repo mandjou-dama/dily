@@ -1,8 +1,7 @@
 import { View } from "react-native";
 import { TabItem } from "./tab-item";
 import { TabIndicator } from "./tab-indicator";
-import { TabBarProps } from "react-native-collapsible-tab-view";
-import { spacing } from "@/theme/spacing";
+import { SharedValue } from "react-native-reanimated";
 
 // threads-home-header-tabs-animation 🔽
 
@@ -10,19 +9,25 @@ import { spacing } from "@/theme/spacing";
 // Also used in TabIndicator for precise positioning calculations
 const TABS_HORIZONTAL_PADDING = 16;
 
-type Props = TabBarProps<string>; // Generic TabBarProps from react-native-collapsible-tab-view
+// Fixed height: the home list reserves exactly this space for the pinned bar
+export const TOP_TABS_HEIGHT = 44;
+
+type Props = {
+  tabNames: readonly string[];
+  // Animated (fractional) index of the selected tab, drives colors and indicator
+  indexDecimal: SharedValue<number>;
+  onTabPress: (name: string) => void;
+};
 
 export function TopTabs({ tabNames, indexDecimal, onTabPress }: Props) {
   return (
-    <View>
-      {/* Tab items container with bottom padding for visual spacing above indicator */}
+    <View style={{ height: TOP_TABS_HEIGHT }}>
+      {/* Tab items fill the bar; the 1px indicator sits under them */}
       <View
-        // className="flex-row pb-2"
         style={{
+          flex: 1,
           paddingHorizontal: TABS_HORIZONTAL_PADDING,
           flexDirection: "row",
-          paddingBottom: spacing.sm + 5,
-          paddingTop: spacing.sm,
         }}
       >
         {tabNames.map((tab, index) => {
