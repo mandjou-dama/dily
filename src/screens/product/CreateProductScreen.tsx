@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-} from "react-native";
+import { View, StyleSheet } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppTabParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";

@@ -1,7 +1,11 @@
 import { Phone, UserRound } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import { FlatList, Gesture, GestureDetector } from "react-native-gesture-handler";
+import {
+  FlatList,
+  Gesture,
+  GestureDetector,
+} from "react-native-gesture-handler";
 import Animated, {
   Easing,
   Extrapolation,
@@ -125,9 +129,9 @@ export const OnboardingScreen = ({ navigation }: Props) => {
   // Slide requested by the tap gesture. Gesture callbacks must not capture the
   // list ref (React Compiler), so the scroll itself happens in an effect.
   // Wrapped in an object so requesting the same index twice still scrolls.
-  const [requestedSlide, setRequestedSlide] = useState<{ index: number } | null>(
-    null,
-  );
+  const [requestedSlide, setRequestedSlide] = useState<{
+    index: number;
+  } | null>(null);
 
   const requestSlide = useCallback((index: number) => {
     setRequestedSlide({ index });
@@ -206,7 +210,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
           if (finished && target === 0) {
             isDragging.set(false);
           }
-        })
+        }),
       );
     });
 
@@ -229,8 +233,8 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             if (finished) {
               isDragging.set(true); // Garder disabled pour éviter auto-advance
             }
-          }
-        )
+          },
+        ),
       );
     }
 
@@ -246,7 +250,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         translateY.get(),
         [0, -TOP_CAROUSEL_OFFSET],
         [0, 1],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       ),
     };
   });
@@ -261,7 +265,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             translateY.get(),
             [0, -TOP_CAROUSEL_OFFSET],
             [0, -40],
-            Extrapolation.CLAMP
+            Extrapolation.CLAMP,
           ),
         },
       ],
@@ -278,7 +282,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
             translateY.get(),
             [0, -TOP_CAROUSEL_OFFSET],
             [40, 0],
-            Extrapolation.CLAMP
+            Extrapolation.CLAMP,
           ),
         },
       ],
@@ -293,7 +297,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         translateY.get(),
         [0, -TOP_CAROUSEL_OFFSET],
         [0, 1],
-        Extrapolation.CLAMP
+        Extrapolation.CLAMP,
       ),
     };
   });
@@ -305,7 +309,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
     translateY.set(
       withTiming(0, {
         duration: 300,
-      })
+      }),
     );
   };
 

@@ -5,17 +5,11 @@ import { RootStackParamList } from "@/types/navigation";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import {
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { ProductData } from "@/mock/products";
-import {
-  ArrowLeft,
-  Heart,
-  Share,
-} from "lucide-react-native";
+import { ArrowLeft, Heart, Share } from "lucide-react-native";
 import { colorKit } from "reanimated-color-picker";
 import Animated, {
   useSharedValue,

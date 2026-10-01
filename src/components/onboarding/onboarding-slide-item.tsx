@@ -64,7 +64,7 @@ export const SlideItem: FC<SlideItemProps> = ({
       scrollOffsetX.get(),
       inputRange,
       [2, 0, -2],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     // Vertical translation: card moves ±4px vertically when adjacent
     // Combined with rotation, creates 3D card stack effect
@@ -72,7 +72,7 @@ export const SlideItem: FC<SlideItemProps> = ({
       scrollOffsetX.get(),
       inputRange,
       [4, 0, 4],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     return {

@@ -34,7 +34,9 @@ const withSceneLifecycle = (config) => {
     if (!src.includes("ExpoReactNativeFactoryProvider")) {
       const declaration = "class AppDelegate: ExpoAppDelegate {";
       if (!src.includes(declaration)) {
-        throw new Error("with-scene-lifecycle: AppDelegate declaration not found");
+        throw new Error(
+          "with-scene-lifecycle: AppDelegate declaration not found",
+        );
       }
       src = src.replace(
         declaration,
@@ -48,7 +50,9 @@ const withSceneLifecycle = (config) => {
         "\n    // The window is created by ExpoAppSceneDelegate (UIScene life cycle).\n",
       );
     } else if (src.includes("factory.startReactNative(")) {
-      throw new Error("with-scene-lifecycle: startReactNative block not recognized");
+      throw new Error(
+        "with-scene-lifecycle: startReactNative block not recognized",
+      );
     }
 
     config.modResults.contents = src;

@@ -4,3 +4,4 @@ assets/
 public/
 pnpm-lock.yaml
 .expo/
+.claude/

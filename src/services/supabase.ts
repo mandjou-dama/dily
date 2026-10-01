@@ -25,7 +25,7 @@ export const supabase = createClient(
       detectSessionInUrl: false,
       autoRefreshToken: true,
     },
-  }
+  },
 );
 
 export { type AuthError, type Session } from "@supabase/supabase-js";

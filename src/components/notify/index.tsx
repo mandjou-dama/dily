@@ -1,9 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  ReactNode,
-  useState,
-} from "react";
+import React, { createContext, useContext, ReactNode, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import Banner from "./banner";
 import { MessageType, NotifyContextType } from "./type";
@@ -44,7 +39,7 @@ export const NotifyProvider = ({ children }: { children: ReactNode }) => {
       },
     },
 
-    []
+    [],
   );
 
   return (

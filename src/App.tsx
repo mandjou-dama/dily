@@ -8,10 +8,7 @@ import { Platform, StatusBar, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
-import {
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";

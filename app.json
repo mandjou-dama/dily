@@ -7,11 +7,7 @@
     "icon": "./assets/ios-light.png",
     "userInterfaceStyle": "light",
     "scheme": "dily",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.dily"

@@ -89,7 +89,7 @@ export const Marquee = React.memo(
         position,
         withGesture = true,
       },
-      ref
+      ref,
     ) => {
       const parentMeasurement = useSharedValue<LayoutRectangle>({
         width: 0,
@@ -142,7 +142,7 @@ export const Marquee = React.memo(
             Math.round(
               direction === "horizontal"
                 ? parentMeasurement.value.width / textMeasurement.value.width
-                : parentMeasurement.value.height / textMeasurement.value.height
+                : parentMeasurement.value.height / textMeasurement.value.height,
             ) + 1
           );
         },
@@ -157,7 +157,7 @@ export const Marquee = React.memo(
           // of the screen without any noticible glitch
           scheduleOnRN(setCloneTimes, v + 2);
         },
-        [direction]
+        [direction],
       );
 
       // Pan Gestures
@@ -180,21 +180,25 @@ export const Marquee = React.memo(
           scheduleOnRN(stop);
         })
         .onChange((e) => {
-          anim.set((v) => v - (direction === "horizontal" ? e.changeX : e.changeY));
+          anim.set(
+            (v) => v - (direction === "horizontal" ? e.changeX : e.changeY),
+          );
         })
         .onFinalize((e) => {
-          anim.set(withDecay(
-            {
-              velocity: -(direction === "horizontal"
-                ? e.velocityX
-                : e.velocityY),
-            },
-            (finished) => {
-              if (finished) {
-                scheduleOnRN(start);
-              }
-            }
-          ));
+          anim.set(
+            withDecay(
+              {
+                velocity: -(direction === "horizontal"
+                  ? e.velocityX
+                  : e.velocityY),
+              },
+              (finished) => {
+                if (finished) {
+                  scheduleOnRN(start);
+                }
+              },
+            ),
+          );
         });
 
       return (
@@ -244,8 +248,8 @@ export const Marquee = React.memo(
           </GestureDetector>
         </Animated.View>
       );
-    }
-  )
+    },
+  ),
 );
 
 const styles = StyleSheet.create({
