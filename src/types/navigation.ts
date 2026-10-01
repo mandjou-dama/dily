@@ -1,6 +1,5 @@
 export type AuthStackParamList = {
   Onboarding: any;
-  Register: any;
   WhatsAppLogin: any;
   VerificationCode: any;
   UserInfos: any;
