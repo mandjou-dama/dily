@@ -159,9 +159,28 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.primary,
   },
+  skeletonBar: {
+    borderRadius: 6,
+    marginVertical: 2,
+    backgroundColor: "#EAE7DC",
+  },
   price: {
     fontSize: 13,
     fontWeight: "600",
     color: colors.black,
   },
+});
+
+/** Same box as a card, shown while the feed loads. Static: no per-cell animation. */
+export const ProductCardSkeleton = memo(function ProductCardSkeleton() {
+  return (
+    <View style={styles.container} accessibilityElementsHidden>
+      <View style={styles.imageWrapper} />
+      <View style={styles.info}>
+        <View style={[styles.skeletonBar, { width: "45%", height: 12 }]} />
+        <View style={[styles.skeletonBar, { width: "80%", height: 15 }]} />
+        <View style={[styles.skeletonBar, { width: "35%", height: 13 }]} />
+      </View>
+    </View>
+  );
 });

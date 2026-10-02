@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Heart,
+  MapPin,
   MessageCircle,
   Share,
 } from "lucide-react-native";
@@ -211,9 +212,14 @@ const ProductView = ({ product }: { product: Product }) => {
             )}
             <View style={styles.sellerInfo}>
               <Text style={styles.sellerName}>{product.seller.name}</Text>
-              <Text style={styles.sellerSub}>
-                {isOwnListing ? "Your listing" : "Seller"}
-              </Text>
+              <View style={styles.sellerLocation}>
+                <MapPin size={12} color="#5A5A52" strokeWidth={2} />
+                <Text style={styles.sellerSub} numberOfLines={1}>
+                  {isOwnListing
+                    ? `Your listing · ${product.seller.location}`
+                    : product.seller.location}
+                </Text>
+              </View>
             </View>
             <ChevronRight size={18} color={colors.primary} strokeWidth={2} />
           </View>
@@ -541,7 +547,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.black,
   },
+  sellerLocation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   sellerSub: {
+    flexShrink: 1,
     fontSize: 12,
     color: "#5A5A52",
   },
