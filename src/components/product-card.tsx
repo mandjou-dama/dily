@@ -12,11 +12,12 @@ type Props = {
   id: string;
   name: string;
   price: string;
-  imageUri: string;
+  imageUri: string | null;
   sellerName: string;
   likeCount: number;
   liked: boolean;
   onPress: (id: string) => void;
+  onToggleLike: (id: string, liked: boolean) => void;
 };
 
 // Only primitives (plus one stable callback) come in, so memo() can skip
@@ -30,6 +31,7 @@ const ProductCard = memo(function ProductCard({
   likeCount,
   liked,
   onPress,
+  onToggleLike,
 }: Props) {
   return (
     <Pressable
@@ -48,8 +50,14 @@ const ProductCard = memo(function ProductCard({
           style={styles.image}
         />
 
-        {/* TODO: wire to useToggleLike once auth provides the user id */}
-        <View style={styles.likePill}>
+        <Pressable
+          onPress={() => onToggleLike(id, liked)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={liked ? "Unlike" : "Like"}
+          accessibilityState={{ selected: liked }}
+          style={styles.likePill}
+        >
           <HeartIcon
             fill={liked ? colors.primary : "transparent"}
             color={colors.primary}
@@ -57,7 +65,7 @@ const ProductCard = memo(function ProductCard({
             size={14}
           />
           <Text style={styles.likeCount}>{likeCount}</Text>
-        </View>
+        </Pressable>
       </View>
 
       <View style={styles.info}>

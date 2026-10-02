@@ -28,6 +28,8 @@ const RootStack = createNativeStackNavigator({
         },
         ProductDetails: {
           screen: ProductDetailsScreen,
+          // dily://product/<uuid>, also what the share sheet sends
+          linking: { path: "product/:id" },
         },
       },
     },

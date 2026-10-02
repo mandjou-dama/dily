@@ -64,3 +64,13 @@ insert into public.product_images (product_id, path, position) values
   ('10000000-0000-4000-8000-000000000004', 'https://images.pexels.com/photos/9367505/pexels-photo-9367505.jpeg', 0),
   ('10000000-0000-4000-8000-000000000005', 'https://images.pexels.com/photos/19895983/pexels-photo-19895983.jpeg', 0),
   ('10000000-0000-4000-8000-000000000006', 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg', 0);
+
+-- Descriptions, so the details screen shows that section
+update public.products p set description = s.description
+from (values
+  ('10000000-0000-4000-8000-000000000001'::uuid, 'Authentic 90s denim, slightly worn for that perfect look. Size M but fits like an L.'),
+  ('10000000-0000-4000-8000-000000000002'::uuid, 'Worn a few times, soles in good shape. Comes with the original box.'),
+  ('10000000-0000-4000-8000-000000000003'::uuid, 'Genuine leather, never used. Fits a phone, wallet and keys.'),
+  ('10000000-0000-4000-8000-000000000005'::uuid, 'Light cotton, perfect for the hot season. Worn once for a wedding.')
+) as s (id, description)
+where p.id = s.id;
