@@ -1,32 +1,25 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { NativeStackScreenProps as StackScreenProps } from "@react-navigation/native-stack";
-import { AppTabParamList, RootStackParamList } from "@/types/navigation";
+import { View, StyleSheet, Text } from "react-native";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import { CompositeScreenProps } from "@react-navigation/native";
-import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { Image } from "expo-image";
+import Button from "@/components/Button";
+import { useNotify } from "@/components/notify";
+import { useAuth } from "@/providers/auth-provider";
+import { useSignOut } from "@/services/auth.service";
 
-type Props = CompositeScreenProps<
-  BottomTabScreenProps<AppTabParamList, "Profile">,
-  StackScreenProps<RootStackParamList>
->;
+// Placeholder until phase 5: shows who is signed in and lets them sign out
+export const ProfileScreen = () => {
+  const { profile } = useAuth();
+  const { notify } = useNotify();
+  const signOut = useSignOut();
 
-export const ProfileScreen = ({ navigation }: Props) => {
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    listingsCount: 12,
-    rating: 4.9,
-  };
-
+  // Signing out clears the session: the root navigator swaps to Auth
   const handleLogout = () => {
-    // Navigate to Auth stack
-    navigation.getParent()?.reset({
-      index: 0,
-      routes: [{ name: "Auth" }],
+    signOut.mutate(undefined, {
+      onError: (error) =>
+        notify("Sign out failed", { description: error.message }),
     });
   };
 
@@ -40,6 +33,18 @@ export const ProfileScreen = ({ navigation }: Props) => {
         }}
         source={require("assets/splash-icon-light.png")}
       />
+
+      <Text style={styles.name}>{profile?.full_name}</Text>
+      <Text style={styles.email}>+{profile?.phone}</Text>
+
+      <View style={styles.footer}>
+        <Button
+          title="Sign out"
+          onPress={handleLogout}
+          isLoading={signOut.isPending}
+          disabled={signOut.isPending}
+        />
+      </View>
     </View>
   );
 };
@@ -130,7 +135,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   footer: {
+    alignSelf: "stretch",
     marginTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   logoutButton: {
     backgroundColor: colors.danger,

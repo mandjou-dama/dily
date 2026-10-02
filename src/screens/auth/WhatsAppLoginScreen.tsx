@@ -19,6 +19,14 @@ import Button from "@/components/Button";
 import { ArrowLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
+import { useNotify } from "@/components/notify";
+import {
+  LOCAL_PHONE_LENGTH,
+  normalizeLocalPhone,
+  sendOtpErrorMessage,
+  toE164,
+  useSendOtp,
+} from "@/services/auth.service";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "WhatsAppLogin">;
 
@@ -26,17 +34,22 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const phoneRef = useRef<TextInput>(null);
 
+  const { notify } = useNotify();
+  const sendOtp = useSendOtp();
+
   const [phone, setPhone] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const isComplete = phone.length === LOCAL_PHONE_LENGTH;
 
   const handleLogin = () => {
-    setIsLoading(true);
+    const e164 = toE164(phone);
 
-    setTimeout(() => {
-      // Keyboard.dismiss();
-      setIsLoading(false);
-      navigation.navigate("VerificationCode");
-    }, 2000);
+    sendOtp.mutate(e164, {
+      onSuccess: () => navigation.navigate("VerificationCode", { phone: e164 }),
+      onError: (error) =>
+        notify("Code not sent", {
+          description: sendOtpErrorMessage(error),
+        }),
+    });
   };
 
   const handleGoBack = () => {
@@ -154,17 +167,18 @@ export const WhatsAppLoginScreen = ({ navigation }: Props) => {
                   placeholder="Your phone number"
                   placeholderTextColor={colors.textSecondary}
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={(text) => setPhone(normalizeLocalPhone(text))}
                   autoCapitalize="none"
-                  keyboardType="phone-pad"
+                  keyboardType="number-pad"
+                  textContentType="telephoneNumber"
                 />
               </View>
 
               <Button
-                disabled={(phone.length >= 8 ? false : true) || isLoading}
+                disabled={!isComplete || sendOtp.isPending}
                 title="Continue"
                 onPress={handleLogin}
-                isLoading={isLoading}
+                isLoading={sendOtp.isPending}
               />
             </View>
 

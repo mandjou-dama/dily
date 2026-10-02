@@ -5,10 +5,11 @@ import { useImagePicker } from "@/hooks/use-image-picker";
 import { colors } from "@/theme/colors";
 import { spacing } from "@/theme/spacing";
 import { typography } from "@/theme/typography";
-import { GlobalStackParamList } from "@/types/navigation";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useNotify } from "@/components/notify";
+import { useUser } from "@/providers/auth-provider";
+import { useUpdateProfile } from "@/services/auth.service";
 import { Image } from "expo-image";
-import { Camera, Mailbox, User } from "lucide-react-native";
+import { Camera, User } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
   View,
@@ -25,23 +26,19 @@ import {
 } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type Props = NativeStackScreenProps<GlobalStackParamList>;
+const MIN_NAME_LENGTH = 2;
 
-const UserInfosScreen = ({ navigation }: any) => {
+const UserInfosScreen = () => {
   const insets = useSafeAreaInsets();
   const { impact } = useHaptics();
+  const { notify } = useNotify();
+  const user = useUser();
+  const updateProfile = useUpdateProfile();
   const { imageUris, pickImages, isPicking } = useImagePicker();
 
-  const fullnameRef = useRef<any>(null);
-  const emailRef = useRef<any>(null);
+  const fullnameRef = useRef<TextInput>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [fullname, setFullname] = useState("");
-  const [email, setEmail] = useState("");
-
-  const [focusedField, setFocusedField] = useState<"fullname" | "email" | null>(
-    null,
-  );
 
   const handlePickImage = async () => {
     impact("light");
@@ -50,18 +47,17 @@ const UserInfosScreen = ({ navigation }: any) => {
     return images;
   };
 
-  // useEffect(() => {
-  //   console.log("Focused field:", focusedField);
-  // }, [focusedField]);
-
+  // Once the profile has a name, the root navigator swaps to the app
   const handleFinish = () => {
-    setIsLoading(true);
-
-    setTimeout(() => {
-      // Keyboard.dismiss();
-      setIsLoading(false);
-      navigation.replace("App", { screen: "Home" });
-    }, 2000);
+    updateProfile.mutate(
+      { userId: user.id, fullName: fullname, avatarUri: imageUris[0] },
+      {
+        onError: (error) =>
+          notify("Profile not saved", {
+            description: error.message || "Try again in a moment.",
+          }),
+      },
+    );
   };
 
   return (
@@ -131,15 +127,7 @@ const UserInfosScreen = ({ navigation }: any) => {
                 )}
               </Pressable>
 
-              <View
-                style={[
-                  styles.inputContainer,
-                  // {
-                  //   borderColor:
-                  //     focusedField === "fullname" ? colors.primary : "#E7E5E4",
-                  // },
-                ]}
-              >
+              <View style={styles.inputContainer}>
                 <User color={colors.primary} />
                 <TextInput
                   ref={fullnameRef}
@@ -147,45 +135,23 @@ const UserInfosScreen = ({ navigation }: any) => {
                   placeholder="Your fullname"
                   placeholderTextColor={colors.textSecondary}
                   value={fullname}
-                  onChangeText={(value) => setFullname(value)}
-                  onFocus={() => setFocusedField("fullname")}
-                  onBlur={() => setFocusedField(null)}
+                  onChangeText={setFullname}
                   autoCapitalize="words"
-                  keyboardType="name-phone-pad"
-                  autoComplete="family-name"
+                  autoComplete="name"
+                  textContentType="name"
+                  maxLength={80}
                   autoFocus={true}
-                />
-              </View>
-              <View
-                style={[
-                  styles.inputContainer,
-                  // {
-                  //   borderColor:
-                  //     focusedField === "email" ? colors.primary : "#E7E5E4",
-                  // },
-                ]}
-              >
-                <Mailbox color={colors.primary} />
-                <TextInput
-                  ref={emailRef}
-                  style={styles.input}
-                  placeholder="Your email (optional)"
-                  placeholderTextColor={colors.textSecondary}
-                  value={email}
-                  onChangeText={setEmail}
-                  onFocus={() => setFocusedField("email")}
-                  onBlur={() => setFocusedField(null)}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoComplete="email"
                 />
               </View>
             </View>
 
             <Button
               onPress={handleFinish}
-              isLoading={isLoading}
-              disabled={fullname.length < 5 || isLoading}
+              isLoading={updateProfile.isPending}
+              disabled={
+                fullname.trim().length < MIN_NAME_LENGTH ||
+                updateProfile.isPending
+              }
               title="Terminer"
             />
           </View>

@@ -269,6 +269,14 @@ max_frequency = "5s"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
 
+# Sends phone sign-in codes over WhatsApp (Meta Cloud API) instead of Twilio.
+# Locally the function runs in the edge runtime; on the hosted project the uri
+# is https://<project-ref>.supabase.co/functions/v1/send-whatsapp-otp.
+[auth.hook.send_sms]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/send-whatsapp-otp"
+secrets = "env(SEND_SMS_HOOK_SECRET)"
+
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
 # enabled = true
@@ -280,12 +288,14 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# Local dev: a provider must be enabled for phone login to exist at all. These
+# placeholders are never called for the test_otp number above; real Twilio
+# credentials only go in the hosted project's dashboard.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "AC_local_placeholder"
+message_service_sid = "MG_local_placeholder"
+auth_token = "local_placeholder"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
@@ -405,3 +415,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Called by Supabase Auth with a signed payload, not by the app
+[functions.send-whatsapp-otp]
+verify_jwt = false
