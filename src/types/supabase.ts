@@ -316,6 +316,10 @@ export type Database = {
         Args: { conversation: string };
         Returns: boolean;
       };
+      set_product_images: {
+        Args: { paths: string[]; product: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       product_condition: "new" | "like_new" | "good" | "used";
