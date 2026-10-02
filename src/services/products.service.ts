@@ -227,6 +227,7 @@ export type Product = {
   status: Enums<"product_status">;
   likesCount: number;
   createdAt: string;
+  categoryId: number | null;
   categoryName: string | null;
   seller: {
     id: string;
@@ -257,7 +258,7 @@ export function useProduct(id: string) {
       const { data, error } = await supabase
         .from("products")
         .select(
-          `id, title, description, price, size, condition, status, likes_count, created_at,
+          `id, title, description, price, size, condition, status, likes_count, created_at, category_id,
           category:categories(name),
           seller:profiles!products_seller_id_fkey(id, full_name, avatar_url, neighbourhood, city),
           images:product_images(path, position)`,
@@ -276,6 +277,7 @@ export function useProduct(id: string) {
             status: Enums<"product_status">;
             likes_count: number;
             created_at: string;
+            category_id: number | null;
             category: { name: string } | null;
             seller: {
               id: string;
@@ -301,6 +303,7 @@ export function useProduct(id: string) {
         status: data.status,
         likesCount: data.likes_count,
         createdAt: data.created_at,
+        categoryId: data.category_id,
         categoryName: data.category?.name ?? null,
         seller: {
           id: data.seller.id,

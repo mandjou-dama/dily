@@ -1,84 +1,42 @@
-import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { AppTabParamList } from "@/types/navigation";
-import { colors } from "@/theme/colors";
-import { spacing } from "@/theme/spacing";
-import { typography } from "@/theme/typography";
-import { Image } from "expo-image";
+import { useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { ListingForm } from "@/components/sell/listing-form";
+import { useNotify } from "@/components/notify";
+import { useHaptics } from "@/hooks/use-haptics";
+import { type ListingInput, useCreateListing } from "@/services/sell.service";
 
-type Props = NativeStackScreenProps<AppTabParamList, "Sell">;
+export const CreateProductScreen = () => {
+  const navigation = useNavigation();
+  const { notify } = useNotify();
+  const { notification } = useHaptics();
+  const createListing = useCreateListing();
 
-export const CreateProductScreen = ({ navigation }: Props) => {
-  const [title, setTitle] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
+  // A new key gives the next listing a blank form
+  const [formKey, setFormKey] = useState(0);
 
-  const handleSubmit = () => {
-    console.log("Create product", { title, price, description });
-    navigation.navigate("Home");
-  };
+  const onSubmit = (input: ListingInput) =>
+    createListing.mutate(input, {
+      onSuccess: (id) => {
+        notification("success");
+        setFormKey((key) => key + 1);
+        navigation.navigate("ProductDetails", { id });
+      },
+      onError: () => {
+        notification("error");
+        notify("Listing not published", {
+          description: "Check your connection and try again.",
+        });
+      },
+    });
 
   return (
-    <View style={styles.container}>
-      <Image
-        style={{
-          width: 100,
-          aspectRatio: 1 / 1,
-          marginTop: 80,
-        }}
-        source={require("assets/splash-icon-light.png")}
-      />
-    </View>
+    <ListingForm
+      key={formKey}
+      heading="Sell an item"
+      submitLabel="Publish listing"
+      isSubmitting={createListing.isPending}
+      progress={createListing.progress}
+      onSubmit={onSubmit}
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  header: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    alignItems: "center",
-  },
-  headerTitle: {
-    ...typography.title,
-    color: colors.textPrimary,
-  },
-  content: {
-    padding: spacing.md,
-  },
-  imageUpload: {
-    height: 120,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: "dashed",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.xl,
-    backgroundColor: "#FAFAFA",
-  },
-  uploadText: {
-    ...typography.body,
-    color: colors.primary,
-  },
-  form: {
-    gap: spacing.sm,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-    paddingTop: spacing.sm,
-  },
-  footer: {
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-});

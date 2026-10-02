@@ -36,7 +36,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Dily needs access to your photos to let you upload profile pictures and attach images to your products."
+          "photosPermission": "Dily needs access to your photos to let you upload profile pictures and attach images to your products.",
+          "cameraPermission": "Dily uses the camera so you can photograph the items you sell."
         }
       ],
       "expo-secure-store",

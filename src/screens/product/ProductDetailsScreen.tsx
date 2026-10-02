@@ -1,8 +1,11 @@
 import React, { useCallback, useState } from "react";
 import {
+  ActionSheetIOS,
+  Alert,
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   Pressable,
   Share as NativeShare,
   StyleSheet,
@@ -22,6 +25,7 @@ import {
   Heart,
   MapPin,
   MessageCircle,
+  MoreHorizontal,
   Share,
 } from "lucide-react-native";
 import Animated, {
@@ -39,6 +43,7 @@ import {
   useProduct,
   useToggleLike,
 } from "@/services/products.service";
+import { useDeleteListing, useSetListingSold } from "@/services/sell.service";
 import { useAuth } from "@/providers/auth-provider";
 import { useNotify } from "@/components/notify";
 import { Spinner } from "@/components/spinner";
@@ -99,7 +104,9 @@ const ProductView = ({ product }: { product: Product }) => {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { notify } = useNotify();
-  const { impact } = useHaptics();
+  const { impact, notification } = useHaptics();
+  const setSold = useSetListingSold();
+  const deleteListing = useDeleteListing();
 
   const { data: likedIds = NO_LIKES } = useLikedIds();
   const { mutate: toggleLike } = useToggleLike();
@@ -152,8 +159,66 @@ const ProductView = ({ product }: { product: Product }) => {
       description: `You'll be able to message ${product.seller.name} here.`,
     });
 
+  const onEdit = () => navigation.navigate("EditProduct", { id: product.id });
+
+  const onToggleSold = () => {
+    impact("light");
+    setSold.mutate(
+      { id: product.id, sold: !isSold },
+      {
+        onError: () =>
+          notify("Listing not updated", {
+            description: "Check your connection and try again.",
+          }),
+      },
+    );
+  };
+
+  const confirmDelete = () =>
+    Alert.alert(
+      "Delete this listing?",
+      "It disappears from Dily for everyone. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            deleteListing.mutate(
+              { id: product.id, paths: product.imagePaths },
+              {
+                onSuccess: () => {
+                  notification("success");
+                  navigation.goBack();
+                },
+                onError: () =>
+                  notify("Listing not deleted", {
+                    description: "Check your connection and try again.",
+                  }),
+              },
+            ),
+        },
+      ],
+    );
+
+  const onMore = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Delete listing", "Cancel"],
+          destructiveButtonIndex: 0,
+          cancelButtonIndex: 1,
+        },
+        (index) => index === 0 && confirmDelete(),
+      );
+    } else {
+      confirmDelete();
+    }
+  };
+
   const avatarUri = imageUrl("avatars", product.seller.avatarPath, 96);
   const tags = [
+    isSold && "Sold",
     CONDITION_LABELS[product.condition],
     product.size && `Size ${product.size}`,
     product.categoryName,
@@ -176,9 +241,20 @@ const ProductView = ({ product }: { product: Product }) => {
             {tags.map((tag, index) => (
               <View
                 key={tag}
-                style={[styles.tag, index === 0 && styles.tagHighlight]}
+                style={[
+                  styles.tag,
+                  index === 0 && styles.tagHighlight,
+                  isSold && index === 0 && styles.tagSold,
+                ]}
               >
-                <Text style={styles.tagText}>{tag}</Text>
+                <Text
+                  style={[
+                    styles.tagText,
+                    isSold && index === 0 && styles.tagSoldText,
+                  ]}
+                >
+                  {tag}
+                </Text>
               </View>
             ))}
           </View>
@@ -245,18 +321,28 @@ const ProductView = ({ product }: { product: Product }) => {
         <RoundButton label="Share" onPress={onShare}>
           <Share size={20} color={colors.primary} strokeWidth={1.8} />
         </RoundButton>
-        <RoundButton
-          label={liked ? "Unlike" : "Like"}
-          selected={liked}
-          onPress={onToggleLike}
-        >
-          <Heart
-            size={20}
-            color={colors.primary}
-            fill={liked ? colors.primary : "transparent"}
-            strokeWidth={1.8}
-          />
-        </RoundButton>
+        {isOwnListing ? (
+          <RoundButton label="More actions" onPress={onMore}>
+            <MoreHorizontal
+              size={22}
+              color={colors.primary}
+              strokeWidth={1.8}
+            />
+          </RoundButton>
+        ) : (
+          <RoundButton
+            label={liked ? "Unlike" : "Like"}
+            selected={liked}
+            onPress={onToggleLike}
+          >
+            <Heart
+              size={20}
+              color={colors.primary}
+              fill={liked ? colors.primary : "transparent"}
+              strokeWidth={1.8}
+            />
+          </RoundButton>
+        )}
       </View>
 
       <View
@@ -273,7 +359,38 @@ const ProductView = ({ product }: { product: Product }) => {
           </Text>
         </View>
         <View style={styles.flex} />
-        {isOwnListing ? null : (
+        {isOwnListing ? (
+          <View style={styles.ownerActions}>
+            <Pressable
+              onPress={onEdit}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.secondaryText}>Edit</Text>
+            </Pressable>
+            <Pressable
+              onPress={onToggleSold}
+              disabled={setSold.isPending}
+              accessibilityRole="button"
+              accessibilityHint={
+                isSold
+                  ? "Puts the listing back in the feed"
+                  : "Takes the listing out of the feed"
+              }
+              style={({ pressed }) => [
+                styles.messageButton,
+                (pressed || setSold.isPending) && styles.pressed,
+              ]}
+            >
+              <Text style={styles.messageText} numberOfLines={1}>
+                {isSold ? "Relist" : "Mark sold"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
           <Pressable
             onPress={onMessage}
             disabled={isSold}
@@ -490,6 +607,12 @@ const styles = StyleSheet.create({
   tagHighlight: {
     backgroundColor: "#DFE3D2",
   },
+  tagSold: {
+    backgroundColor: colors.black,
+  },
+  tagSoldText: {
+    color: colors.white,
+  },
   tagText: {
     fontSize: 12,
     fontWeight: "600",
@@ -623,6 +746,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     backgroundColor: colors.primary,
+  },
+  ownerActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  secondaryButton: {
+    height: 52,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  secondaryText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.primary,
   },
   messageButtonDisabled: {
     backgroundColor: "#8A877C",
