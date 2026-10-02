@@ -29,15 +29,15 @@ from (values
 ) as s (id, phone);
 
 update public.profiles p
-set full_name = s.full_name, avatar_url = s.avatar_url
+set full_name = s.full_name, avatar_url = s.avatar_url, neighbourhood = s.neighbourhood
 from (values
-  ('00000000-0000-4000-8000-000000000001'::uuid, 'Aïcha Traoré', 'https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg'),
-  ('00000000-0000-4000-8000-000000000002'::uuid, 'Mamadou Diallo', 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg'),
-  ('00000000-0000-4000-8000-000000000003'::uuid, 'Fatou Koné', 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg'),
-  ('00000000-0000-4000-8000-000000000004'::uuid, 'Ibrahim Touré', 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg'),
-  ('00000000-0000-4000-8000-000000000005'::uuid, 'Sira Coulibaly', 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg'),
-  ('00000000-0000-4000-8000-000000000006'::uuid, 'Yacouba Sanogo', 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg')
-) as s (id, full_name, avatar_url)
+  ('00000000-0000-4000-8000-000000000001'::uuid, 'Aïcha Traoré', 'https://images.pexels.com/photos/762020/pexels-photo-762020.jpeg', 'Hamdallaye ACI'),
+  ('00000000-0000-4000-8000-000000000002'::uuid, 'Mamadou Diallo', 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg', 'Badalabougou'),
+  ('00000000-0000-4000-8000-000000000003'::uuid, 'Fatou Koné', 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg', 'Kalaban Coura'),
+  ('00000000-0000-4000-8000-000000000004'::uuid, 'Ibrahim Touré', 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg', 'Lafiabougou'),
+  ('00000000-0000-4000-8000-000000000005'::uuid, 'Sira Coulibaly', 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg', 'Baco Djicoroni'),
+  ('00000000-0000-4000-8000-000000000006'::uuid, 'Yacouba Sanogo', 'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg', null)
+) as s (id, full_name, avatar_url, neighbourhood)
 where p.id = s.id;
 
 -- likes_count is set directly: the mock counts have no matching users

@@ -13,7 +13,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { useIsFocused } from "@react-navigation/native";
-import { SpotlightPick } from "@/mock/spotlight";
+import type { FeedProduct } from "@/services/products.service";
+import { imageUrl } from "@/lib/image";
+import { formatPrice } from "@/lib/format";
 import { colors } from "@/theme/colors";
 
 // Time each pick stays on screen before auto-advancing
@@ -22,10 +24,16 @@ const PICK_DURATION_MS = 5000;
 // Every height is fixed so the collapsible header is measured once and never
 // re-laid out when the pick changes.
 const IMAGE_HEIGHT = 260;
+// The photo sits in a taped print, like the onboarding photos
+const FRAME_WIDTH = 196;
+const FRAME_HEIGHT = 236;
+// Frame is ~200pt wide: 2x density
+const PICK_IMAGE_WIDTH = 480;
 export const SPOTLIGHT_HEADER_HEIGHT = 360;
 
 type Props = {
-  picks: SpotlightPick[];
+  // Empty while loading: the header keeps its height so the list doesn't jump
+  picks: FeedProduct[];
   onPressPick: (pickId: string) => void;
 };
 
@@ -39,7 +47,8 @@ export const SpotlightHeader = memo(function SpotlightHeader({
   // With reduced motion, picks stop auto-advancing (the bars stay tappable)
   const reduceMotion = useReducedMotion();
 
-  const pick = picks[index];
+  // Picks can shrink on refetch: never index past the end
+  const pick = picks.length > 0 ? picks[index % picks.length] : undefined;
 
   useEffect(() => {
     const goToNextPick = () => setIndex((i) => (i + 1) % picks.length);
@@ -62,7 +71,18 @@ export const SpotlightHeader = memo(function SpotlightHeader({
     return () => cancelAnimation(progress);
   }, [index, isFocused, reduceMotion, picks.length, progress]);
 
-  if (!pick) return null;
+  if (!pick) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{"Today's Pick"}</Text>
+        <View style={styles.imageWrapper}>
+          <View style={[styles.frame, styles.framePlaceholder]} />
+        </View>
+      </View>
+    );
+  }
+
+  const price = formatPrice(pick.price);
 
   return (
     <View style={styles.container}>
@@ -71,24 +91,33 @@ export const SpotlightHeader = memo(function SpotlightHeader({
       {/* The fade lives on a wrapper so it doesn't fight the text's opacity */}
       <Animated.View key={pick.id} entering={FadeIn.duration(250)}>
         <Text numberOfLines={1} style={styles.subtitle}>
-          {pick.name},{" "}
-          <Text style={styles.subtitleHighlight}>{pick.price} F CFA</Text>
+          {pick.title},{" "}
+          <Text style={styles.subtitleHighlight}>{price} F CFA</Text>
         </Text>
       </Animated.View>
 
       <Pressable
         onPress={() => onPressPick(pick.id)}
         accessibilityRole="button"
-        accessibilityLabel={`${pick.name}, ${pick.price} F CFA, sold by ${pick.seller}`}
+        accessibilityLabel={`${pick.title}, ${price} F CFA, sold by ${pick.sellerName}`}
         style={styles.imageWrapper}
       >
-        <Image
-          source={pick.image}
-          contentFit="contain"
-          // Native cross-dissolve between picks, no JS animation involved
-          transition={{ duration: 300, effect: "cross-dissolve" }}
-          style={styles.image}
-        />
+        <View style={styles.frame}>
+          <Image
+            source={imageUrl(
+              "product-images",
+              pick.imagePath,
+              PICK_IMAGE_WIDTH,
+            )}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            // Native cross-dissolve between picks, no JS animation involved
+            transition={{ duration: 300, effect: "cross-dissolve" }}
+            style={styles.image}
+          />
+          <View style={[styles.tape, styles.tapeTopLeft]} />
+          <View style={[styles.tape, styles.tapeBottomRight]} />
+        </View>
       </Pressable>
 
       <View style={styles.bars}>
@@ -168,11 +197,37 @@ const styles = StyleSheet.create({
     width: "100%",
     height: IMAGE_HEIGHT,
     marginTop: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  frame: {
+    width: FRAME_WIDTH,
+    height: FRAME_HEIGHT,
+    padding: 7,
+    backgroundColor: colors.white,
+    transform: [{ rotate: "-2deg" }],
+  },
+  framePlaceholder: {
+    backgroundColor: "#EAE7DC",
   },
   image: {
-    width: "100%",
-    height: "100%",
-    transform: [{ rotate: "-1deg" }],
+    flex: 1,
+    backgroundColor: "#EAE7DC",
+  },
+  tape: {
+    position: "absolute",
+    width: 74,
+    height: 22,
+    backgroundColor: "rgba(60, 86, 39, 0.82)",
+    transform: [{ rotate: "-35deg" }],
+  },
+  tapeTopLeft: {
+    top: -4,
+    left: -22,
+  },
+  tapeBottomRight: {
+    bottom: 2,
+    right: -24,
   },
   bars: {
     flexDirection: "row",

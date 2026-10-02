@@ -277,25 +277,31 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null;
+          city: string;
           created_at: string;
           full_name: string | null;
           id: string;
+          neighbourhood: string | null;
           phone: string | null;
           updated_at: string;
         };
         Insert: {
           avatar_url?: string | null;
+          city?: string;
           created_at?: string;
           full_name?: string | null;
           id: string;
+          neighbourhood?: string | null;
           phone?: string | null;
           updated_at?: string;
         };
         Update: {
           avatar_url?: string | null;
+          city?: string;
           created_at?: string;
           full_name?: string | null;
           id?: string;
+          neighbourhood?: string | null;
           phone?: string | null;
           updated_at?: string;
         };

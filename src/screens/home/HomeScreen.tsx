@@ -1,5 +1,5 @@
 import { Bell, Search } from "lucide-react-native";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, RefreshControl } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FlashList, FlashListRef } from "@shopify/flash-list";
@@ -12,7 +12,12 @@ import Animated, {
 import { colors } from "@/theme/colors";
 import { colorKit } from "reanimated-color-picker";
 import { Image } from "expo-image";
-import ProductCard from "@/components/product-card";
+import {
+  GridError,
+  GridLoading,
+  GridMessage,
+} from "@/components/product-grid-states";
+import { productKeyExtractor, useProductGrid } from "@/hooks/use-product-grid";
 import { TOP_TABS_HEIGHT, TopTabs } from "@/components/top-tab";
 import {
   SPOTLIGHT_HEADER_HEIGHT,
@@ -22,18 +27,11 @@ import { useNavigation, useScrollToTop } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import {
   type FeedProduct,
-  useLikedIds,
   useProductFeed,
-  useToggleLike,
+  useSpotlightPicks,
 } from "@/services/products.service";
-import { SpotlightPicks } from "@/mock/spotlight";
-import { imageUrl } from "@/lib/image";
-import { formatPrice } from "@/lib/format";
 
 type Product = FeedProduct;
-
-// Cards are ~180pt wide: 400px covers 2x density without decoding full photos
-const CARD_IMAGE_WIDTH = 400;
 
 const CATEGORIES = ["All", "Designers", "Electronics"] as const;
 type Category = (typeof CATEGORIES)[number];
@@ -45,8 +43,8 @@ const CATEGORY_SLUGS: Record<Category, string | undefined> = {
   Electronics: "electronics",
 };
 
-const NO_PRODUCTS: Product[] = [];
-const NO_LIKES = new Set<string>();
+// Stable fallback: a new [] each render would rebuild the list header
+const NO_PICKS: FeedProduct[] = [];
 
 // One list for the whole screen (no pager, no per-tab lists to keep in sync):
 // the cheapest setup for low-end Android.
@@ -54,7 +52,7 @@ const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList,
 ) as unknown as typeof FlashList<Product>;
 
-const FixedHeader = () => {
+const FixedHeader = ({ onSearch }: { onSearch: () => void }) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -66,14 +64,15 @@ const FixedHeader = () => {
         />
 
         <View style={styles.iconRow}>
-          {/* TODO: open search and notifications once those screens exist */}
           <Pressable
+            onPress={onSearch}
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Search"
           >
             <Search size={22} color={colors.primary} strokeWidth={1.5} />
           </Pressable>
+          {/* TODO: open notifications once that screen exists */}
           <Pressable
             hitSlop={12}
             accessibilityRole="button"
@@ -87,14 +86,6 @@ const FixedHeader = () => {
   );
 };
 
-const keyExtractor = (item: Product) => item.id;
-
-const EmptyState = () => (
-  <View style={styles.empty}>
-    <Text style={styles.emptyText}>Nothing here yet</Text>
-  </View>
-);
-
 export default function HomeScreen() {
   const navigation = useNavigation();
   const tabBarHeight = useBottomTabBarHeight();
@@ -106,28 +97,21 @@ export default function HomeScreen() {
   const scrollY = useSharedValue(0);
 
   // One subscription for the whole screen; cells only receive primitives
-  const feed = useProductFeed(CATEGORY_SLUGS[category]);
-  const { data: likedIds = NO_LIKES } = useLikedIds();
-  const { mutate: toggleLike } = useToggleLike();
+  const feed = useProductFeed({ categorySlug: CATEGORY_SLUGS[category] });
+  const { data, renderItem, loadMore, openProduct, refetchLikes } =
+    useProductGrid(feed);
+  const { data: picks = NO_PICKS, refetch: refetchPicks } = useSpotlightPicks();
 
-  const data = useMemo(
-    () => feed.data?.pages.flat() ?? NO_PRODUCTS,
-    [feed.data],
-  );
-
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const onToggleLike = useCallback(
-    (productId: string, currentlyLiked: boolean) =>
-      toggleLike({ productId, currentlyLiked }),
-    [toggleLike],
-  );
-
-  const openProduct = useCallback(
-    (id: string) => navigation.navigate("ProductDetails", { id }),
+  // Own flag: isRefetching would also spin for background refetches
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { refetch: refetchFeed } = feed;
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchFeed(), refetchLikes(), refetchPicks()]);
+    setIsRefreshing(false);
+  }, [refetchFeed, refetchLikes, refetchPicks]);
+  const openSearch = useCallback(
+    () => navigation.navigate("Search"),
     [navigation],
   );
 
@@ -155,52 +139,54 @@ export default function HomeScreen() {
     ],
   }));
 
-  const renderItem = useCallback(
-    ({ item }: { item: Product }) => (
-      <ProductCard
-        id={item.id}
-        name={item.title}
-        price={formatPrice(item.price)}
-        imageUri={imageUrl("product-images", item.imagePath, CARD_IMAGE_WIDTH)}
-        sellerName={item.sellerName}
-        likeCount={item.likesCount}
-        liked={likedIds.has(item.id)}
-        onPress={openProduct}
-        onToggleLike={onToggleLike}
-      />
-    ),
-    [openProduct, onToggleLike, likedIds],
-  );
-
   // Stable element: switching category must not remount the spotlight
   // (it would lose the current pick and restart its timer)
   const listHeader = useMemo(
     () => (
       <View>
-        <SpotlightHeader picks={SpotlightPicks} onPressPick={openProduct} />
+        <SpotlightHeader picks={picks} onPressPick={openProduct} />
         {/* Room for the pinned tab bar drawn above the list */}
         <View style={styles.tabsSpacer} />
       </View>
     ),
-    [openProduct],
+    [openProduct, picks],
   );
 
   return (
     <View style={styles.screen}>
-      <FixedHeader />
+      <FixedHeader onSearch={openSearch} />
 
       <View style={styles.body}>
         <AnimatedFlashList
           ref={listRef}
           data={data}
           numColumns={2}
-          keyExtractor={keyExtractor}
+          keyExtractor={productKeyExtractor}
           renderItem={renderItem}
           onScroll={onScroll}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={listHeader}
-          ListEmptyComponent={feed.isPending ? null : EmptyState}
+          ListEmptyComponent={
+            feed.isPending ? (
+              <GridLoading />
+            ) : feed.isError ? (
+              <GridError onRetry={refetchFeed} />
+            ) : (
+              <GridMessage
+                title="No listings here yet"
+                text="New items will show up here."
+              />
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
           contentContainerStyle={{
@@ -265,13 +251,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderBottomWidth: 0.5,
     borderBottomColor: colorKit.setAlpha("#1e1e1e", 0.07).hex(),
-  },
-  empty: {
-    paddingTop: 48,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textSecondary,
   },
 });

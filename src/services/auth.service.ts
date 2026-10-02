@@ -93,6 +93,8 @@ export function useProfile(userId: string | undefined) {
 type UpdateProfileVars = {
   userId: string;
   fullName: string;
+  // Where the seller meets buyers; blank clears it
+  neighbourhood?: string;
   // Local file uri from the image picker
   avatarUri?: string;
 };
@@ -101,8 +103,18 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, fullName, avatarUri }: UpdateProfileVars) => {
+    mutationFn: async ({
+      userId,
+      fullName,
+      neighbourhood,
+      avatarUri,
+    }: UpdateProfileVars) => {
       const changes: TablesUpdate<"profiles"> = { full_name: fullName.trim() };
+
+      if (neighbourhood !== undefined) {
+        // The column rejects "": an empty field means "not set"
+        changes.neighbourhood = neighbourhood.trim() || null;
+      }
 
       if (avatarUri) {
         changes.avatar_url = await uploadAvatar(userId, avatarUri);

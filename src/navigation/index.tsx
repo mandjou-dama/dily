@@ -7,6 +7,7 @@ import { AuthNavigator } from "./AuthNavigator";
 import { AppNavigator } from "./AppNavigator";
 import { ProductDetailsScreen } from "../screens/product/ProductDetailsScreen";
 import UserInfosScreen from "../screens/auth/UserInfosScreen";
+import SearchScreen from "../screens/search/SearchScreen";
 import { NotFound } from "../screens/NotFound";
 import {
   useIsSignedIn,
@@ -30,6 +31,10 @@ const RootStack = createNativeStackNavigator({
           screen: ProductDetailsScreen,
           // dily://product/<uuid>, also what the share sheet sends
           linking: { path: "product/:id" },
+        },
+        Search: {
+          screen: SearchScreen,
+          options: { animation: "fade" },
         },
       },
     },

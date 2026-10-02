@@ -1,5 +1,6 @@
 import {
   type InfiniteData,
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -15,10 +16,17 @@ import { useNotify } from "@/components/notify";
 export const PAGE_SIZE = 20;
 
 export const PRODUCTS_QUERY_KEY = ["products"];
-export const feedQueryKey = (categorySlug: string | undefined) => [
+export type FeedFilters = {
+  categorySlug?: string;
+  // Matched anywhere in the title, case-insensitive
+  search?: string;
+};
+
+export const feedQueryKey = ({ categorySlug, search }: FeedFilters) => [
   ...PRODUCTS_QUERY_KEY,
   "feed",
   categorySlug ?? "all",
+  search ?? "",
 ];
 const FEED_QUERY_KEY = [...PRODUCTS_QUERY_KEY, "feed"];
 export const productQueryKey = (id: string) => [
@@ -53,11 +61,35 @@ export type FeedProduct = {
 
 type FeedPage = FeedProduct[];
 
+// What FEED_COLUMNS returns
+type FeedRow = {
+  id: string;
+  title: string;
+  price: number;
+  likes_count: number;
+  created_at: string;
+  seller: { full_name: string | null } | null;
+  images: { path: string }[];
+};
+
+const toFeedProduct = (row: FeedRow): FeedProduct => ({
+  id: row.id,
+  title: row.title,
+  price: row.price,
+  likesCount: row.likes_count,
+  createdAt: row.created_at,
+  sellerName: row.seller?.full_name ?? "Dily",
+  imagePath: row.images[0]?.path ?? null,
+});
+
 // Newest first; the cursor is the last card's (created_at, id)
 type Cursor = { createdAt: string; id: string } | null;
 
+// % and _ are ilike wildcards: a search for "50%" must match them literally
+const escapeLike = (term: string) => term.replace(/[\\%_]/g, "\\$&");
+
 async function fetchFeedPage(
-  categorySlug: string | undefined,
+  { categorySlug, search }: FeedFilters,
   cursor: Cursor,
 ): Promise<FeedPage> {
   let query = supabase
@@ -71,6 +103,8 @@ async function fetchFeedPage(
     .limit(PAGE_SIZE);
 
   if (categorySlug) query = query.eq("category.slug", categorySlug);
+  // Served by the pg_trgm index on title
+  if (search) query = query.ilike("title", `%${escapeLike(search)}%`);
 
   // Keyset pagination: stays correct when new products are listed while
   // scrolling, unlike offsets
@@ -81,40 +115,73 @@ async function fetchFeedPage(
   }
 
   const { data, error } = await query.overrideTypes<
-    {
-      id: string;
-      title: string;
-      price: number;
-      likes_count: number;
-      created_at: string;
-      seller: { full_name: string | null } | null;
-      images: { path: string }[];
-    }[],
+    FeedRow[],
     { merge: false }
   >();
   if (error) throw error;
 
-  return data.map((row) => ({
-    id: row.id,
-    title: row.title,
-    price: row.price,
-    likesCount: row.likes_count,
-    createdAt: row.created_at,
-    sellerName: row.seller?.full_name ?? "Dily",
-    imagePath: row.images[0]?.path ?? null,
-  }));
+  return data.map(toFeedProduct);
 }
 
 /** The home feed, newest first, optionally limited to one category slug. */
-export function useProductFeed(categorySlug?: string) {
+export function useProductFeed(
+  filters: FeedFilters = {},
+  // Search: keep showing the last results while the next term loads
+  { keepPrevious = false } = {},
+) {
   return useInfiniteQuery({
-    queryKey: feedQueryKey(categorySlug),
-    queryFn: ({ pageParam }) => fetchFeedPage(categorySlug, pageParam),
+    queryKey: feedQueryKey(filters),
+    queryFn: ({ pageParam }) => fetchFeedPage(filters, pageParam),
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
     initialPageParam: null as Cursor,
     getNextPageParam: (lastPage) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
       const last = lastPage[lastPage.length - 1];
       return { createdAt: last.createdAt, id: last.id };
+    },
+  });
+}
+
+const PICKS_COUNT = 5;
+const PICKS_WINDOW_DAYS = 14;
+
+/**
+ * "Today's Pick": the most liked active listings of the last two weeks, so
+ * the banner stays fresh. Falls back to the most liked ever while the
+ * catalog is small.
+ */
+export function useSpotlightPicks() {
+  return useQuery({
+    queryKey: [...PRODUCTS_QUERY_KEY, "picks"],
+    queryFn: async () => {
+      const since = new Date(
+        Date.now() - PICKS_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
+      const fetchPicks = async (from?: string) => {
+        let query = supabase
+          .from("products")
+          .select(FEED_COLUMNS)
+          .eq("status", "active")
+          .gt("likes_count", 0)
+          .order("likes_count", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("position", { referencedTable: "product_images" })
+          .limit(1, { referencedTable: "product_images" })
+          .limit(PICKS_COUNT);
+        if (from) query = query.gte("created_at", from);
+
+        const { data, error } = await query.overrideTypes<
+          FeedRow[],
+          { merge: false }
+        >();
+        if (error) throw error;
+        // A pick without a photo would leave the banner empty
+        return data.map(toFeedProduct).filter((p) => p.imagePath);
+      };
+
+      const recent = await fetchPicks(since);
+      return recent.length >= 3 ? recent : fetchPicks();
     },
   });
 }
@@ -161,7 +228,13 @@ export type Product = {
   likesCount: number;
   createdAt: string;
   categoryName: string | null;
-  seller: { id: string; name: string; avatarPath: string | null };
+  seller: {
+    id: string;
+    name: string;
+    avatarPath: string | null;
+    // "Hamdallaye ACI, Bamako", or just the city when no neighbourhood is set
+    location: string;
+  };
   // Ordered by position, the cover first
   imagePaths: string[];
 };
@@ -186,7 +259,7 @@ export function useProduct(id: string) {
         .select(
           `id, title, description, price, size, condition, status, likes_count, created_at,
           category:categories(name),
-          seller:profiles!products_seller_id_fkey(id, full_name, avatar_url),
+          seller:profiles!products_seller_id_fkey(id, full_name, avatar_url, neighbourhood, city),
           images:product_images(path, position)`,
         )
         .eq("id", id)
@@ -208,6 +281,8 @@ export function useProduct(id: string) {
               id: string;
               full_name: string | null;
               avatar_url: string | null;
+              neighbourhood: string | null;
+              city: string;
             };
             images: { path: string; position: number }[];
           },
@@ -231,6 +306,9 @@ export function useProduct(id: string) {
           id: data.seller.id,
           name: data.seller.full_name ?? "Dily",
           avatarPath: data.seller.avatar_url,
+          location: [data.seller.neighbourhood, data.seller.city]
+            .filter(Boolean)
+            .join(", "),
         },
         imagePaths: data.images.map((image) => image.path),
       };

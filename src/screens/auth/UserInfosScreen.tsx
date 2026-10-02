@@ -9,7 +9,7 @@ import { useNotify } from "@/components/notify";
 import { useUser } from "@/providers/auth-provider";
 import { useUpdateProfile } from "@/services/auth.service";
 import { Image } from "expo-image";
-import { Camera, User } from "lucide-react-native";
+import { Camera, MapPin, User } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
   View,
@@ -37,8 +37,10 @@ const UserInfosScreen = () => {
   const { imageUris, pickImages, isPicking } = useImagePicker();
 
   const fullnameRef = useRef<TextInput>(null);
+  const neighbourhoodRef = useRef<TextInput>(null);
 
   const [fullname, setFullname] = useState("");
+  const [neighbourhood, setNeighbourhood] = useState("");
 
   const handlePickImage = async () => {
     impact("light");
@@ -50,7 +52,12 @@ const UserInfosScreen = () => {
   // Once the profile has a name, the root navigator swaps to the app
   const handleFinish = () => {
     updateProfile.mutate(
-      { userId: user.id, fullName: fullname, avatarUri: imageUris[0] },
+      {
+        userId: user.id,
+        fullName: fullname,
+        neighbourhood,
+        avatarUri: imageUris[0],
+      },
       {
         onError: (error) =>
           notify("Profile not saved", {
@@ -141,8 +148,33 @@ const UserInfosScreen = () => {
                   textContentType="name"
                   maxLength={80}
                   autoFocus={true}
+                  returnKeyType="next"
+                  submitBehavior="submit"
+                  onSubmitEditing={() => neighbourhoodRef.current?.focus()}
                 />
               </View>
+
+              {/* Optional: buyers see it next to the seller's name */}
+              <View style={styles.inputContainer}>
+                <MapPin color={colors.primary} />
+                <TextInput
+                  ref={neighbourhoodRef}
+                  style={styles.input}
+                  placeholder="Your neighbourhood (optional)"
+                  placeholderTextColor={colors.textSecondary}
+                  value={neighbourhood}
+                  onChangeText={setNeighbourhood}
+                  autoCapitalize="words"
+                  autoComplete="off"
+                  textContentType="sublocality"
+                  maxLength={60}
+                  returnKeyType="done"
+                />
+              </View>
+              <Text style={styles.hint}>
+                Buyers see it on your listings, e.g. Hamdallaye ACI. City:
+                Bamako.
+              </Text>
             </View>
 
             <Button
@@ -229,6 +261,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     gap: spacing.md,
     marginBottom: 15,
+  },
+  hint: {
+    ...typography.small,
+    color: colors.textSecondary,
+    marginTop: -6,
   },
   input: {
     fontSize: 14,
