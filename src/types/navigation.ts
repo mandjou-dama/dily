@@ -1,8 +1,7 @@
 export type AuthStackParamList = {
   Onboarding: any;
   WhatsAppLogin: any;
-  VerificationCode: any;
-  UserInfos: any;
+  VerificationCode: { phone: string };
 };
 
 export type AppTabParamList = {

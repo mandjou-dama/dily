@@ -7,6 +7,14 @@ module.exports = defineConfig([
   expoConfig,
   prettierConfig,
   {
-    ignores: ["dist/*", "ios/*", "android/*", "assets/*", "public/*"],
+    ignores: [
+      "dist/*",
+      "ios/*",
+      "android/*",
+      "assets/*",
+      "public/*",
+      // Deno code, linted by `deno lint`
+      "supabase/functions/*",
+    ],
   },
 ]);

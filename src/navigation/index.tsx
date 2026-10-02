@@ -6,36 +6,57 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { AuthNavigator } from "./AuthNavigator";
 import { AppNavigator } from "./AppNavigator";
 import { ProductDetailsScreen } from "../screens/product/ProductDetailsScreen";
+import UserInfosScreen from "../screens/auth/UserInfosScreen";
 import { NotFound } from "../screens/NotFound";
+import {
+  useIsSignedIn,
+  useIsSignedOut,
+  useNeedsProfile,
+} from "@/providers/auth-provider";
 
+// The session picks the group: signing in or out swaps the screens, so no
+// screen navigates to "App" or "Auth" by hand.
 const RootStack = createNativeStackNavigator({
+  screenOptions: { headerShown: false },
+  groups: {
+    SignedIn: {
+      if: useIsSignedIn,
+      screens: {
+        App: {
+          screen: AppNavigator,
+          options: { title: "App" },
+        },
+        ProductDetails: {
+          screen: ProductDetailsScreen,
+        },
+      },
+    },
+    // Signed in, but the profile has no name yet
+    NeedsProfile: {
+      if: useNeedsProfile,
+      screens: {
+        CompleteProfile: {
+          screen: UserInfosScreen,
+          options: { gestureEnabled: false },
+        },
+      },
+    },
+    SignedOut: {
+      if: useIsSignedOut,
+      screens: {
+        Auth: {
+          screen: AuthNavigator,
+          options: { title: "Auth" },
+        },
+      },
+    },
+  },
   screens: {
-    App: {
-      screen: AppNavigator,
-      options: {
-        title: "App",
-        headerShown: false,
-      },
-    },
-    Auth: {
-      screen: AuthNavigator,
-      options: {
-        title: "Auth",
-        headerShown: false,
-      },
-    },
-
-    ProductDetails: {
-      screen: ProductDetailsScreen,
-      options: ({ navigation }) => ({
-        // presentation: "pageSheet",
-        headerShown: false,
-      }),
-    },
     NotFound: {
       screen: NotFound,
       options: {
         title: "404",
+        headerShown: true,
       },
       linking: {
         path: "*",

@@ -15,6 +15,7 @@ import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
 import { NotifyProvider } from "./components/notify";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider, useAuth } from "@/providers/auth-provider";
 
 Asset.loadAsync([...NavigationAssets, require("assets/splash-icon-light.png")]);
 
@@ -28,6 +29,17 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const linking = { enabled: "auto" as const, prefixes: [prefix] };
+
+// The `if` hooks of the root stack need the restored session: mounting before
+// it is read would show the auth screens for a frame to signed-in users
+function AppNavigation({ theme }: { theme: typeof DefaultTheme }) {
+  const { isLoading } = useAuth();
+  if (isLoading) return null;
+
+  return <Navigation theme={theme} linking={linking} />;
+}
 
 export function App() {
   const colorScheme = useColorScheme();
@@ -53,14 +65,9 @@ export function App() {
         <QueryClientProvider client={queryClient}>
           <KeyboardProvider preload={false}>
             <NotifyProvider>
-              {/* Navigation mounts immediately */}
-              <Navigation
-                theme={theme}
-                linking={{
-                  enabled: "auto",
-                  prefixes: [prefix],
-                }}
-              />
+              <AuthProvider>
+                <AppNavigation theme={theme} />
+              </AuthProvider>
 
               {/* Splash overlay */}
               {splashVisible && (
