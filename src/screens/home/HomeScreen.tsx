@@ -20,12 +20,17 @@ import {
 } from "@/components/home/spotlight-header";
 import { useNavigation, useScrollToTop } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useProducts } from "@/services/products.service";
-import { ProductData } from "@/mock/products";
+import {
+  type FeedProduct,
+  useLikedIds,
+  useProductFeed,
+  useToggleLike,
+} from "@/services/products.service";
 import { SpotlightPicks } from "@/mock/spotlight";
-import { thumbnailUrl } from "@/lib/image";
+import { imageUrl } from "@/lib/image";
+import { formatPrice } from "@/lib/format";
 
-type Product = (typeof ProductData)[number];
+type Product = FeedProduct;
 
 // Cards are ~180pt wide: 400px covers 2x density without decoding full photos
 const CARD_IMAGE_WIDTH = 400;
@@ -33,9 +38,15 @@ const CARD_IMAGE_WIDTH = 400;
 const CATEGORIES = ["All", "Designers", "Electronics"] as const;
 type Category = (typeof CATEGORIES)[number];
 
-// Designers and Electronics have no data source yet: they show the empty
-// state until categories exist in the backend (phase 1).
+// Tab → categories.slug; "All" is the unfiltered feed
+const CATEGORY_SLUGS: Record<Category, string | undefined> = {
+  All: undefined,
+  Designers: "designers",
+  Electronics: "electronics",
+};
+
 const NO_PRODUCTS: Product[] = [];
+const NO_LIKES = new Set<string>();
 
 // One list for the whole screen (no pager, no per-tab lists to keep in sync):
 // the cheapest setup for low-end Android.
@@ -76,7 +87,7 @@ const FixedHeader = () => {
   );
 };
 
-const keyExtractor = (item: Product) => item.id.toString();
+const keyExtractor = (item: Product) => item.id;
 
 const EmptyState = () => (
   <View style={styles.empty}>
@@ -90,18 +101,33 @@ export default function HomeScreen() {
   const listRef = useRef<FlashListRef<Product>>(null);
   useScrollToTop(listRef);
 
-  // One subscription for the whole screen; cells only receive primitives
-  const { data: products = NO_PRODUCTS } = useProducts();
-
   const [category, setCategory] = useState<Category>("All");
   const tabIndex = useSharedValue(0);
   const scrollY = useSharedValue(0);
 
-  const data = category === "All" ? products : NO_PRODUCTS;
+  // One subscription for the whole screen; cells only receive primitives
+  const feed = useProductFeed(CATEGORY_SLUGS[category]);
+  const { data: likedIds = NO_LIKES } = useLikedIds();
+  const { mutate: toggleLike } = useToggleLike();
 
-  // TODO: pass the product id once ProductDetails reads it (phase 3)
+  const data = useMemo(
+    () => feed.data?.pages.flat() ?? NO_PRODUCTS,
+    [feed.data],
+  );
+
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const onToggleLike = useCallback(
+    (productId: string, currentlyLiked: boolean) =>
+      toggleLike({ productId, currentlyLiked }),
+    [toggleLike],
+  );
+
   const openProduct = useCallback(
-    (_id: string) => navigation.navigate("ProductDetails"),
+    (id: string) => navigation.navigate("ProductDetails", { id }),
     [navigation],
   );
 
@@ -132,17 +158,18 @@ export default function HomeScreen() {
   const renderItem = useCallback(
     ({ item }: { item: Product }) => (
       <ProductCard
-        id={item.id.toString()}
-        name={item.product.name}
-        price={item.product.price}
-        imageUri={thumbnailUrl(item.product.image, CARD_IMAGE_WIDTH)}
-        sellerName={item.user.name}
-        likeCount={item.like.number}
-        liked={item.like.liked}
+        id={item.id}
+        name={item.title}
+        price={formatPrice(item.price)}
+        imageUri={imageUrl("product-images", item.imagePath, CARD_IMAGE_WIDTH)}
+        sellerName={item.sellerName}
+        likeCount={item.likesCount}
+        liked={likedIds.has(item.id)}
         onPress={openProduct}
+        onToggleLike={onToggleLike}
       />
     ),
-    [openProduct],
+    [openProduct, onToggleLike, likedIds],
   );
 
   // Stable element: switching category must not remount the spotlight
@@ -173,7 +200,9 @@ export default function HomeScreen() {
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={listHeader}
-          ListEmptyComponent={EmptyState}
+          ListEmptyComponent={feed.isPending ? null : EmptyState}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
           contentContainerStyle={{
             paddingHorizontal: 6,
             paddingBottom: tabBarHeight + 16,
