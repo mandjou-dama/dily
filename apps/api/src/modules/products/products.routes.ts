@@ -1,4 +1,4 @@
-import { feedQuerySchema } from "@dily/shared";
+import { feedQuerySchema, pageQuerySchema } from "@dily/shared";
 import type { FastifyPluginAsync, preHandlerAsyncHookHandler } from "fastify";
 import { authUser } from "../../lib/auth-guard.js";
 import { parseInput, uuidParamSchema } from "../../lib/validation.js";
@@ -31,6 +31,16 @@ export const productsRoutes: FastifyPluginAsync<ProductsRoutesOptions> = async (
   app.get("/me/likes", async (request) => ({
     productIds: await products.likedIds(authUser(request).id),
   }));
+
+  app.get("/me/listings", async (request) => {
+    const { cursor } = parseInput(pageQuerySchema, request.query);
+    return products.ownListings(authUser(request).id, cursor);
+  });
+
+  app.get("/me/favorites", async (request) => {
+    const { cursor } = parseInput(pageQuerySchema, request.query);
+    return products.favorites(authUser(request).id, cursor);
+  });
 
   app.put("/products/:id/like", async (request, reply) => {
     const { id } = parseInput(uuidParamSchema, request.params);

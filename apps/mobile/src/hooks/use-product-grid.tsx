@@ -13,6 +13,12 @@ import { formatPrice } from "@/lib/format";
 // Cards are ~180pt wide: 400px covers 2x density without decoding full photos
 const CARD_IMAGE_WIDTH = 400;
 
+const STATUS_BADGES: Record<FeedProduct["status"], string | null> = {
+  active: null,
+  sold: "Sold",
+  archived: "Hidden",
+};
+
 const NO_PRODUCTS: FeedProduct[] = [];
 const NO_LIKES = new Set<string>();
 
@@ -59,6 +65,7 @@ export function useProductGrid(feed: ReturnType<typeof useProductFeed>) {
         sellerName={item.sellerName}
         likeCount={item.likesCount}
         liked={likedIds.has(item.id)}
+        badge={STATUS_BADGES[item.status]}
         onPress={openProduct}
         onToggleLike={onToggleLike}
       />

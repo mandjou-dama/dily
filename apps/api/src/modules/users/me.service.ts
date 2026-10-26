@@ -58,4 +58,15 @@ export class MeService {
       await this.deps.media.remove([previous.avatarPath]);
     return toProfile(user);
   }
+
+  /**
+   * Deletes the account for good (App Store guideline 5.1.1(v)). The
+   * database cascades to sessions, listings, likes (other listings' counts
+   * follow through the trigger) and conversations; then every uploaded
+   * image goes. Signing in again with the same number starts a new account.
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    await this.deps.prisma.user.delete({ where: { id: userId } });
+    await this.deps.media.removeAllOf(userId);
+  }
 }

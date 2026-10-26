@@ -112,4 +112,14 @@ export class MediaService {
     const usedPaths = new Set(used.map((image) => image.path));
     await this.remove(own.filter((path) => !usedPaths.has(path)));
   }
+
+  /** Every image the user ever uploaded, abandoned uploads included (account deletion). */
+  async removeAllOf(userId: string): Promise<void> {
+    const folders: MediaFolder[] = ["products", "avatars"];
+    await Promise.all(
+      folders.map((folder) =>
+        this.deps.storage.deletePrefix(`${folder}/${userId}/`),
+      ),
+    );
+  }
 }

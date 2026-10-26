@@ -75,6 +75,11 @@ export class ApiClient {
     await this.clearSession();
   }
 
+  /** Forgets the session on this device only: the server already dropped it (account deleted). */
+  async forgetSession(): Promise<void> {
+    await this.clearSession();
+  }
+
   /** A valid access JWT (refreshed if needed). */
   async getAccessToken(): Promise<string> {
     if (

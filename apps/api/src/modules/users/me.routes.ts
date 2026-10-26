@@ -30,4 +30,9 @@ export const meRoutes: FastifyPluginAsync<MeRoutesOptions> = async (
     await rateLimiter.consume(`upload:user:${user.id}`, UPLOAD_RATE_LIMIT);
     return me.setAvatar(user.id, await readImageUpload(request));
   });
+
+  app.delete("/me", async (request, reply) => {
+    await me.deleteAccount(authUser(request).id);
+    return reply.code(204).send();
+  });
 };

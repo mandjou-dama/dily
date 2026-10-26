@@ -19,11 +19,13 @@ export const categorySchema = z.object({
 export type Category = z.infer<typeof categorySchema>;
 export const categoriesSchema = z.array(categorySchema);
 
-/** What a product card shows: the cover image and the seller's name. */
+/** What a product card shows: the cover image, the seller's name, a Sold badge. */
 export const feedProductSchema = z.object({
   id: z.uuid(),
   title: z.string(),
   price: z.number().int(),
+  // Always active in the feed; sold or archived in the profile tabs
+  status: productStatusSchema,
   likesCount: z.number().int(),
   createdAt: z.iso.datetime(),
   sellerName: z.string(),
@@ -39,6 +41,9 @@ export const feedQuerySchema = z.object({
   cursor: z.string().max(200).optional(),
 });
 export type FeedQuery = z.infer<typeof feedQuerySchema>;
+
+/** Paging of the profile tabs (own listings, favorites). */
+export const pageQuerySchema = feedQuerySchema.pick({ cursor: true });
 
 export const feedPageSchema = z.object({
   items: z.array(feedProductSchema),

@@ -16,6 +16,8 @@ type Props = {
   sellerName: string;
   likeCount: number;
   liked: boolean;
+  // "Sold" on the profile tabs; null in the feed, which only has active listings
+  badge: string | null;
   onPress: (id: string) => void;
   onToggleLike: (id: string, liked: boolean) => void;
 };
@@ -30,6 +32,7 @@ const ProductCard = memo(function ProductCard({
   sellerName,
   likeCount,
   liked,
+  badge,
   onPress,
   onToggleLike,
 }: Props) {
@@ -49,6 +52,12 @@ const ProductCard = memo(function ProductCard({
           transition={200}
           style={styles.image}
         />
+
+        {badge ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge}</Text>
+          </View>
+        ) : null}
 
         <Pressable
           onPress={() => onToggleLike(id, liked)}
@@ -107,6 +116,21 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
+  },
+  badge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    justifyContent: "center",
+    backgroundColor: colors.black,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.white,
   },
   likePill: {
     position: "absolute",

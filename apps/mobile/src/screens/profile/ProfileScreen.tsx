@@ -1,145 +1,398 @@
-import React from "react";
-import { View, StyleSheet, Text } from "react-native";
-import { colors } from "@/theme/colors";
-import { spacing } from "@/theme/spacing";
-import { typography } from "@/theme/typography";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ActionSheetIOS,
+  Alert,
+  Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useNavigation, useScrollToTop } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Image } from "expo-image";
-import Button from "@/components/Button";
-import { useNotify } from "@/components/notify";
-import { useAuth } from "@/providers/auth-provider";
-import { useSignOut } from "@/services/auth.service";
+import { Ellipsis, MapPin, Pencil } from "lucide-react-native";
+import { colorKit } from "reanimated-color-picker";
 
-// Placeholder until phase 5: shows who is signed in and lets them sign out
+import {
+  GridError,
+  GridLoading,
+  GridMessage,
+} from "@/components/product-grid-states";
+import { TOP_TABS_HEIGHT, TopTabs } from "@/components/top-tab";
+import { useNotify } from "@/components/notify";
+import { productKeyExtractor, useProductGrid } from "@/hooks/use-product-grid";
+import { apiErrorMessage } from "@/lib/api";
+import { formatPhone } from "@/lib/format";
+import { imageUrl } from "@/lib/image";
+import { useAuth } from "@/providers/auth-provider";
+import { useDeleteAccount, useSignOut } from "@/services/auth.service";
+import {
+  type FeedProduct,
+  useFavorites,
+  useMyListings,
+} from "@/services/products.service";
+import { colors } from "@/theme/colors";
+import { typography } from "@/theme/typography";
+
+const TABS = ["Listings", "Favorites"] as const;
+type Tab = (typeof TABS)[number];
+
+const AVATAR_SIZE = 88;
+// 88pt at up to 3x density
+const AVATAR_WIDTH = 400;
+
+// One list for the whole screen, like the home feed
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList,
+) as unknown as typeof FlashList<FeedProduct>;
+
+const EMPTY_MESSAGES: Record<Tab, { title: string; text: string }> = {
+  Listings: {
+    title: "No listings yet",
+    text: "What you sell from the Sell tab shows up here.",
+  },
+  Favorites: {
+    title: "No favorites yet",
+    text: "Tap the heart on a listing to keep it here.",
+  },
+};
+
 export const ProfileScreen = () => {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const tabBarHeight = useBottomTabBarHeight();
   const { profile } = useAuth();
   const { notify } = useNotify();
   const signOut = useSignOut();
+  const deleteAccount = useDeleteAccount();
 
-  // Signing out clears the session: the root navigator swaps to Auth
-  const handleLogout = () => {
+  const listRef = useRef<FlashListRef<FeedProduct>>(null);
+  useScrollToTop(listRef);
+
+  const [tab, setTab] = useState<Tab>("Listings");
+  const tabIndex = useSharedValue(0);
+  const scrollY = useSharedValue(0);
+  // Measured: the name and location make the header's height vary
+  const identityHeight = useSharedValue(0);
+
+  // Both stay loaded, so switching tabs is instant
+  const listings = useMyListings();
+  const favorites = useFavorites();
+  const feed = tab === "Listings" ? listings : favorites;
+  const { data, renderItem, loadMore, refetchLikes } = useProductGrid(feed);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { refetch: refetchListings } = listings;
+  const { refetch: refetchFavorites } = favorites;
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([refetchListings(), refetchFavorites(), refetchLikes()]);
+    setIsRefreshing(false);
+  }, [refetchListings, refetchFavorites, refetchLikes]);
+
+  const selectTab = useCallback(
+    (name: string) => {
+      const index = TABS.indexOf(name as Tab);
+      if (index === -1) return;
+      tabIndex.set(withTiming(index, { duration: 250 }));
+      setTab(name as Tab);
+    },
+    [tabIndex],
+  );
+
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.set(event.contentOffset.y);
+  });
+
+  // The tabs ride up with the identity block, then stick under the top bar
+  const pinnedTabsStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: Math.max(0, identityHeight.get() - scrollY.get()) },
+    ],
+  }));
+
+  // Signing out or deleting clears the session: the root navigator swaps to Auth
+  const confirmSignOut = () =>
     signOut.mutate(undefined, {
       onError: (error) =>
-        notify("Sign out failed", { description: error.message }),
+        notify("Sign out failed", {
+          description: apiErrorMessage(error, "Try again in a moment."),
+        }),
     });
+
+  const confirmDeleteAccount = () =>
+    Alert.alert(
+      "Delete your account?",
+      "Your listings, photos and favorites are deleted for good. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: () =>
+            deleteAccount.mutate(undefined, {
+              onError: (error) =>
+                notify("Account not deleted", {
+                  description: apiErrorMessage(
+                    error,
+                    "Check your connection and try again.",
+                  ),
+                }),
+            }),
+        },
+      ],
+    );
+
+  const onMore = () => {
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Sign out", "Delete account", "Cancel"],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 2,
+        },
+        (index) => {
+          if (index === 0) confirmSignOut();
+          if (index === 1) confirmDeleteAccount();
+        },
+      );
+    } else {
+      Alert.alert("Account", undefined, [
+        { text: "Sign out", onPress: confirmSignOut },
+        {
+          text: "Delete account",
+          style: "destructive",
+          onPress: confirmDeleteAccount,
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
   };
 
+  const name = profile?.fullName ?? "";
+  const location = [profile?.neighbourhood, profile?.city]
+    .filter(Boolean)
+    .join(", ");
+  const avatarUri = imageUrl(profile?.avatarPath, AVATAR_WIDTH);
+
+  const listHeader = useMemo(
+    () => (
+      <View>
+        <View
+          style={styles.identity}
+          onLayout={(event) =>
+            identityHeight.set(event.nativeEvent.layout.height)
+          }
+        >
+          {avatarUri ? (
+            <Image
+              source={{ uri: avatarUri }}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[styles.avatar, styles.avatarInitial]}>
+              <Text style={styles.avatarInitialText}>{name.charAt(0)}</Text>
+            </View>
+          )}
+          <Text style={styles.name}>{name}</Text>
+          {location ? (
+            <View style={styles.location}>
+              <MapPin size={14} color={colors.textSecondary} />
+              <Text style={styles.secondary}>{location}</Text>
+            </View>
+          ) : null}
+          {profile ? (
+            <Text style={styles.secondary}>{formatPhone(profile.phone)}</Text>
+          ) : null}
+
+          <Pressable
+            onPress={() => navigation.navigate("EditProfile")}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.editButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Pencil size={16} color={colors.primary} strokeWidth={1.8} />
+            <Text style={styles.editText}>Edit profile</Text>
+          </Pressable>
+        </View>
+        {/* Room for the pinned tab bar drawn above the list */}
+        <View style={styles.tabsSpacer} />
+      </View>
+    ),
+    [avatarUri, identityHeight, location, name, navigation, profile],
+  );
+
+  const empty = EMPTY_MESSAGES[tab];
+
   return (
-    <View style={styles.container}>
-      <Image
-        style={{
-          width: 100,
-          aspectRatio: 1 / 1,
-          marginTop: 80,
-        }}
-        source={require("assets/splash-icon-light.png")}
-      />
+    <View style={styles.screen}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.topTitle}>Profile</Text>
+        <Pressable
+          onPress={onMore}
+          hitSlop={12}
+          disabled={signOut.isPending || deleteAccount.isPending}
+          accessibilityRole="button"
+          accessibilityLabel="Account options"
+        >
+          <Ellipsis size={22} color={colors.primary} strokeWidth={1.5} />
+        </Pressable>
+      </View>
 
-      <Text style={styles.name}>{profile?.fullName}</Text>
-      <Text style={styles.email}>{profile?.phone}</Text>
-
-      <View style={styles.footer}>
-        <Button
-          title="Sign out"
-          onPress={handleLogout}
-          isLoading={signOut.isPending}
-          disabled={signOut.isPending}
+      <View style={styles.body}>
+        <AnimatedFlashList
+          ref={listRef}
+          data={data}
+          numColumns={2}
+          keyExtractor={productKeyExtractor}
+          renderItem={renderItem}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={listHeader}
+          ListEmptyComponent={
+            feed.isPending ? (
+              <GridLoading />
+            ) : feed.isError ? (
+              <GridError onRetry={feed.refetch} />
+            ) : (
+              <GridMessage title={empty.title} text={empty.text} />
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          contentContainerStyle={{
+            paddingHorizontal: 6,
+            paddingBottom: tabBarHeight + 16,
+          }}
         />
+
+        <Animated.View style={[styles.pinnedTabs, pinnedTabsStyle]}>
+          <TopTabs
+            tabNames={TABS}
+            indexDecimal={tabIndex}
+            onTabPress={selectTab}
+          />
+        </Animated.View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
-    justifyContent: "center",
+  },
+  topBar: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    backgroundColor: colors.background,
+    borderBottomWidth: 0.8,
+    borderBottomColor: colorKit.setAlpha("#3C5627", 0.07).hex(),
+    zIndex: 50,
   },
-  header: {
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    alignItems: "center",
+  topTitle: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.primary,
   },
-  headerTitle: {
-    ...typography.title,
-    color: colors.textPrimary,
-  },
-  content: {
+  body: {
     flex: 1,
-    padding: spacing.md,
+    overflow: "hidden",
   },
-  profileHeader: {
+  identity: {
     alignItems: "center",
-    marginBottom: spacing.xl,
+    paddingTop: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
+    gap: 4,
   },
-  avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    marginBottom: 8,
+    backgroundColor: "#EAE7DC",
+  },
+  avatarInitial: {
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: spacing.md,
+    backgroundColor: "#DFE3D2",
   },
-  avatarText: {
-    ...typography.title,
-    fontSize: 32,
-    color: "#FFFFFF",
+  avatarInitialText: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: colors.primary,
   },
   name: {
     ...typography.title,
-    marginBottom: 4,
+    fontSize: 24,
+    color: colors.black,
+    textAlign: "center",
   },
-  email: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-  statsRow: {
+  location: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FAFAFA",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 12,
+    gap: 4,
   },
-  statItem: {
-    alignItems: "center",
-  },
-  statValue: {
-    ...typography.title,
-    fontSize: 18,
-  },
-  statLabel: {
-    ...typography.small,
+  secondary: {
+    fontSize: 14,
     color: colors.textSecondary,
   },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.xl,
+  editButton: {
+    marginTop: 14,
+    height: 40,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  menu: {
-    flex: 1,
+  editText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.primary,
   },
-  menuItem: {
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  pressed: {
+    opacity: 0.6,
   },
-  menuText: {
-    ...typography.body,
-    fontSize: 16,
+  tabsSpacer: {
+    height: TOP_TABS_HEIGHT + 6,
   },
-  footer: {
-    alignSelf: "stretch",
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-  logoutButton: {
-    backgroundColor: colors.danger,
+  pinnedTabs: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.background,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colorKit.setAlpha("#1e1e1e", 0.07).hex(),
   },
 });

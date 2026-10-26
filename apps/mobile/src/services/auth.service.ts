@@ -82,6 +82,23 @@ export function useSignOut() {
   });
 }
 
+/**
+ * Deletes the account for good: listings, photos, favorites, sessions. The
+ * root navigator then swaps to the sign-in screens.
+ */
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      await api.request("/me", { method: "DELETE" });
+      await api.forgetSession();
+      await endSession();
+    },
+    onSuccess: () => queryClient.clear(),
+  });
+}
+
 export function useProfile(userId: string | undefined) {
   return useQuery({
     queryKey: profileQueryKey(userId),

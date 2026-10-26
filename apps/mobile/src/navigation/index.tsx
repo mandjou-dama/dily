@@ -9,6 +9,7 @@ import { ProductDetailsScreen } from "../screens/product/ProductDetailsScreen";
 import UserInfosScreen from "../screens/auth/UserInfosScreen";
 import SearchScreen from "../screens/search/SearchScreen";
 import EditProductScreen from "../screens/product/EditProductScreen";
+import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import { NotFound } from "../screens/NotFound";
 import {
   useIsSignedIn,
@@ -40,6 +41,9 @@ const RootStack = createNativeStackNavigator({
         Search: {
           screen: SearchScreen,
           options: { animation: "fade" },
+        },
+        EditProfile: {
+          screen: EditProfileScreen,
         },
       },
     },

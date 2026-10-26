@@ -79,6 +79,34 @@ export function useProductFeed(
 }
 
 /**
+ * A paged list of the signed-in user's: their own listings or their
+ * favorites. Under PRODUCTS_QUERY_KEY, so a like or a listing change
+ * refreshes it.
+ */
+function useOwnPages(tab: "listings" | "favorites") {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+
+  return useInfiniteQuery({
+    queryKey: [...PRODUCTS_QUERY_KEY, tab, userId],
+    enabled: !!userId,
+    queryFn: ({ pageParam }) =>
+      api.request(
+        `/me/${tab}${pageParam ? `?cursor=${encodeURIComponent(pageParam)}` : ""}`,
+        { schema: feedPageSchema },
+      ),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+  });
+}
+
+/** The user's listings, sold and archived included, newest first. */
+export const useMyListings = () => useOwnPages("listings");
+
+/** Listings the user liked, the latest like first. */
+export const useFavorites = () => useOwnPages("favorites");
+
+/**
  * "Today's Pick": the most liked active listings of the last two weeks,
  * chosen by the API.
  */

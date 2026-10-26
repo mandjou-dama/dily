@@ -6,6 +6,8 @@ export interface MediaStorage {
   put(key: string, body: Buffer, contentType: string): Promise<void>;
   /** Missing keys are ignored. */
   delete(keys: readonly string[]): Promise<void>;
+  /** Every key under `prefix` (a folder, ending with "/"). */
+  deletePrefix(prefix: string): Promise<void>;
 }
 
 /**
@@ -29,6 +31,10 @@ export class DiskMediaStorage implements MediaStorage {
     await Promise.all(
       keys.map((key) => rm(this.fileFor(key), { force: true })),
     );
+  }
+
+  async deletePrefix(prefix: string): Promise<void> {
+    await rm(this.fileFor(prefix), { recursive: true, force: true });
   }
 
   private fileFor(key: string): string {

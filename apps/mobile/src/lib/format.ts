@@ -4,6 +4,10 @@ export const formatPrice = (price: number) =>
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
+/** "+22370000000" → "+223 70 00 00 00", the way Malians write numbers. */
+export const formatPhone = (phone: string) =>
+  phone.replace(/^\+(\d{3})(\d{2})(\d{2})(\d{2})(\d{2})$/, "+$1 $2 $3 $4 $5");
+
 /** "just now", "5 min ago", "3 h ago", "2 d ago", then the date. */
 export function timeAgo(isoDate: string, now = Date.now()) {
   const minutes = Math.floor((now - new Date(isoDate).getTime()) / 60000);

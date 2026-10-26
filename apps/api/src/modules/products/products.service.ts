@@ -10,11 +10,12 @@ import { z } from "zod";
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
 import { AppError, notFound } from "../../lib/errors.js";
 
-// Only what a card shows: the cover image and the seller's name
+// Only what a card shows: the cover image, the seller's name, a Sold badge
 const FEED_SELECT = {
   id: true,
   title: true,
   price: true,
+  status: true,
   likesCount: true,
   createdAt: true,
   seller: { select: { fullName: true } },
@@ -27,30 +28,60 @@ const toFeedProduct = (row: FeedRow): FeedProduct => ({
   id: row.id,
   title: row.title,
   price: row.price,
+  status: row.status,
   likesCount: row.likesCount,
   createdAt: row.createdAt.toISOString(),
   sellerName: row.seller.fullName ?? "Dily",
   imagePath: row.images[0]?.path ?? null,
 });
 
-// Newest first; the cursor is the last card's (created_at, id)
+// Newest first; the cursor is the last card's (date, id): its created_at in
+// the feed, the moment it was liked in favorites
 const cursorSchema = z.object({ c: z.iso.datetime(), i: z.uuid() });
 
-const encodeCursor = (row: FeedRow) =>
-  Buffer.from(
-    JSON.stringify({ c: row.createdAt.toISOString(), i: row.id }),
-  ).toString("base64url");
+const encodeCursor = (date: Date, id: string) =>
+  Buffer.from(JSON.stringify({ c: date.toISOString(), i: id })).toString(
+    "base64url",
+  );
 
 function decodeCursor(cursor: string) {
   try {
     const { c, i } = cursorSchema.parse(
       JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")),
     );
-    return { createdAt: new Date(c), id: i };
+    return { date: new Date(c), id: i };
   } catch {
     throw new AppError(400, "validation_error", "Invalid cursor.");
   }
 }
+
+/** Rows strictly after the cursor in (date desc, id desc) order. */
+const productsAfter = (cursor: string | undefined) => {
+  if (!cursor) return {};
+  const after = decodeCursor(cursor);
+  return {
+    OR: [
+      { createdAt: { lt: after.date } },
+      { createdAt: after.date, id: { lt: after.id } },
+    ],
+  } satisfies Prisma.ProductWhereInput;
+};
+
+/** One page out of PAGE_SIZE + 1 rows: the extra one tells whether another page follows. */
+function toPage<T>(
+  rows: T[],
+  toItem: (row: T) => FeedProduct,
+  cursorOf: (row: T) => string,
+): FeedPage {
+  const page = rows.slice(0, FEED_PAGE_SIZE);
+  const last = page.at(-1);
+  return {
+    items: page.map(toItem),
+    nextCursor: rows.length > FEED_PAGE_SIZE && last ? cursorOf(last) : null,
+  };
+}
+
+const feedCursor = (row: FeedRow) => encodeCursor(row.createdAt, row.id);
 
 // Prisma passes `contains` to ILIKE as is: a search for "50%" must match the
 // % and _ wildcards literally
@@ -88,7 +119,6 @@ export class ProductsService {
    * listings arrive while scrolling, unlike offsets.
    */
   async feed({ category, search, cursor }: FeedQuery): Promise<FeedPage> {
-    const after = cursor ? decodeCursor(cursor) : null;
     const rows = await this.prisma.product.findMany({
       where: {
         status: "active",
@@ -97,28 +127,55 @@ export class ProductsService {
         ...(search
           ? { title: { contains: escapeLike(search), mode: "insensitive" } }
           : {}),
+        ...productsAfter(cursor),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: FEED_PAGE_SIZE + 1,
+      select: FEED_SELECT,
+    });
+    return toPage(rows, toFeedProduct, feedCursor);
+  }
+
+  /** The seller's own listings, sold and archived included, newest first. */
+  async ownListings(sellerId: string, cursor?: string): Promise<FeedPage> {
+    const rows = await this.prisma.product.findMany({
+      where: { sellerId, ...productsAfter(cursor) },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: FEED_PAGE_SIZE + 1,
+      select: FEED_SELECT,
+    });
+    return toPage(rows, toFeedProduct, feedCursor);
+  }
+
+  /** Listings the user liked and can still see, the latest like first. */
+  async favorites(userId: string, cursor?: string): Promise<FeedPage> {
+    const after = cursor ? decodeCursor(cursor) : null;
+    const rows = await this.prisma.like.findMany({
+      where: {
+        userId,
+        product: visibleTo(userId),
         ...(after
           ? {
               OR: [
-                { createdAt: { lt: after.createdAt } },
-                { createdAt: after.createdAt, id: { lt: after.id } },
+                { createdAt: { lt: after.date } },
+                { createdAt: after.date, productId: { lt: after.id } },
               ],
             }
           : {}),
       },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      // One more than a page tells whether another page follows
+      orderBy: [{ createdAt: "desc" }, { productId: "desc" }],
       take: FEED_PAGE_SIZE + 1,
-      select: FEED_SELECT,
+      select: {
+        createdAt: true,
+        productId: true,
+        product: { select: FEED_SELECT },
+      },
     });
-
-    const page = rows.slice(0, FEED_PAGE_SIZE);
-    const last = page.at(-1);
-    return {
-      items: page.map(toFeedProduct),
-      nextCursor:
-        rows.length > FEED_PAGE_SIZE && last ? encodeCursor(last) : null,
-    };
+    return toPage(
+      rows,
+      (row) => toFeedProduct(row.product),
+      (row) => encodeCursor(row.createdAt, row.productId),
+    );
   }
 
   /**
