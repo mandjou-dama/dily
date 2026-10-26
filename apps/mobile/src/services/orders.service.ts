@@ -76,7 +76,14 @@ export function usePay() {
       // The waiting screen shows at once, then fetches the saved order
       queryClient.setQueryData<OrderDetails>(
         orderQueryKey(order.id),
-        (details) => details ?? { order, payment },
+        (details) =>
+          details ?? {
+            order,
+            payment,
+            handoverCode: null,
+            dispute: null,
+            transfer: null,
+          },
       );
       applyPaymentToCache(queryClient, payment);
     },

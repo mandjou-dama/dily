@@ -4,6 +4,7 @@ import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPrisma } from "./lib/prisma.js";
 import { createRedis } from "./lib/redis.js";
+import { startOrdersJobs } from "./modules/orders/orders.jobs.js";
 import { attachRealtime } from "./modules/realtime/realtime.js";
 import { createServices } from "./services.js";
 
@@ -23,10 +24,16 @@ const app = buildApp(services, {
 });
 const realtime = attachRealtime(app, { authenticate: services.authenticate });
 services.notifier.bind(realtime.emitToUser);
+const stopOrdersJobs = await startOrdersJobs({
+  redisUrl: config.REDIS_URL,
+  handover: services.handover,
+  logger,
+});
 
 async function shutdown(signal: string): Promise<void> {
   app.log.info({ signal }, "shutting down");
   await app.close();
+  await stopOrdersJobs();
   await Promise.allSettled([prisma.$disconnect(), redis.quit()]);
   process.exit(0);
 }

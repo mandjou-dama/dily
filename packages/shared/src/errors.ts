@@ -16,6 +16,8 @@ export const apiErrorCodes = [
   "refresh_token_invalid",
   "file_too_large",
   "unsupported_image",
+  // The handover code doesn't match
+  "handover_code_invalid",
   "internal_error",
 ] as const;
 

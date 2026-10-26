@@ -17,21 +17,25 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
+  id             String           @id @default(uuid()) @db.Uuid
   /// E.164, e.g. "+22370000000"
-  phoneE164     String   @unique @map("phone_e164")
+  phoneE164      String           @unique @map("phone_e164")
   /// HMAC-SHA256 of the number (src/lib/phone-hash.ts): finds the account
   /// without looking the number up in clear
-  phoneHash     String   @unique @map("phone_hash")
-  fullName      String?  @map("full_name")
-  avatarPath    String?  @map("avatar_path")
+  phoneHash      String           @unique @map("phone_hash")
+  fullName       String?          @map("full_name")
+  avatarPath     String?          @map("avatar_path")
   /// Where the seller meets buyers: "Hamdallaye ACI"
-  neighbourhood String?
-  city          String   @default("Bamako")
+  neighbourhood  String?
+  city           String           @default("Bamako")
   /// Test number (TEST_PHONES): set at sign-in, never by the app
-  isTester      Boolean  @default(false) @map("is_tester")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  isTester       Boolean          @default(false) @map("is_tester")
+  /// Where the seller receives what buyers paid: both set or both null (CHECK)
+  payoutProvider PaymentProvider? @map("payout_provider")
+  /// E.164: the mobile money account money is sent to
+  payoutPhone    String?          @map("payout_phone")
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   refreshTokens         RefreshToken[]
   products              Product[]
@@ -43,6 +47,7 @@ model User {
   offers                Offer[]
   ordersAsBuyer         Order[]        @relation("OrderBuyer")
   ordersAsSeller        Order[]        @relation("OrderSeller")
+  transfers             Transfer[]
 
   @@map("users")
 }
@@ -205,6 +210,13 @@ enum MessageKind {
   offer
   /// "Deal": an offer was accepted, or a direct buy was paid
   deal
+  /// The item changed hands (handover code, or the buyer confirmed): the
+  /// money goes to the seller
+  handover
+  /// The buyer reported a problem: Dily keeps the money
+  dispute
+  /// The buyer got their money back
+  refund
 
   @@map("message_kind")
 }
@@ -220,8 +232,7 @@ model Message {
   body           String
   /// Set on offer messages only (CHECK)
   offerId        String?     @unique @map("offer_id") @db.Uuid
-  /// Set on deal messages only (CHECK): an accepted offer, or a direct
-  /// buy once paid
+  /// Set on deal, handover, dispute and refund messages only (CHECK)
   orderId        String?     @map("order_id") @db.Uuid
   readAt         DateTime?   @map("read_at") @db.Timestamptz(3)
   createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -299,6 +310,13 @@ enum OrderStatus {
   /// The buyer made a new offer instead of paying
   cancelled
   expired
+  /// The item changed hands: the money goes to the seller
+  completed
+  /// The buyer reported a problem: Dily keeps the money until it decides
+  disputed
+  /// The buyer got their money back: not handed over in time, refunded by
+  /// the seller, or Dily's decision
+  refunded
 
   @@map("order_status")
 }
@@ -307,30 +325,38 @@ enum OrderStatus {
 /// payment the listing is held for the buyer. At most one order awaiting
 /// payment or paid per listing (partial unique index).
 model Order {
-  id             String      @id @default(uuid()) @db.Uuid
-  conversationId String      @map("conversation_id") @db.Uuid
-  productId      String      @map("product_id") @db.Uuid
-  buyerId        String      @map("buyer_id") @db.Uuid
-  sellerId       String      @map("seller_id") @db.Uuid
+  id                String      @id @default(uuid()) @db.Uuid
+  conversationId    String      @map("conversation_id") @db.Uuid
+  productId         String      @map("product_id") @db.Uuid
+  buyerId           String      @map("buyer_id") @db.Uuid
+  sellerId          String      @map("seller_id") @db.Uuid
   /// Null for a direct buy
-  offerId        String?     @unique @map("offer_id") @db.Uuid
+  offerId           String?     @unique @map("offer_id") @db.Uuid
   /// Total the buyer pays, delivery included
-  amount         Int
+  amount            Int
   /// The listing's price at the time: shown struck through next to `amount`
-  listPrice      Int         @map("list_price")
-  fulfilment     Fulfilment
-  deliveryFee    Int?        @map("delivery_fee")
-  deliveryArea   String?     @map("delivery_area")
+  listPrice         Int         @map("list_price")
+  fulfilment        Fulfilment
+  deliveryFee       Int?        @map("delivery_fee")
+  deliveryArea      String?     @map("delivery_area")
   /// For the courier, delivery only: "derrière la pharmacie, portail vert"
-  landmark       String?
+  landmark          String?
   /// The number the courier calls, delivery only: E.164
-  contactPhone   String?     @map("contact_phone")
-  status         OrderStatus @default(awaiting_payment)
+  contactPhone      String?     @map("contact_phone")
+  status            OrderStatus @default(awaiting_payment)
   /// The listing is held for the buyer until then
-  reservedUntil  DateTime    @map("reserved_until") @db.Timestamptz(3)
-  paidAt         DateTime?   @map("paid_at") @db.Timestamptz(3)
-  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  reservedUntil     DateTime    @map("reserved_until") @db.Timestamptz(3)
+  paidAt            DateTime?   @map("paid_at") @db.Timestamptz(3)
+  /// 4 digits, set once paid: the buyer gives it to the seller (or the
+  /// courier) once they have the item. Never shown to the seller
+  handoverCode      String?     @map("handover_code")
+  /// Reminders sent to the seller to hand the item over (2 days, 5 days)
+  handoverReminders Int         @default(0) @map("handover_reminders")
+  /// Handed over: the money goes to the seller
+  completedAt       DateTime?   @map("completed_at") @db.Timestamptz(3)
+  refundedAt        DateTime?   @map("refunded_at") @db.Timestamptz(3)
+  createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -339,9 +365,13 @@ model Order {
   offer        Offer?       @relation(fields: [offerId], references: [id], onDelete: SetNull)
   messages     Message[]
   payments     Payment[]
+  dispute      Dispute?
+  transfer     Transfer?
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([productId])
+  /// Paid orders waiting for the handover: reminders and refunds (job)
+  @@index([status, paidAt])
   @@map("orders")
 }
 
@@ -389,4 +419,94 @@ model Payment {
 
   @@index([orderId, createdAt(sort: Desc)])
   @@map("payments")
+}
+
+enum DisputeReason {
+  not_received
+  /// Not what the listing showed: a photo is required
+  not_as_described
+  other
+
+  @@map("dispute_reason")
+}
+
+enum DisputeStatus {
+  open
+  /// The buyer got their money back (the seller refunded, or Dily decided)
+  refunded
+  /// The money went to the seller (handover code, or Dily decided)
+  released
+
+  @@map("dispute_status")
+}
+
+/// A problem the buyer reported on a paid order: the money stays with Dily
+/// until the seller refunds, the item changes hands, or Dily decides.
+model Dispute {
+  id         String        @id @default(uuid()) @db.Uuid
+  orderId    String        @unique @map("order_id") @db.Uuid
+  reason     DisputeReason
+  /// What the buyer wrote, up to 500 characters
+  note       String?
+  /// Uploaded photos (`reports/<buyer id>/<id>`), at least one for
+  /// not_as_described (CHECK)
+  photoPaths String[]      @map("photo_paths")
+  status     DisputeStatus @default(open)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  resolvedAt DateTime?     @map("resolved_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("disputes")
+}
+
+enum TransferKind {
+  /// What the buyer paid, to the seller
+  payout
+  /// Back to the number that paid
+  refund
+
+  @@map("transfer_kind")
+}
+
+enum TransferStatus {
+  /// A payout for a seller who hasn't said where to receive money yet
+  awaiting_account
+  /// Sent to the operator, waiting for its answer
+  pending
+  succeeded
+  /// Tried again later (`next_attempt_at`), or when the seller changes
+  /// their payout account
+  failed
+
+  @@map("transfer_status")
+}
+
+/// Money Dily sends once an order is settled: to the seller once the item
+/// changed hands, or back to the buyer. One per order.
+model Transfer {
+  id            String           @id @default(uuid()) @db.Uuid
+  orderId       String           @unique @map("order_id") @db.Uuid
+  kind          TransferKind
+  /// Who receives it: the seller for a payout, the buyer for a refund
+  recipientId   String           @map("recipient_id") @db.Uuid
+  amount        Int
+  /// Where it goes; null while awaiting the seller's account
+  provider      PaymentProvider?
+  phone         String?
+  status        TransferStatus
+  failureReason String?          @map("failure_reason")
+  /// The operator's id for the transaction
+  reference     String?
+  attempts      Int              @default(0)
+  nextAttemptAt DateTime?        @map("next_attempt_at") @db.Timestamptz(3)
+  settledAt     DateTime?        @map("settled_at") @db.Timestamptz(3)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipient User  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([recipientId, status])
+  @@map("transfers")
 }

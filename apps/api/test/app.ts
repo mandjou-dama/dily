@@ -18,6 +18,9 @@ import type {
   PaymentOutcome,
   PaymentOutcomeHandler,
   PaymentRequest,
+  TransferOutcome,
+  TransferOutcomeHandler,
+  TransferRequest,
 } from "../src/modules/orders/payment-gateway.js";
 import { attachRealtime } from "../src/modules/realtime/realtime.js";
 import { createServices } from "../src/services.js";
@@ -57,9 +60,11 @@ export class FakePushSender implements PushSender {
 /** Mobile money operator the test drives: requests are kept, answers sent by hand. */
 export class FakePaymentGateway implements PaymentGateway {
   readonly requests: PaymentRequest[] = [];
+  readonly transfers: TransferRequest[] = [];
   /** True: the operator can't be reached. */
   unreachable = false;
   private handler: PaymentOutcomeHandler | null = null;
+  private transferHandler: TransferOutcomeHandler | null = null;
 
   onOutcome(handler: PaymentOutcomeHandler): void {
     this.handler = handler;
@@ -74,6 +79,21 @@ export class FakePaymentGateway implements PaymentGateway {
   answer(paymentId: string, outcome: PaymentOutcome): Promise<void> {
     if (!this.handler) throw new Error("No outcome handler");
     return this.handler(paymentId, outcome);
+  }
+
+  onTransferOutcome(handler: TransferOutcomeHandler): void {
+    this.transferHandler = handler;
+  }
+
+  async send(transfer: TransferRequest): Promise<void> {
+    if (this.unreachable) throw new Error("Operator unreachable");
+    this.transfers.push(transfer);
+  }
+
+  /** The operator's answer for a transfer. */
+  answerTransfer(transferId: string, outcome: TransferOutcome): Promise<void> {
+    if (!this.transferHandler) throw new Error("No transfer outcome handler");
+    return this.transferHandler(transferId, outcome);
   }
 }
 

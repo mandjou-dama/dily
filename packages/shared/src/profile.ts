@@ -1,7 +1,15 @@
 import { z } from "zod";
+import { paymentProviderSchema } from "./orders";
 import { phoneE164Schema } from "./phone";
 
 export const DEFAULT_CITY = "Bamako";
+
+/** Where a seller receives what buyers paid. */
+export const payoutAccountSchema = z.object({
+  provider: paymentProviderSchema,
+  phone: phoneE164Schema,
+});
+export type PayoutAccount = z.infer<typeof payoutAccountSchema>;
 
 export const profileSchema = z.object({
   id: z.uuid(),
@@ -12,6 +20,8 @@ export const profileSchema = z.object({
   // Where the seller meets buyers: "Hamdallaye ACI"
   neighbourhood: z.string().nullable(),
   city: z.string(),
+  // Null until the seller says where to receive money
+  payoutAccount: payoutAccountSchema.nullable(),
 });
 export type Profile = z.infer<typeof profileSchema>;
 

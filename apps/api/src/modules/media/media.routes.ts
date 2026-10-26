@@ -59,6 +59,18 @@ export const mediaRoutes: FastifyPluginAsync<MediaRoutesOptions> = async (
     return reply.code(201).send({ path });
   });
 
+  // Photos of a problem with an order, sent with POST /orders/:id/dispute
+  app.post("/media/report-images", async (request, reply) => {
+    const user = authUser(request);
+    await rateLimiter.consume(`upload:user:${user.id}`, UPLOAD_RATE_LIMIT);
+    const path = await media.store(
+      "reports",
+      user.id,
+      await readImageUpload(request),
+    );
+    return reply.code(201).send({ path });
+  });
+
   app.delete("/media/product-images", async (request, reply) => {
     const { paths } = parseInput(discardImagesBodySchema, request.body);
     await media.discard(authUser(request).id, paths);

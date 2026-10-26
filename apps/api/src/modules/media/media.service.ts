@@ -8,7 +8,8 @@ import type { MediaStorage } from "./storage.js";
 // A small VPS runs this: no decoded-image cache kept between uploads
 sharp.cache(false);
 
-export type MediaFolder = "products" | "avatars";
+// reports: photos of a problem the buyer reports on an order
+export type MediaFolder = "products" | "avatars" | "reports";
 
 const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp"]);
 const WEBP_QUALITY = 75;
@@ -86,6 +87,11 @@ export class MediaService {
     return new RegExp(`^products/${userId}/${UUID}$`).test(path);
   }
 
+  /** True for a photo the user took for a report (`reports/<uid>/<id>`). */
+  isOwnReportImage(userId: string, path: string): boolean {
+    return new RegExp(`^reports/${userId}/${UUID}$`).test(path);
+  }
+
   /** Deletes every size of these images. Best effort: a leftover file only costs storage. */
   async remove(paths: readonly string[]): Promise<void> {
     const keys = paths
@@ -115,7 +121,7 @@ export class MediaService {
 
   /** Every image the user ever uploaded, abandoned uploads included (account deletion). */
   async removeAllOf(userId: string): Promise<void> {
-    const folders: MediaFolder[] = ["products", "avatars"];
+    const folders: MediaFolder[] = ["products", "avatars", "reports"];
     await Promise.all(
       folders.map((folder) =>
         this.deps.storage.deletePrefix(`${folder}/${userId}/`),

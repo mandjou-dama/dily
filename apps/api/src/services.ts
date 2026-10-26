@@ -31,6 +31,7 @@ import {
   type PushSender,
 } from "./modules/notifications/push.service.js";
 import { OffersService } from "./modules/offers/offers.service.js";
+import { HandoverService } from "./modules/orders/handover.service.js";
 import { OrdersService } from "./modules/orders/orders.service.js";
 import {
   SimulatedPaymentGateway,
@@ -132,6 +133,9 @@ export function createServices(input: ServicesInput): Services {
     logger: input.logger,
     ...now,
   };
+  const gateway =
+    input.paymentGateway ?? createPaymentGateway(config, input.logger);
+  const handover = new HandoverService({ ...chatDeps, media, gateway });
 
   return {
     health: {
@@ -139,17 +143,18 @@ export function createServices(input: ServicesInput): Services {
       redis: () => redis.ping(),
     },
     auth,
-    me: new MeService({ prisma, media }),
+    me: new MeService({
+      prisma,
+      media,
+      onPayoutAccountChange: (userId) => handover.payoutAccountChanged(userId),
+    }),
     products: new ProductsService({ prisma, ...now }),
     sell: new SellService({ prisma, media, ...now }),
     media,
     chat: new ChatService(chatDeps),
     offers: new OffersService(chatDeps),
-    orders: new OrdersService({
-      ...chatDeps,
-      gateway:
-        input.paymentGateway ?? createPaymentGateway(config, input.logger),
-    }),
+    orders: new OrdersService({ ...chatDeps, gateway }),
+    handover,
     push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),

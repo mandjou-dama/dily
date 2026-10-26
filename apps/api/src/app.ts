@@ -16,6 +16,7 @@ import { mediaRoutes } from "./modules/media/media.routes.js";
 import { offersRoutes } from "./modules/offers/offers.routes.js";
 import type { OffersService } from "./modules/offers/offers.service.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
+import type { HandoverService } from "./modules/orders/handover.service.js";
 import type { OrdersService } from "./modules/orders/orders.service.js";
 import type { MediaService } from "./modules/media/media.service.js";
 import { pushRoutes } from "./modules/notifications/push.routes.js";
@@ -38,6 +39,7 @@ export interface AppDeps {
   chat: ChatService;
   offers: OffersService;
   orders: OrdersService;
+  handover: HandoverService;
   push: PushService;
   rateLimiter: RateLimiter;
   requireAuth: preHandlerAsyncHookHandler;
@@ -112,7 +114,11 @@ export function buildApp(
   app.register(mediaRoutes, { media: deps.media, rateLimiter, requireAuth });
   app.register(chatRoutes, { chat: deps.chat, requireAuth });
   app.register(offersRoutes, { offers: deps.offers, requireAuth });
-  app.register(ordersRoutes, { orders: deps.orders, requireAuth });
+  app.register(ordersRoutes, {
+    orders: deps.orders,
+    handover: deps.handover,
+    requireAuth,
+  });
   app.register(pushRoutes, { push: deps.push, requireAuth });
   return app;
 }

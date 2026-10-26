@@ -14,6 +14,12 @@ export const messageKinds = [
   "offer",
   // An offer was accepted: the order waits for payment
   "deal",
+  // The item changed hands: the money goes to the seller
+  "handover",
+  // The buyer reported a problem
+  "dispute",
+  // The buyer got their money back
+  "refund",
 ] as const;
 export const messageKindSchema = z.enum(messageKinds);
 export type MessageKind = z.infer<typeof messageKindSchema>;
@@ -28,7 +34,7 @@ export const chatMessageSchema = z.object({
   body: z.string(),
   // Offer messages only
   offer: offerSchema.nullable(),
-  // Deal messages only
+  // Deal, handover, dispute and refund messages
   order: orderSchema.nullable(),
   createdAt: z.iso.datetime(),
   // Set when the other participant opened the conversation

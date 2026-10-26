@@ -1,4 +1,4 @@
-import type { Profile, ProfileUpdate } from "@dily/shared";
+import type { PayoutAccount, Profile, ProfileUpdate } from "@dily/shared";
 import type { PrismaClient, User } from "../../generated/prisma/client.js";
 import { AppError } from "../../lib/errors.js";
 import type { MediaService } from "../media/media.service.js";
@@ -10,11 +10,17 @@ export const toProfile = (user: User): Profile => ({
   avatarPath: user.avatarPath,
   neighbourhood: user.neighbourhood,
   city: user.city,
+  payoutAccount:
+    user.payoutProvider && user.payoutPhone
+      ? { provider: user.payoutProvider, phone: user.payoutPhone }
+      : null,
 });
 
 export interface MeServiceDeps {
   prisma: PrismaClient;
   media: MediaService;
+  /** Payouts waiting for an account, or that failed, leave again. */
+  onPayoutAccountChange?: (userId: string) => Promise<void>;
 }
 
 /** The signed-in user's own profile. */
@@ -40,6 +46,19 @@ export class MeService {
           : {}),
       },
     });
+    return toProfile(user);
+  }
+
+  /** Where the seller receives what buyers paid. */
+  async setPayoutAccount(
+    userId: string,
+    account: PayoutAccount,
+  ): Promise<Profile> {
+    const user = await this.deps.prisma.user.update({
+      where: { id: userId },
+      data: { payoutProvider: account.provider, payoutPhone: account.phone },
+    });
+    await this.deps.onPayoutAccountChange?.(userId);
     return toProfile(user);
   }
 

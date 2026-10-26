@@ -1,4 +1,5 @@
 import type {
+  Dispute,
   Offer,
   OfferStatus,
   Order,
@@ -6,11 +7,14 @@ import type {
   Payment,
   PaymentFailureReason,
   PaymentStatus,
+  Transfer,
 } from "@dily/shared";
 import type {
+  Dispute as DisputeRow,
   Offer as OfferRow,
   Order as OrderRow,
   Payment as PaymentRow,
+  Transfer as TransferRow,
 } from "../../generated/prisma/client.js";
 
 // Deadlines are read, not swept: a pending offer, an unpaid order or an
@@ -73,6 +77,8 @@ export const toOrder = (row: OrderRow, now: Date): Order => ({
   status: orderStatusAt(row, now),
   reservedUntil: row.reservedUntil.toISOString(),
   paidAt: row.paidAt?.toISOString() ?? null,
+  completedAt: row.completedAt?.toISOString() ?? null,
+  refundedAt: row.refundedAt?.toISOString() ?? null,
   createdAt: row.createdAt.toISOString(),
 });
 
@@ -86,6 +92,29 @@ export const toPayment = (row: PaymentRow, now: Date): Payment => ({
   // Checked by `payments_failure_reason_check` and the code that writes it
   failureReason: row.failureReason as PaymentFailureReason | null,
   expiresAt: row.expiresAt.toISOString(),
+  settledAt: row.settledAt?.toISOString() ?? null,
+  createdAt: row.createdAt.toISOString(),
+});
+
+export const toDispute = (row: DisputeRow): Dispute => ({
+  id: row.id,
+  orderId: row.orderId,
+  reason: row.reason,
+  note: row.note,
+  photoPaths: row.photoPaths,
+  status: row.status,
+  createdAt: row.createdAt.toISOString(),
+  resolvedAt: row.resolvedAt?.toISOString() ?? null,
+});
+
+export const toTransfer = (row: TransferRow): Transfer => ({
+  id: row.id,
+  orderId: row.orderId,
+  kind: row.kind,
+  amount: row.amount,
+  provider: row.provider,
+  phone: row.phone,
+  status: row.status,
   settledAt: row.settledAt?.toISOString() ?? null,
   createdAt: row.createdAt.toISOString(),
 });

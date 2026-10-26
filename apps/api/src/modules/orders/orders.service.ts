@@ -31,9 +31,11 @@ import {
   offerStatusAt,
   orderStatusAt,
   paymentStatusAt,
+  toDispute,
   toOffer,
   toOrder,
   toPayment,
+  toTransfer,
 } from "../offers/offer-rows.js";
 import {
   announceExpired,
@@ -44,6 +46,7 @@ import {
   unavailable,
 } from "../offers/terms.js";
 import type { UserNotifier } from "../realtime/notifier.js";
+import { newHandoverCode } from "./handover.service.js";
 import type { PaymentGateway, PaymentOutcome } from "./payment-gateway.js";
 
 export type DirectBuyInput = z.output<typeof directBuyBodySchema>;
@@ -224,20 +227,31 @@ export class OrdersService {
     return order;
   }
 
-  /** The order; the buyer also gets their latest payment attempt. */
+  /**
+   * The order. The buyer also gets their latest payment attempt and, until
+   * the handover, the code to give; each side gets the money sent to them.
+   */
   async get(userId: string, orderId: string): Promise<OrderDetails> {
     const row = await this.prisma.order.findFirst({
       where: { id: orderId, OR: [{ buyerId: userId }, { sellerId: userId }] },
       include: {
         payments: { orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 1 },
+        dispute: true,
+        transfer: true,
       },
     });
     if (!row) throw orderNotFound();
     const now = this.now();
-    const payment = row.buyerId === userId ? row.payments[0] : undefined;
+    const isBuyer = row.buyerId === userId;
+    const payment = isBuyer ? row.payments[0] : undefined;
     return {
       order: toOrder(row, now),
       payment: payment ? toPayment(payment, now) : null,
+      // Cleared once the item changed hands or the money went back
+      handoverCode: isBuyer ? row.handoverCode : null,
+      dispute: row.dispute ? toDispute(row.dispute) : null,
+      transfer:
+        row.transfer?.recipientId === userId ? toTransfer(row.transfer) : null,
     };
   }
 
@@ -440,7 +454,7 @@ export class OrdersService {
       if (count === 0) return null;
       const paid = await tx.order.updateMany({
         where: { id: order.id, status: "awaiting_payment" },
-        data: { status: "paid", paidAt: now },
+        data: { status: "paid", paidAt: now, handoverCode: newHandoverCode() },
       });
       if (paid.count === 0) return { orderPaid: false, message: null };
       await tx.product.update({

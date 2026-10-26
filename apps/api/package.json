@@ -13,7 +13,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:reset": "prisma migrate reset --force"
+    "db:reset": "prisma migrate reset --force",
+    "dispute:resolve": "tsx --env-file-if-exists=../../.env src/scripts/resolve-dispute.ts"
   },
   "dependencies": {
     "@dily/shared": "workspace:*",
@@ -21,6 +22,7 @@
     "@fastify/static": "^10.1.7",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
+    "bullmq": "6.3.11",
     "dotenv": "^18.0.9",
     "expo-server-sdk": "^7.2.0",
     "fastify": "^5.12.7",
