@@ -79,6 +79,7 @@ const conversationSelect = (userId: string) =>
         title: true,
         price: true,
         status: true,
+        size: true,
         pickup: true,
         deliveryFee: true,
         images: {
@@ -138,6 +139,7 @@ function toConversation(
       price: row.product.price,
       status: row.product.status,
       imagePath: row.product.images[0]?.path ?? null,
+      size: row.product.size,
       pickup: row.product.pickup,
       deliveryFee: row.product.deliveryFee,
     },

@@ -12,11 +12,15 @@ import { env } from "@/lib/env";
 import { registerForPush } from "@/lib/push";
 import { useAuth, useIsSignedIn } from "@/providers/auth-provider";
 import {
-  addMessageToCache,
   applyReadToCache,
   CHAT_QUERY_KEY,
   refreshChatSummaries,
 } from "@/services/chat.service";
+import {
+  applyMessageToCache,
+  applyOfferToCache,
+  applyOrderToCache,
+} from "@/services/offers.service";
 
 type RealtimeSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -89,9 +93,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
 
     socket.on("message:new", ({ message }) => {
-      addMessageToCache(queryClient, message);
+      applyMessageToCache(queryClient, message);
       refreshChatSummaries(queryClient, userId);
     });
+    socket.on("offer:updated", ({ offer }) =>
+      applyOfferToCache(queryClient, offer),
+    );
+    socket.on("order:updated", ({ order }) =>
+      applyOrderToCache(queryClient, order),
+    );
     socket.on("conversation:read", (event) => {
       applyReadToCache(queryClient, event);
       if (event.readerId === userId) refreshChatSummaries(queryClient, userId);

@@ -1,4 +1,5 @@
 import React, {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -8,6 +9,7 @@ import React, {
 import {
   Alert,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -20,47 +22,48 @@ import {
   useIsFocused,
   useNavigation,
 } from "@react-navigation/native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   KeyboardAvoidingView,
-  useReanimatedKeyboardAnimation,
+  KeyboardController,
 } from "react-native-keyboard-controller";
-import Animated, {
-  interpolate,
-  useAnimatedStyle,
-} from "react-native-reanimated";
-import { Image } from "expo-image";
 import {
   ArrowLeft,
   ArrowUp,
-  Check,
-  CheckCheck,
   CircleAlert,
   Clock,
+  ShieldCheck,
 } from "lucide-react-native";
-import { MESSAGE_MAX_LENGTH } from "@dily/shared";
+import { useTranslation } from "react-i18next";
+import { MESSAGE_MAX_LENGTH, type Offer } from "@dily/shared";
 
-import { Avatar } from "@/components/chat/avatar";
+import { DealHeader } from "@/components/offers/deal-header";
+import { DealMessage } from "@/components/offers/deal-message";
+import { OfferMessage } from "@/components/offers/offer-message";
+import {
+  OfferSheet,
+  type OfferSheetRef,
+} from "@/components/offers/offer-sheet";
 import { Spinner } from "@/components/spinner";
 import { useHaptics } from "@/hooks/use-haptics";
-import {
-  chatDayLabel,
-  formatPrice,
-  isSameDay,
-  messageTime,
-} from "@/lib/format";
-import { imageUrl } from "@/lib/image";
+import { chatDayLabel, messageMeta } from "@/lib/chat-labels";
+import { isSameDay, messageTime } from "@/lib/format";
+import { dealErrorMessage, firstName } from "@/lib/offers";
 import { registerForPush, setOpenConversation } from "@/lib/push";
 import { useAuth } from "@/providers/auth-provider";
 import {
   type ChatMessage,
   type Conversation,
+  conversationQueryKey,
+  messagesQueryKey,
   type OutgoingMessage,
   useConversation,
   useMarkRead,
   useMessages,
   useSendMessage,
 } from "@/services/chat.service";
+import { useAnswerOffer } from "@/services/offers.service";
 import { colors } from "@/theme/colors";
 
 // Static navigation reads the params type from here
@@ -68,12 +71,13 @@ type Props = StaticScreenProps<{ id: string }>;
 
 type Row = ChatMessage | OutgoingMessage;
 
-const PRODUCT_THUMB_SIZE = 40;
-// What a buyer most often asks first
-const FIRST_QUESTION = "Hi! Is this still available?";
+// Between the composer and the keyboard, or the screen's edge
+const COMPOSER_GAP = 10;
 
 const isOutgoing = (row: Row): row is OutgoingMessage => "status" in row;
 const keyExtractor = (row: Row) => row.id;
+// Android only: iOS gains little and can blank rows while scrolling fast
+const REMOVE_CLIPPED_SUBVIEWS = Platform.OS === "android";
 
 export const ConversationScreen = ({ route }: Props) => {
   const { id } = route.params;
@@ -83,6 +87,7 @@ export const ConversationScreen = ({ route }: Props) => {
     isError,
     refetch,
   } = useConversation(id);
+  const { t } = useTranslation();
 
   // Its notifications don't pop up while it's on screen
   useFocusEffect(
@@ -96,25 +101,19 @@ export const ConversationScreen = ({ route }: Props) => {
 
   return (
     <View style={styles.screen}>
-      <TopBar>
-        <View style={styles.flex} />
-      </TopBar>
+      <TopBar />
       <View style={styles.status}>
         {isPending ? (
           <Spinner color={colors.primary} size={28} />
         ) : isError ? (
           <>
-            <Text style={styles.statusTitle}>
-              {"Couldn't load this conversation"}
-            </Text>
+            <Text style={styles.statusTitle}>{t("chat.loadError")}</Text>
             <Pressable onPress={() => refetch()} hitSlop={12}>
-              <Text style={styles.statusAction}>Try again</Text>
+              <Text style={styles.statusAction}>{t("common.retry")}</Text>
             </Pressable>
           </>
         ) : (
-          <Text style={styles.statusTitle}>
-            This conversation is no longer available
-          </Text>
+          <Text style={styles.statusTitle}>{t("chat.gone")}</Text>
         )}
       </View>
     </View>
@@ -123,11 +122,19 @@ export const ConversationScreen = ({ route }: Props) => {
 
 const ConversationView = ({ conversation }: { conversation: Conversation }) => {
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const { impact } = useHaptics();
-  const { session } = useAuth();
+  const { t } = useTranslation();
+  const { impact, notification } = useHaptics();
+  const { session, profile } = useAuth();
   const userId = session?.user.id;
-  const { otherUser, product } = conversation;
+  const { otherUser, product, deal } = conversation;
+  const isBuyer = conversation.role === "buyer";
+  const otherName = firstName(otherUser.name);
+  // Pickup happens at the seller's
+  const pickupArea = isBuyer
+    ? (otherUser.location.split(",")[0] ?? otherUser.location)
+    : (profile?.neighbourhood ?? profile?.city ?? "");
 
   const {
     data,
@@ -144,7 +151,8 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data],
   );
-  // Newest first; a sent message can reach the cache before its request returns
+  // Newest first: the order of an inverted list; a sent message can reach
+  // the cache before its request returns
   const rows = useMemo<Row[]>(() => {
     const savedIds = new Set(saved.map((m) => m.id));
     return [...outgoing.filter((m) => !savedIds.has(m.id)), ...saved];
@@ -184,15 +192,85 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
 
   const onFailedPress = useCallback(
     (message: OutgoingMessage) =>
-      Alert.alert("Message not sent", "Check your connection.", [
+      Alert.alert(t("chat.notSentTitle"), t("chat.notSentBody"), [
         {
-          text: "Delete",
+          text: t("chat.delete"),
           style: "destructive",
           onPress: () => discard(message.id),
         },
-        { text: "Try again", onPress: () => retry(message) },
+        { text: t("common.retry"), onPress: () => retry(message) },
       ]),
-    [discard, retry],
+    [discard, retry, t],
+  );
+
+  // The offer sheet: a new offer, or a counter-offer to `answering`. The
+  // chat's keyboard goes down first, then the sheet rises: one movement at
+  // a time, never the sheet settling on a keyboard that's leaving
+  const offerSheet = useRef<OfferSheetRef>(null);
+  const opening = useRef(false);
+  const openSheet = useCallback(async (answering: Offer | null) => {
+    if (opening.current) return;
+    opening.current = true;
+    try {
+      await KeyboardController.dismiss();
+      offerSheet.current?.open(answering);
+    } finally {
+      opening.current = false;
+    }
+  }, []);
+
+  const pendingFromThem =
+    deal.offer?.status === "pending" && deal.offer.authorId !== userId
+      ? deal.offer
+      : null;
+  const onMakeOffer = useCallback(
+    () => openSheet(pendingFromThem),
+    [openSheet, pendingFromThem],
+  );
+
+  const refreshDeal = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: conversationQueryKey(conversation.id),
+    });
+    queryClient.invalidateQueries({
+      queryKey: messagesQueryKey(conversation.id),
+    });
+  }, [queryClient, conversation.id]);
+
+  const {
+    mutate: answerOffer,
+    isPending: isAnswering,
+    variables: answerVariables,
+  } = useAnswerOffer();
+  const answeringId = isAnswering ? answerVariables?.offerId : undefined;
+  const answer = useCallback(
+    (offer: Offer, verb: "accept" | "decline") => {
+      impact("light");
+      answerOffer(
+        { offerId: offer.id, answer: verb },
+        {
+          onSuccess: () => notification("success"),
+          onError: (error) => {
+            notification("error");
+            Alert.alert(dealErrorMessage(error));
+            refreshDeal();
+          },
+        },
+      );
+    },
+    [answerOffer, impact, notification, refreshDeal],
+  );
+  const onAccept = useCallback(
+    (offer: Offer) => answer(offer, "accept"),
+    [answer],
+  );
+  const onDecline = useCallback(
+    (offer: Offer) => answer(offer, "decline"),
+    [answer],
+  );
+  const onCounter = useCallback(
+    (offer: Offer) => openSheet(offer),
+    [openSheet],
   );
 
   const loadOlder = useCallback(() => {
@@ -204,165 +282,267 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
       // Inverted: the row above on screen is the next, older one
       const older = rows[index + 1];
       const newDay = !older || !isSameDay(older.createdAt, item.createdAt);
-      const grouped = !newDay && older?.senderId === item.senderId;
+      const grouped =
+        !newDay &&
+        older?.senderId === item.senderId &&
+        older.kind === "text" &&
+        item.kind === "text";
       return (
-        <View style={grouped ? styles.rowGrouped : styles.row}>
-          {newDay ? (
-            <Text style={styles.day}>{chatDayLabel(item.createdAt)}</Text>
-          ) : null}
-          <Bubble
-            message={item}
-            mine={item.senderId === userId}
-            onFailedPress={onFailedPress}
-          />
-        </View>
+        <MessageRow
+          row={item}
+          newDay={newDay}
+          grouped={grouped}
+          mine={item.senderId === userId}
+          offerMine={item.offer?.authorId === userId}
+          role={conversation.role}
+          otherName={otherName}
+          pickupArea={pickupArea}
+          answering={!!item.offer && item.offer.id === answeringId}
+          onFailedPress={onFailedPress}
+          onAccept={onAccept}
+          onCounter={onCounter}
+          onDecline={onDecline}
+        />
       );
     },
-    [rows, userId, onFailedPress],
+    [
+      rows,
+      userId,
+      conversation.role,
+      otherName,
+      pickupArea,
+      answeringId,
+      onFailedPress,
+      onAccept,
+      onCounter,
+      onDecline,
+    ],
   );
 
-  // The composer sits on the home indicator, then on the keyboard
-  const { progress } = useReanimatedKeyboardAnimation();
-  const composerStyle = useAnimatedStyle(() => ({
-    paddingBottom: interpolate(
-      progress.get(),
-      [0, 1],
-      [Math.max(insets.bottom, 10), 10],
-    ),
-  }));
+  // The composer sits on the home indicator, then COMPOSER_GAP above the
+  // keyboard: the chat moves up by the keyboard minus what the home
+  // indicator already took
+  const keyboardOffset = -Math.max(insets.bottom - COMPOSER_GAP, 0);
 
-  const thumbUri = imageUrl(product.imagePath, PRODUCT_THUMB_SIZE * 3);
-  const isBuyer = conversation.role === "buyer";
+  // Before any offer or agreement: where paying safely starts
+  const showSafetyNote =
+    isBuyer && product.status === "active" && !deal.offer && !deal.order;
 
   return (
-    <KeyboardAvoidingView behavior="padding" style={styles.screen}>
-      <TopBar>
-        <Avatar name={otherUser.name} path={otherUser.avatarPath} size={36} />
-        <Text style={styles.headerName} numberOfLines={1}>
-          {otherUser.name}
-        </Text>
-      </TopBar>
+    <View style={styles.screen}>
+      {/* Above the chat, which slides under it while the keyboard moves */}
+      <View style={styles.top}>
+        <TopBar>
+          <Text style={styles.headerName} numberOfLines={1}>
+            {otherUser.name}
+          </Text>
+          {otherUser.location ? (
+            <Text style={styles.headerLocation} numberOfLines={1}>
+              {otherUser.location}
+            </Text>
+          ) : null}
+        </TopBar>
 
-      <Pressable
-        onPress={() =>
-          navigation.navigate("ProductDetails", { id: product.id })
-        }
-        accessibilityRole="button"
-        accessibilityHint="Opens the listing"
-        style={({ pressed }) => [
-          styles.productStrip,
-          pressed && styles.pressed,
-        ]}
+        <DealHeader
+          conversation={conversation}
+          userId={userId}
+          onOpenProduct={() =>
+            navigation.navigate("ProductDetails", { id: product.id })
+          }
+          onMakeOffer={onMakeOffer}
+        />
+      </View>
+
+      {/* Moved with transforms while the keyboard moves, laid out once at
+          the end: smooth on modest phones. Always on, the sheet's keyboard
+          included: switched off mid-move, it would stay where it was */}
+      <KeyboardAvoidingView
+        behavior="translate-with-padding"
+        keyboardVerticalOffset={keyboardOffset}
+        style={styles.flex}
       >
-        {thumbUri ? (
-          <Image
-            source={thumbUri}
-            style={styles.productThumb}
-            contentFit="cover"
-            cachePolicy="memory-disk"
+        {rows.length > 0 ? (
+          <FlatList
+            inverted
+            data={rows}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            onEndReached={loadOlder}
+            onEndReachedThreshold={0.4}
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={11}
+            removeClippedSubviews={REMOVE_CLIPPED_SUBVIEWS}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            // Inverted: the header sits at the bottom, the footer at the top
+            ListHeaderComponent={showSafetyNote ? <SafetyNote /> : null}
+            ListFooterComponent={
+              isFetchingNextPage ? (
+                <View style={styles.olderSpinner}>
+                  <Spinner color={colors.primary} />
+                </View>
+              ) : null
+            }
           />
         ) : (
-          <View style={styles.productThumb} />
-        )}
-        <View style={styles.flex}>
-          <Text style={styles.productTitle} numberOfLines={1}>
-            {product.title}
-          </Text>
-          <Text style={styles.productPrice}>
-            {formatPrice(product.price)} F CFA
-            {product.status === "sold" ? " · Sold" : ""}
-          </Text>
-        </View>
-      </Pressable>
-
-      <FlatList
-        inverted
-        data={rows}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        onEndReached={loadOlder}
-        onEndReachedThreshold={0.4}
-        keyboardDismissMode="interactive"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <View style={styles.olderSpinner}>
-              <Spinner color={colors.primary} />
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          isPending ? (
-            <View style={styles.status}>
+          <View style={styles.status}>
+            {isPending ? (
               <Spinner color={colors.primary} size={28} />
-            </View>
-          ) : isError ? (
-            <View style={styles.status}>
-              <Text style={styles.statusTitle}>
-                {"Couldn't load the messages"}
-              </Text>
-              <Pressable onPress={() => refetch()} hitSlop={12}>
-                <Text style={styles.statusAction}>Try again</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>
-                Say hello to {otherUser.name.split(" ")[0]}
-              </Text>
-              <Text style={styles.emptyText}>
-                {isBuyer
-                  ? "Ask about the item, agree on a price and where to meet."
-                  : "They'll see your reply right away."}
-              </Text>
-              {isBuyer && product.status === "active" ? (
-                <Pressable
-                  onPress={() => setText(FIRST_QUESTION)}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.suggestion,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.suggestionText}>{FIRST_QUESTION}</Text>
+            ) : isError ? (
+              <>
+                <Text style={styles.statusTitle}>
+                  {t("chat.messagesError")}
+                </Text>
+                <Pressable onPress={() => refetch()} hitSlop={12}>
+                  <Text style={styles.statusAction}>{t("common.retry")}</Text>
                 </Pressable>
-              ) : null}
-            </View>
-          )
-        }
-      />
+              </>
+            ) : (
+              <>
+                <Text style={styles.emptyTitle}>
+                  {t("chat.sayHello", { name: otherName })}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {isBuyer ? t("chat.buyerHint") : t("chat.sellerHint")}
+                </Text>
+                {isBuyer && product.status === "active" ? (
+                  <Pressable
+                    onPress={() => setText(t("chat.firstQuestion"))}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.suggestion,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text style={styles.suggestionText}>
+                      {t("chat.firstQuestion")}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </>
+            )}
+          </View>
+        )}
 
-      <Animated.View style={[styles.composer, composerStyle]}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Message"
-          placeholderTextColor={colors.gray}
-          multiline
-          maxLength={MESSAGE_MAX_LENGTH}
-          style={styles.input}
-          accessibilityLabel="Message"
-        />
-        <Pressable
-          onPress={onSend}
-          disabled={!canSend}
-          hitSlop={6}
-          accessibilityRole="button"
-          accessibilityLabel="Send"
-          style={({ pressed }) => [
-            styles.sendButton,
-            !canSend && styles.sendButtonDisabled,
-            pressed && styles.pressed,
+        <View
+          style={[
+            styles.composer,
+            { paddingBottom: Math.max(insets.bottom, COMPOSER_GAP) },
           ]}
         >
-          <ArrowUp size={20} color={colors.white} strokeWidth={2.4} />
-        </Pressable>
-      </Animated.View>
-    </KeyboardAvoidingView>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder={t("chat.placeholder")}
+            placeholderTextColor={colors.gray}
+            multiline
+            maxLength={MESSAGE_MAX_LENGTH}
+            style={styles.input}
+            accessibilityLabel={t("chat.message")}
+          />
+          <Pressable
+            onPress={onSend}
+            disabled={!canSend}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={t("chat.send")}
+            style={({ pressed }) => [
+              styles.sendButton,
+              !canSend && styles.sendButtonDisabled,
+              pressed && styles.pressed,
+            ]}
+          >
+            <ArrowUp size={20} color={colors.white} strokeWidth={2.4} />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+
+      <OfferSheet ref={offerSheet} conversation={conversation} />
+    </View>
   );
 };
+
+/** Before any offer: the price is discussed here, and paid safely in Dily. */
+const SafetyNote = () => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.safetyNote}>
+      <ShieldCheck size={20} color={colors.primary} strokeWidth={2} />
+      <Text style={styles.safetyText}>{t("deal.safetyNote")}</Text>
+    </View>
+  );
+};
+
+type MessageRowProps = {
+  row: Row;
+  newDay: boolean;
+  grouped: boolean;
+  mine: boolean;
+  offerMine: boolean;
+  role: Conversation["role"];
+  otherName: string;
+  pickupArea: string;
+  answering: boolean;
+  onFailedPress: (message: OutgoingMessage) => void;
+  onAccept: (offer: Offer) => void;
+  onCounter: (offer: Offer) => void;
+  onDecline: (offer: Offer) => void;
+};
+
+/** One row of the conversation: a day label when the day changes, then the message. */
+const MessageRow = memo(function MessageRow({
+  row,
+  newDay,
+  grouped,
+  mine,
+  offerMine,
+  role,
+  otherName,
+  pickupArea,
+  answering,
+  onFailedPress,
+  onAccept,
+  onCounter,
+  onDecline,
+}: MessageRowProps) {
+  let content: React.ReactNode;
+  if (row.kind === "offer" && row.offer) {
+    content = (
+      <OfferMessage
+        offer={row.offer}
+        createdAt={row.createdAt}
+        read={!!row.readAt}
+        mine={offerMine}
+        role={role}
+        otherName={otherName}
+        pickupArea={pickupArea}
+        answering={answering}
+        onAccept={onAccept}
+        onCounter={onCounter}
+        onDecline={onDecline}
+      />
+    );
+  } else if (row.kind === "deal" && row.order) {
+    content = (
+      <DealMessage order={row.order} role={role} otherName={otherName} />
+    );
+  } else {
+    content = (
+      <Bubble message={row} mine={mine} onFailedPress={onFailedPress} />
+    );
+  }
+  return (
+    <View style={grouped ? styles.rowGrouped : styles.row}>
+      {newDay ? (
+        <Text style={styles.day}>{chatDayLabel(row.createdAt)}</Text>
+      ) : null}
+      {content}
+    </View>
+  );
+});
 
 const Bubble = ({
   message,
@@ -373,9 +553,9 @@ const Bubble = ({
   mine: boolean;
   onFailedPress: (message: OutgoingMessage) => void;
 }) => {
+  const { t } = useTranslation();
   const status = isOutgoing(message) ? message.status : null;
   const failed = status === "failed";
-  const tint = mine ? "rgba(255, 255, 255, 0.75)" : colors.textSecondary;
 
   const content = (
     <View
@@ -392,30 +572,17 @@ const Bubble = ({
         {message.body}
       </Text>
       <View style={styles.bubbleMeta}>
-        <Text style={[styles.bubbleTime, { color: tint }]}>
-          {messageTime(message.createdAt)}
-        </Text>
-        {mine ? (
-          status === "sending" ? (
-            <Clock size={12} color={tint} strokeWidth={2} />
-          ) : failed ? (
-            <CircleAlert size={13} color={colors.white} strokeWidth={2.2} />
-          ) : message.readAt ? (
-            <CheckCheck
-              size={14}
-              color={colors.white}
-              strokeWidth={2.2}
-              accessibilityLabel="Read"
-            />
-          ) : (
-            <Check
-              size={14}
-              color={tint}
-              strokeWidth={2.2}
-              accessibilityLabel="Sent"
-            />
-          )
+        {status === "sending" ? (
+          <Clock size={11} color={colors.success} strokeWidth={2} />
+        ) : failed ? (
+          <CircleAlert size={12} color={colors.white} strokeWidth={2.2} />
         ) : null}
+        <Text style={[styles.bubbleTime, mine && styles.bubbleTimeMine]}>
+          {messageMeta(
+            messageTime(message.createdAt),
+            mine && !status && !!message.readAt,
+          )}
+        </Text>
       </View>
     </View>
   );
@@ -425,18 +592,20 @@ const Bubble = ({
     <Pressable
       onPress={() => onFailedPress(message)}
       accessibilityRole="button"
-      accessibilityHint="Not sent. Opens the options to try again."
+      accessibilityHint={t("chat.notSentHint")}
       style={styles.failedWrap}
     >
       {content}
-      <Text style={styles.failedText}>Not sent · Tap to retry</Text>
+      <Text style={styles.failedText}>{t("chat.notSent")}</Text>
     </Pressable>
   );
 };
 
-const TopBar = ({ children }: { children: React.ReactNode }) => {
+/** Back, then the other person's name and neighbourhood, centered. */
+const TopBar = ({ children }: { children?: React.ReactNode }) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
@@ -444,12 +613,13 @@ const TopBar = ({ children }: { children: React.ReactNode }) => {
         onPress={() => navigation.goBack()}
         hitSlop={6}
         accessibilityRole="button"
-        accessibilityLabel="Back"
+        accessibilityLabel={t("chat.back")}
         style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
       >
         <ArrowLeft size={22} color={colors.primary} strokeWidth={1.8} />
       </Pressable>
-      {children}
+      <View style={styles.headerCenter}>{children}</View>
+      <View style={styles.headerSpacer} />
     </View>
   );
 };
@@ -457,6 +627,10 @@ const TopBar = ({ children }: { children: React.ReactNode }) => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  top: {
+    zIndex: 1,
     backgroundColor: colors.background,
   },
   flex: {
@@ -481,44 +655,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.white,
   },
-  headerName: {
+  headerCenter: {
     flex: 1,
+    alignItems: "center",
+  },
+  // Balances the back button: the name stays centered
+  headerSpacer: {
+    width: 44,
+    height: 44,
+  },
+  headerName: {
     fontSize: 17,
     fontWeight: "600",
     color: colors.black,
   },
-  productStrip: {
+  headerLocation: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  safetyNote: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginHorizontal: 16,
-    marginBottom: 4,
-    padding: 8,
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 16,
     borderCurve: "continuous",
-    backgroundColor: colors.white,
+    backgroundColor: colors.note,
   },
-  productThumb: {
-    width: PRODUCT_THUMB_SIZE,
-    height: PRODUCT_THUMB_SIZE,
-    borderRadius: 10,
-    borderCurve: "continuous",
-    backgroundColor: "#EAE7DC",
-  },
-  productTitle: {
+  safetyText: {
+    flex: 1,
     fontSize: 14,
-    fontWeight: "600",
-    color: colors.black,
-  },
-  productPrice: {
-    fontSize: 13,
-    color: "#5A5A52",
-    fontVariant: ["tabular-nums"],
+    lineHeight: 19,
+    color: colors.noteText,
   },
   listContent: {
-    flexGrow: 1,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   olderSpinner: {
     paddingVertical: 12,
@@ -536,22 +710,25 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontSize: 12,
     fontWeight: "600",
-    color: "#5A5A52",
+    color: colors.muted,
   },
   bubble: {
-    maxWidth: "80%",
+    maxWidth: "78%",
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 6,
     borderRadius: 18,
     borderCurve: "continuous",
   },
+  // The corner on the sender's side is the bubble's tail
   bubbleMine: {
     alignSelf: "flex-end",
+    borderBottomRightRadius: 6,
     backgroundColor: colors.primary,
   },
   bubbleTheirs: {
     alignSelf: "flex-start",
+    borderBottomLeftRadius: 6,
     backgroundColor: colors.white,
   },
   bubbleFailed: {
@@ -574,7 +751,11 @@ const styles = StyleSheet.create({
   },
   bubbleTime: {
     fontSize: 11,
+    color: colors.muted,
     fontVariant: ["tabular-nums"],
+  },
+  bubbleTimeMine: {
+    color: colors.success,
   },
   failedWrap: {
     alignItems: "flex-end",
@@ -635,13 +816,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: colors.primary,
-  },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingHorizontal: 32,
   },
   emptyTitle: {
     fontSize: 17,

@@ -57,6 +57,7 @@ export const conversationSchema = z.object({
     status: productStatusSchema,
     // The cover image
     imagePath: z.string().nullable(),
+    size: z.string().nullable(),
     // How the buyer can get it: pickup, and delivery when it has a fee
     pickup: z.boolean(),
     deliveryFee: z.number().int().nullable(),

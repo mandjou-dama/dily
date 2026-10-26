@@ -7,10 +7,12 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { Platform, StatusBar, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import "@/i18n";
 import { Navigation } from "@/navigation";
 import { AnimatedBootSplash } from "@/components/animated-boot-splash";
 import BootSplash from "react-native-bootsplash";
@@ -96,7 +98,10 @@ export function App() {
             <NotifyProvider>
               <AuthProvider>
                 <ChatProvider>
-                  <AppNavigation theme={theme} />
+                  {/* Sheets render here, with the session and the cache */}
+                  <BottomSheetModalProvider>
+                    <AppNavigation theme={theme} />
+                  </BottomSheetModalProvider>
                 </ChatProvider>
               </AuthProvider>
 
