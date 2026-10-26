@@ -42,3 +42,7 @@ export const countdownLabel = (ms: number) => {
 /** "Derrière la pharmacie" → "derrière la pharmacie", after "À Hamdallaye ACI, ". */
 export const lowerFirst = (text: string) =>
   text.charAt(0).toLocaleLowerCase("fr") + text.slice(1);
+
+/** "70000000" → "70 00 00 00" while typing a number. */
+export const groupDigits = (digits: string) =>
+  digits.replace(/(\d{2})(?=\d)/g, "$1 ");

@@ -16,6 +16,7 @@ import {
 import { Hero, HeroMark } from "@/components/checkout/hero";
 import { NoteBand } from "@/components/checkout/note-band";
 import { type Step, StepList } from "@/components/checkout/step-list";
+import { HandoverCodeDigits } from "@/components/handover/handover-code";
 import { lowerFirst, paymentLine } from "@/lib/checkout";
 import { formatPhone } from "@/lib/format";
 import { amountLabel, firstName } from "@/lib/offers";
@@ -75,7 +76,7 @@ export const PaymentDoneScreen = ({ route }: Props) => {
           state: "next",
         },
         { title: t("checkout.stepCheckCourier"), state: "next" },
-        { title: t("checkout.stepConfirm", { name }), state: "next" },
+        { title: t("checkout.stepCodeCourier"), state: "next" },
       ]
     : [
         { title: t("checkout.stepPaid"), state: "done" },
@@ -85,7 +86,7 @@ export const PaymentDoneScreen = ({ route }: Props) => {
           state: "current",
         },
         { title: t("checkout.stepCheck"), state: "next" },
-        { title: t("checkout.stepConfirm", { name }), state: "next" },
+        { title: t("checkout.stepCode", { name }), state: "next" },
       ];
 
   return (
@@ -100,11 +101,12 @@ export const PaymentDoneScreen = ({ route }: Props) => {
         onClose={navigation.goBack}
       />
       <ScrollView
-        contentContainerStyle={[styles.content, delivery && styles.compact]}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Hero compact={delivery}>
-          <HeroMark compact={delivery} />
+        {/* Compact: the code needs the room */}
+        <Hero compact>
+          <HeroMark compact />
         </Hero>
         <View>
           <Text style={styles.headline} accessibilityRole="header">
@@ -116,6 +118,19 @@ export const PaymentDoneScreen = ({ route }: Props) => {
               : t("checkout.paidPickupBody")}
           </Text>
         </View>
+        {data.handoverCode ? (
+          <Card style={styles.code}>
+            <Text style={styles.codeTitle}>{t("handover.codeTitle")}</Text>
+            <Text style={styles.codeHint}>
+              {delivery
+                ? t("handover.codeForCourier")
+                : t("handover.codeForSeller", { name })}
+            </Text>
+            <View style={styles.codeDigits}>
+              <HandoverCodeDigits code={data.handoverCode} compact />
+            </View>
+          </Card>
+        ) : null}
         <Card>
           <StepList steps={steps} />
           <NoteBand>
@@ -140,13 +155,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    gap: 20,
+    gap: 16,
     paddingTop: 8,
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  compact: {
-    gap: 16,
+  code: {
+    gap: 2,
+    padding: 14,
+  },
+  codeTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.black,
+  },
+  codeHint: {
+    fontSize: 13,
+    color: colors.muted,
+  },
+  codeDigits: {
+    marginTop: 10,
   },
   headline: {
     fontSize: 24,

@@ -29,10 +29,11 @@ import {
 } from "@/components/checkout/checkout-header";
 import { NoteBand } from "@/components/checkout/note-band";
 import { ProductSummary } from "@/components/checkout/product-summary";
+import { ProviderLogo } from "@/components/checkout/provider-logo";
 import { type Segment, SegmentedControl } from "@/components/segmented-control";
 import { useHaptics } from "@/hooks/use-haptics";
 import { ApiRequestError } from "@/lib/api";
-import { areaOf, unpaidOrderOf } from "@/lib/checkout";
+import { areaOf, groupDigits, unpaidOrderOf } from "@/lib/checkout";
 import { formatPhone } from "@/lib/format";
 import { amountLabel, dealErrorMessage } from "@/lib/offers";
 import { useAuth } from "@/providers/auth-provider";
@@ -165,12 +166,12 @@ const PayStep = ({
     {
       value: "orange_money",
       title: t("checkout.orangeMoney"),
-      leading: () => <ProviderLogo label="OM" color={colors.orangeMoney} />,
+      leading: () => <ProviderLogo provider="orange_money" />,
     },
     {
       value: "moov_money",
       title: t("checkout.moovMoney"),
-      leading: () => <ProviderLogo label="M" color={colors.moovMoney} />,
+      leading: () => <ProviderLogo provider="moov_money" />,
     },
   ];
 
@@ -309,16 +310,6 @@ const PayStep = ({
   );
 };
 
-/** "70000000" → "70 00 00 00" while typing. */
-const groupDigits = (digits: string) => digits.replace(/(\d{2})(?=\d)/g, "$1 ");
-
-/** The operator's square: its initials on its color. */
-const ProviderLogo = ({ label, color }: { label: string; color: string }) => (
-  <View style={[styles.logo, { backgroundColor: color }]}>
-    <Text style={styles.logoText}>{label}</Text>
-  </View>
-);
-
 const AmountRow = ({ label, value }: { label: string; value: string }) => (
   <View style={styles.amountRow}>
     <Text style={styles.amountLabel}>{label}</Text>
@@ -338,19 +329,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 10,
-  },
-  logo: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    borderCurve: "continuous",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.white,
   },
   phone: {
     flexDirection: "row",

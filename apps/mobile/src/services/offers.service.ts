@@ -151,6 +151,13 @@ export function applyOfferToCache(queryClient: QueryClient, offer: Offer) {
   );
 }
 
+/** Paid, the listing is sold; refunded, it's on sale again. */
+const productStatusFor = (order: Order) => {
+  if (order.status === "refunded") return "active";
+  if (["paid", "completed", "disputed"].includes(order.status)) return "sold";
+  return undefined;
+};
+
 /** An order's new status: its card in the chat, the deal at the top, the payment screens. */
 export function applyOrderToCache(queryClient: QueryClient, order: Order) {
   queryClient.setQueryData<OrderDetails>(
@@ -170,11 +177,10 @@ export function applyOrderToCache(queryClient: QueryClient, order: Order) {
       }
       return {
         ...conversation,
-        // Paid: the listing is sold
-        product:
-          order.status === "paid"
-            ? { ...conversation.product, status: "sold" }
-            : conversation.product,
+        product: {
+          ...conversation.product,
+          status: productStatusFor(order) ?? conversation.product.status,
+        },
         deal: { ...conversation.deal, order },
       };
     },

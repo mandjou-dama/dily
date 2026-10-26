@@ -15,7 +15,9 @@
     "network": "Pas de connexion. Vérifie ton réseau.",
     "conflict": "La discussion a changé entre-temps. Regarde les derniers messages.",
     "rateLimited": "Trop d'essais. Réessaie dans un moment.",
-    "generic": "Ça n'a pas marché. Réessaie."
+    "generic": "Ça n'a pas marché. Réessaie.",
+    "handoverCode": "Ce n'est pas le code de {{name}}.",
+    "tooManyCodes": "Trop d'essais. Réessaie dans 15 minutes."
   },
   "chat": {
     "back": "Retour",
@@ -55,7 +57,22 @@
     "paidBuyer": "Payé. Dily garde l'argent jusqu'à la remise.",
     "paidSeller": "Payé par {{name}}. Dily garde l'argent jusqu'à la remise.",
     "safetyNote": "Le prix se discute ici. Paie dans Dily : ton argent est protégé jusqu'à la remise.",
-    "priceWithSize": "{{price}} · Taille {{size}}"
+    "priceWithSize": "{{price}} · Taille {{size}}",
+    "showCode": "Mon code de remise",
+    "enterCode": "Saisir le code de remise",
+    "seeReport": "Voir le signalement",
+    "addPayout": "Ajouter mon numéro",
+    "changePayout": "Changer de numéro",
+    "disputedBuyer": "Problème signalé. Dily garde l'argent en attendant.",
+    "disputedSeller": "{{name}} a signalé un problème. Dily garde l'argent en attendant.",
+    "completedBuyer": "Remis. {{name}} reçoit l'argent.",
+    "payoutPending": "Remis. {{amount}} partent sur ton {{provider}}.",
+    "payoutSent": "{{amount}} envoyés sur ton {{provider}}.",
+    "payoutWaiting": "Remis. Ajoute ton numéro pour recevoir {{amount}}.",
+    "payoutFailed": "Le versement de {{amount}} n'est pas passé. Vérifie ton numéro.",
+    "payoutSoon": "Remis. Dily t'envoie {{amount}}.",
+    "refundedBuyer": "{{amount}} remboursés sur le numéro qui a payé.",
+    "refundedSeller": "Commande remboursée. Ton annonce est de nouveau en vente."
   },
   "offerSheet": {
     "title": "Ton prix",
@@ -115,7 +132,12 @@
     "buyerNote": "{{name}} reçoit l'argent quand tu as l'article en main.",
     "sellerNote": "Tu reçois l'argent quand {{name}} a l'article en main.",
     "expired": "Pas payé à temps : l'article n'est plus réservé.",
-    "cancelled": "Remplacé par une nouvelle offre."
+    "cancelled": "Remplacé par une nouvelle offre.",
+    "completedBuyer": "Remis. {{name}} reçoit l'argent.",
+    "completedSeller": "Remis. Dily t'envoie l'argent.",
+    "disputed": "Problème signalé. Dily garde l'argent en attendant.",
+    "refundedBuyer": "Remboursé sur le numéro qui a payé.",
+    "refundedSeller": "Remboursé à {{name}}."
   },
   "checkout": {
     "back": "Retour",
@@ -185,15 +207,71 @@
     "stepPaid": "Payé",
     "stepMeet": "Retrouve {{name}}",
     "stepCheck": "Vérifie l'article",
-    "stepConfirm": "Confirme dans Dily : {{name}} reçoit l'argent",
     "stepCourier": "{{name}} envoie un livreur",
     "stepCourierWhere": "À {{area}}",
     "stepCourierWhereLandmark": "À {{area}}, {{landmark}}",
     "stepCall": "Le livreur t'appelle",
     "stepCallAt": "Au {{phone}}",
     "stepCheckCourier": "Vérifie l'article devant lui",
-    "paidNote": "Dily garde l'argent jusqu'à ta confirmation.",
-    "paidNoteDelivery": "Dily garde l'argent jusqu'à ta confirmation. Pas conforme à l'annonce ? Ne confirme pas, signale-le.",
-    "writeTo": "Écrire à {{name}}"
+    "paidNote": "Dily garde l'argent jusqu'à la remise. Ne donne ton code qu'une fois l'article en main.",
+    "paidNoteDelivery": "Dily garde l'argent jusqu'à la remise. Pas conforme à l'annonce ? Garde ton code et signale-le.",
+    "writeTo": "Écrire à {{name}}",
+    "stepCode": "Donne ton code de remise à {{name}}",
+    "stepCodeCourier": "Donne ton code de remise au livreur"
+  },
+  "events": {
+    "handover": "Article remis · {{amount}}",
+    "refund": "Remboursé · {{amount}}"
+  },
+  "handover": {
+    "codeTitle": "Ton code de remise",
+    "codeForSeller": "Donne-le à {{name}} une fois l'article vérifié.",
+    "codeForCourier": "Donne-le au livreur une fois l'article vérifié.",
+    "codeLabel": "Code de remise {{code}}",
+    "neverEarly": "Ne le donne jamais avant d'avoir l'article en main, même par téléphone.",
+    "disputed": "Problème signalé. Dily garde l'argent en attendant.",
+    "received": "J'ai reçu l'article",
+    "report": "Signaler un problème",
+    "receivedTitle": "Tu as l'article ?",
+    "receivedBody": "L'argent part à {{name}}. Tu ne pourras plus signaler de problème.",
+    "confirm": "Confirmer",
+    "enterTitle": "Code de remise",
+    "enterSubtitle": "Demande son code à {{name}}, une fois l'article vérifié.",
+    "enterLabel": "Code à 4 chiffres",
+    "validate": "Valider la remise",
+    "cantHandOver": "Tu ne peux pas remettre l'article ?",
+    "refund": "Rembourser {{name}}",
+    "refundTitle": "Rembourser {{name}} ?",
+    "refundBody": "{{amount}} retournent sur le numéro qui a payé, et ton annonce est remise en vente.",
+    "reportBy": "Signalé par {{name}} : {{reason}}",
+    "photo": "Photo {{index}}"
+  },
+  "report": {
+    "title": "Signaler un problème",
+    "subtitle": "Dily garde l'argent pendant qu'on regarde.",
+    "reason": "Que se passe-t-il ?",
+    "not_received": "Je n'ai rien reçu",
+    "not_as_described": "Pas conforme à l'annonce",
+    "other": "Autre problème",
+    "note": "Explique en quelques mots",
+    "notePlaceholder": "Ex. : taille 40 au lieu de 42",
+    "photos": "Photos de l'article",
+    "photosRequired": "Ajoute au moins une photo de l'article.",
+    "addPhoto": "Ajouter une photo",
+    "removePhoto": "Retirer la photo {{index}}",
+    "send": "Signaler",
+    "reasonLabel_not_received": "pas reçu",
+    "reasonLabel_not_as_described": "pas conforme à l'annonce",
+    "reasonLabel_other": "autre problème"
+  },
+  "payout": {
+    "title": "Recevoir ton argent",
+    "intro": "Quand un acheteur a son article, Dily t'envoie l'argent sur ce numéro.",
+    "operator": "Opérateur",
+    "number": "Numéro",
+    "save": "Enregistrer",
+    "saved": "C'est noté : ton argent arrivera sur ce numéro.",
+    "profileEntry": "Recevoir ton argent",
+    "profileNone": "Ajoute où recevoir ton argent"
   }
 }

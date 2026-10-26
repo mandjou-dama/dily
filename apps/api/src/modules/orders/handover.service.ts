@@ -255,7 +255,15 @@ export class HandoverService {
           nextAttemptAt: now,
         },
       });
-      if (count > 0) await this.sendTransfer(transfer.id);
+      if (count === 0) continue;
+      // The seller's screen leaves "Ajoute ton numéro" at once
+      const pending = await this.prisma.transfer.findUniqueOrThrow({
+        where: { id: transfer.id },
+      });
+      this.deps.notifier.send(userId, "transfer:updated", {
+        transfer: toTransfer(pending),
+      });
+      await this.sendTransfer(transfer.id);
     }
   }
 

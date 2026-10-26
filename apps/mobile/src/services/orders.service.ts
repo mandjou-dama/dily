@@ -6,21 +6,31 @@ import {
 } from "@tanstack/react-query";
 import {
   type DirectBuyBody,
+  type DisputeReason,
   type Order,
   type OrderDetails,
   orderDetailsSchema,
   orderSchema,
   type Payment,
   type PaymentBody,
+  type PayoutAccount,
   paymentSchema,
+  profileSchema,
+  type Transfer,
+  uploadedImageSchema,
 } from "@dily/shared";
 import { randomUUID } from "expo-crypto";
 
 import { api } from "@/lib/api";
+import { compressImage, imageFormData } from "@/lib/upload";
+import { profileQueryKey } from "@/services/auth.service";
 import { orderQueryKey } from "@/services/chat.service";
 import { applyOrderToCache } from "@/services/offers.service";
 
-export type { OrderDetails, Payment };
+export type { OrderDetails, Payment, Transfer };
+
+/** Report photos: enough to see a defect, small over mobile data. */
+const REPORT_PHOTO_MAX_SIDE = 1600;
 
 /** While the payer confirms: in case a realtime event gets lost. */
 const PAYMENT_POLL_MS = 3_000;
@@ -126,5 +136,112 @@ export function applyPaymentToCache(
       }
       return { ...details, payment };
     },
+  );
+}
+
+// After the payment: handover code, reported problems, refunds, payouts
+
+/** An order's details as an action returned them: every screen showing it. */
+function applyDetailsToCache(queryClient: QueryClient, details: OrderDetails) {
+  queryClient.setQueryData(orderQueryKey(details.order.id), details);
+  applyOrderToCache(queryClient, details.order);
+}
+
+const orderAction = (orderId: string, action: string, body?: object) =>
+  api.request(`/orders/${orderId}/${action}`, {
+    method: "POST",
+    ...(body ? { body } : {}),
+    schema: orderDetailsSchema,
+  });
+
+/** The seller types the code the buyer gave: the money leaves for them. */
+export function useHandover() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, code }: { orderId: string; code: string }) =>
+      orderAction(orderId, "handover", { code }),
+    onSuccess: (details) => applyDetailsToCache(queryClient, details),
+  });
+}
+
+/** "J'ai reçu l'article": the buyer settles it without the code. */
+export function useConfirmReceipt() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => orderAction(orderId, "confirm"),
+    onSuccess: (details) => applyDetailsToCache(queryClient, details),
+  });
+}
+
+export type ReportPhoto = { uri: string; width: number; height: number };
+
+/** The buyer reports a problem: photos uploaded first, then the report. */
+export function useReportProblem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      reason,
+      note,
+      photos,
+    }: {
+      orderId: string;
+      reason: DisputeReason;
+      note: string;
+      photos: ReportPhoto[];
+    }) => {
+      const photoPaths: string[] = [];
+      for (const photo of photos) {
+        const uri = await compressImage(
+          photo.uri,
+          REPORT_PHOTO_MAX_SIDE,
+          photo,
+        );
+        const { path } = await api.request("/media/report-images", {
+          method: "POST",
+          body: imageFormData(uri),
+          schema: uploadedImageSchema,
+        });
+        photoPaths.push(path);
+      }
+      return orderAction(orderId, "dispute", { reason, note, photoPaths });
+    },
+    onSuccess: (details) => applyDetailsToCache(queryClient, details),
+  });
+}
+
+/** The seller gives the money back: the listing is on sale again. */
+export function useRefundBuyer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => orderAction(orderId, "refund"),
+    onSuccess: (details) => applyDetailsToCache(queryClient, details),
+  });
+}
+
+/** Where the seller receives money; waiting payouts leave at once. */
+export function useSetPayoutAccount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (account: PayoutAccount) =>
+      api.request("/me/payout-account", {
+        method: "PUT",
+        body: account,
+        schema: profileSchema,
+      }),
+    onSuccess: (profile) => {
+      queryClient.setQueryData(profileQueryKey(profile.id), profile);
+    },
+  });
+}
+
+/** Money sent to the user changed: the order's details show it. */
+export function applyTransferToCache(
+  queryClient: QueryClient,
+  transfer: Transfer,
+) {
+  queryClient.setQueryData<OrderDetails>(
+    orderQueryKey(transfer.orderId),
+    (details) => details && { ...details, transfer },
   );
 }

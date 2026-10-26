@@ -20,7 +20,8 @@ import Animated, {
 import { useNavigation, useScrollToTop } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Image } from "expo-image";
-import { Ellipsis, MapPin, Pencil } from "lucide-react-native";
+import { Ellipsis, MapPin, Pencil, Wallet } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { colorKit } from "reanimated-color-picker";
 
 import {
@@ -69,6 +70,7 @@ const EMPTY_MESSAGES: Record<Tab, { title: string; text: string }> = {
 
 export const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const tabBarHeight = useBottomTabBarHeight();
   const { profile } = useAuth();
@@ -227,12 +229,28 @@ export const ProfileScreen = () => {
             <Pencil size={16} color={colors.primary} strokeWidth={1.8} />
             <Text style={styles.editText}>Edit profile</Text>
           </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate("PayoutAccount")}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.editButton,
+              styles.payoutButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Wallet size={16} color={colors.primary} strokeWidth={1.8} />
+            <Text style={styles.editText}>
+              {profile?.payoutAccount
+                ? t("payout.profileEntry")
+                : t("payout.profileNone")}
+            </Text>
+          </Pressable>
         </View>
         {/* Room for the pinned tab bar drawn above the list */}
         <View style={styles.tabsSpacer} />
       </View>
     ),
-    [avatarUri, identityHeight, location, name, navigation, profile],
+    [avatarUri, identityHeight, location, name, navigation, profile, t],
   );
 
   const empty = EMPTY_MESSAGES[tab];
@@ -363,6 +381,9 @@ const styles = StyleSheet.create({
   secondary: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  payoutButton: {
+    marginTop: 8,
   },
   editButton: {
     marginTop: 14,

@@ -39,6 +39,19 @@ import {
 import { useTranslation } from "react-i18next";
 import { MESSAGE_MAX_LENGTH, type Offer } from "@dily/shared";
 
+import {
+  EnterCodeSheet,
+  type EnterCodeSheetRef,
+} from "@/components/handover/enter-code-sheet";
+import {
+  HandoverCodeSheet,
+  type HandoverCodeSheetRef,
+} from "@/components/handover/code-sheet";
+import { OrderEventMessage } from "@/components/handover/order-event";
+import {
+  ReportSheet,
+  type ReportSheetRef,
+} from "@/components/handover/report-sheet";
 import { DealHeader } from "@/components/offers/deal-header";
 import { DealMessage } from "@/components/offers/deal-message";
 import { OfferMessage } from "@/components/offers/offer-message";
@@ -65,6 +78,7 @@ import {
   useSendMessage,
 } from "@/services/chat.service";
 import { useAnswerOffer } from "@/services/offers.service";
+import { useOrderDetails } from "@/services/orders.service";
 import { colors } from "@/theme/colors";
 
 // Static navigation reads the params type from here. `makeOffer`: back
@@ -257,6 +271,36 @@ const ConversationView = ({
     navigation.navigate("Checkout", { conversationId: conversation.id });
   }, [navigation, conversation.id]);
 
+  // Once paid: the buyer's code, the seller's code entry, a report, and
+  // where the seller's money stands
+  const order = deal.order;
+  const paidOrderId =
+    order && order.status !== "awaiting_payment" && order.paidAt
+      ? order.id
+      : undefined;
+  const { data: orderDetails } = useOrderDetails(paidOrderId);
+  const codeSheet = useRef<HandoverCodeSheetRef>(null);
+  const enterCodeSheet = useRef<EnterCodeSheetRef>(null);
+  const reportSheet = useRef<ReportSheetRef>(null);
+  const afterKeyboard = useCallback(async (open: () => void) => {
+    await KeyboardController.dismiss();
+    open();
+  }, []);
+  const onShowCode = useCallback(
+    () => afterKeyboard(() => codeSheet.current?.open()),
+    [afterKeyboard],
+  );
+  const onEnterCode = useCallback(
+    () => afterKeyboard(() => enterCodeSheet.current?.open()),
+    [afterKeyboard],
+  );
+  // Presenting it replaces the code sheet
+  const onReport = useCallback(() => reportSheet.current?.open(), []);
+  const onPayoutAccount = useCallback(
+    () => navigation.navigate("PayoutAccount"),
+    [navigation],
+  );
+
   const refreshDeal = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: conversationQueryKey(conversation.id),
@@ -383,6 +427,10 @@ const ConversationView = ({
           onMakeOffer={onMakeOffer}
           onBuy={onCheckout}
           onPay={onCheckout}
+          onShowCode={onShowCode}
+          onEnterCode={onEnterCode}
+          onPayoutAccount={onPayoutAccount}
+          payout={isBuyer ? null : orderDetails?.transfer}
         />
       </View>
 
@@ -494,6 +542,25 @@ const ConversationView = ({
       </KeyboardAvoidingView>
 
       <OfferSheet ref={offerSheet} conversation={conversation} />
+      {paidOrderId ? (
+        isBuyer ? (
+          <>
+            <HandoverCodeSheet
+              ref={codeSheet}
+              conversation={conversation}
+              orderId={paidOrderId}
+              onReport={onReport}
+            />
+            <ReportSheet ref={reportSheet} orderId={paidOrderId} />
+          </>
+        ) : (
+          <EnterCodeSheet
+            ref={enterCodeSheet}
+            conversation={conversation}
+            orderId={paidOrderId}
+          />
+        )
+      ) : null}
     </View>
   );
 };
@@ -560,6 +627,13 @@ const MessageRow = memo(function MessageRow({
         onDecline={onDecline}
       />
     );
+  } else if (
+    (row.kind === "handover" ||
+      row.kind === "dispute" ||
+      row.kind === "refund") &&
+    !isOutgoing(row)
+  ) {
+    content = <OrderEventMessage message={row} />;
   } else if (row.kind === "deal" && row.order) {
     content = (
       <DealMessage

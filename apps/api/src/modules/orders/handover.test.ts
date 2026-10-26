@@ -416,8 +416,12 @@ describe.skipIf(!hasTestServices)("after the payment", () => {
         ]),
       );
 
+      events.mockClear();
       const profile = await setPayoutAccount(seller.token);
       expect(profile.statusCode, profile.body).toBe(200);
+      expect(sentTo(seller.id, "transfer:updated")).toMatchObject([
+        { transfer: { id: waiting?.id, status: "pending" } },
+      ]);
       expect(profile.json<Profile>().payoutAccount).toEqual(SELLER_PAYOUT);
       expect(t.payments.transfers).toMatchObject([
         { transferId: waiting?.id, phone: SELLER_PAYOUT.phone, amount: 16000 },

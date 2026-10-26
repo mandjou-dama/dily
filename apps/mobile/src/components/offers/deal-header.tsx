@@ -1,11 +1,17 @@
-import { listedTotal, type Conversation } from "@dily/shared";
+import {
+  listedTotal,
+  type Conversation,
+  type OrderStatus,
+  type Transfer,
+} from "@dily/shared";
 import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { Check, Clock } from "lucide-react-native";
+import { Check, CircleAlert, Clock } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { ActionButton } from "@/components/action-button";
+import { providerName } from "@/lib/checkout";
 import { imageUrl } from "@/lib/image";
 import { amountLabel, deadlineLabel, firstName } from "@/lib/offers";
 import { colors } from "@/theme/colors";
@@ -19,12 +25,30 @@ type Props = {
   onMakeOffer: () => void;
   onBuy: () => void;
   onPay: () => void;
+  /** The buyer's handover code, once paid. */
+  onShowCode: () => void;
+  /** The seller types the code, or sees what was reported. */
+  onEnterCode: () => void;
+  /** Where the seller receives money. */
+  onPayoutAccount: () => void;
+  /** The seller's payout once handed over, when loaded. */
+  payout?: Transfer | null;
 };
+
+// Orders still in play: the deal card follows them
+const LIVE_ORDER: readonly OrderStatus[] = [
+  "awaiting_payment",
+  "paid",
+  "disputed",
+  "completed",
+];
 
 /**
  * The listing at the top of the conversation and where the deal stands:
  * "Proposer un prix" / "Acheter" for the buyer, then who waits for whom,
- * the agreed price with "Payer", or paid.
+ * the agreed price with "Payer"; once paid, the handover code (buyer) or
+ * where to type it (seller), a reported problem, the seller's payout, a
+ * refund.
  */
 function DealHeaderBase({
   conversation,
@@ -33,15 +57,17 @@ function DealHeaderBase({
   onMakeOffer,
   onBuy,
   onPay,
+  onShowCode,
+  onEnterCode,
+  onPayoutAccount,
+  payout,
 }: Props) {
   const { t } = useTranslation();
   const { product, deal, otherUser } = conversation;
   const isBuyer = conversation.role === "buyer";
   const name = firstName(otherUser.name);
   const order =
-    deal.order?.status === "awaiting_payment" || deal.order?.status === "paid"
-      ? deal.order
-      : null;
+    deal.order && LIVE_ORDER.includes(deal.order.status) ? deal.order : null;
   const pendingForMe =
     deal.offer?.status === "pending" && deal.offer.authorId !== userId
       ? deal.offer
@@ -78,11 +104,74 @@ function DealHeaderBase({
 
   let band: ReactNode = null;
   let actions: ReactNode = null;
-  if (order?.status === "paid") {
+  const amount = order ? amountLabel(order.amount) : "";
+  if (order?.status === "completed") {
+    if (isBuyer) {
+      band = (
+        <Band tone="success" icon="check">
+          {t("deal.completedBuyer", { name })}
+        </Band>
+      );
+    } else if (payout?.status === "awaiting_account") {
+      band = (
+        <Band tone="warning" icon="alert">
+          {t("deal.payoutWaiting", { amount })}
+        </Band>
+      );
+      actions = (
+        <ActionButton label={t("deal.addPayout")} onPress={onPayoutAccount} />
+      );
+    } else if (payout?.status === "failed") {
+      band = (
+        <Band tone="warning" icon="alert">
+          {t("deal.payoutFailed", { amount })}
+        </Band>
+      );
+      actions = (
+        <ActionButton
+          label={t("deal.changePayout")}
+          variant="outline"
+          onPress={onPayoutAccount}
+        />
+      );
+    } else {
+      const provider = payout?.provider ? providerName(payout.provider) : null;
+      band = (
+        <Band tone="success" icon="check">
+          {!provider
+            ? t("deal.payoutSoon", { amount })
+            : payout?.status === "succeeded"
+              ? t("deal.payoutSent", { amount, provider })
+              : t("deal.payoutPending", { amount, provider })}
+        </Band>
+      );
+    }
+  } else if (order?.status === "disputed") {
+    band = (
+      <Band tone="warning" icon="alert">
+        {isBuyer ? t("deal.disputedBuyer") : t("deal.disputedSeller", { name })}
+      </Band>
+    );
+    actions = isBuyer ? (
+      <ActionButton
+        label={t("deal.showCode")}
+        variant="outline"
+        onPress={onShowCode}
+      />
+    ) : (
+      <ActionButton label={t("deal.seeReport")} onPress={onEnterCode} />
+    );
+  } else if (order?.status === "paid") {
     band = (
       <Band tone="success" icon="check">
         {isBuyer ? t("deal.paidBuyer") : t("deal.paidSeller", { name })}
       </Band>
+    );
+    actions = (
+      <ActionButton
+        label={isBuyer ? t("deal.showCode") : t("deal.enterCode")}
+        onPress={isBuyer ? onShowCode : onEnterCode}
+      />
     );
   } else if (order) {
     const time = deadlineLabel(order.reservedUntil);
@@ -95,10 +184,7 @@ function DealHeaderBase({
     );
     if (isBuyer) {
       actions = (
-        <ActionButton
-          label={t("deal.pay", { amount: amountLabel(order.amount) })}
-          onPress={onPay}
-        />
+        <ActionButton label={t("deal.pay", { amount })} onPress={onPay} />
       );
     }
   } else if (product.status !== "active") {
@@ -135,6 +221,16 @@ function DealHeaderBase({
           style={styles.flex}
         />
       </View>
+    );
+  }
+
+  if (!band && deal.order?.status === "refunded") {
+    band = (
+      <Band tone="success" icon="check">
+        {isBuyer
+          ? t("deal.refundedBuyer", { amount: amountLabel(deal.order.amount) })
+          : t("deal.refundedSeller")}
+      </Band>
     );
   }
 
@@ -183,11 +279,12 @@ function Band({
   children,
 }: {
   tone: "success" | "warning";
-  icon: "check" | "clock";
+  icon: "check" | "clock" | "alert";
   children: ReactNode;
 }) {
   const color = tone === "success" ? colors.noteText : colors.warningText;
-  const Icon = icon === "check" ? Check : Clock;
+  const Icon =
+    icon === "check" ? Check : icon === "clock" ? Clock : CircleAlert;
   return (
     <View
       style={[
