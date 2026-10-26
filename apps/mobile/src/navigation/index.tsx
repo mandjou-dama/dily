@@ -11,6 +11,10 @@ import SearchScreen from "../screens/search/SearchScreen";
 import EditProductScreen from "../screens/product/EditProductScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import { ConversationScreen } from "../screens/chat/ConversationScreen";
+import { CheckoutScreen } from "../screens/checkout/CheckoutScreen";
+import { CheckoutPayScreen } from "../screens/checkout/CheckoutPayScreen";
+import { PaymentPendingScreen } from "../screens/checkout/PaymentPendingScreen";
+import { PaymentDoneScreen } from "../screens/checkout/PaymentDoneScreen";
 import { NotFound } from "../screens/NotFound";
 import {
   useIsSignedIn,
@@ -50,6 +54,21 @@ const RootStack = createNativeStackNavigator({
           screen: ConversationScreen,
           // dily://chat/<uuid>, also what a message notification opens
           linking: { path: "chat/:id" },
+        },
+        // Paying: pickup or delivery, then mobile money
+        Checkout: {
+          screen: CheckoutScreen,
+        },
+        CheckoutPay: {
+          screen: CheckoutPayScreen,
+        },
+        PaymentPending: {
+          screen: PaymentPendingScreen,
+          // Leaving while the payer confirms goes through "Je n'ai rien reçu"
+          options: { gestureEnabled: false },
+        },
+        PaymentDone: {
+          screen: PaymentDoneScreen,
         },
       },
     },

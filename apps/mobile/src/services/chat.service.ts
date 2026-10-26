@@ -49,6 +49,7 @@ export const messagesQueryKey = (id: string) => [
   "messages",
   id,
 ];
+export const orderQueryKey = (id: string) => [...CHAT_QUERY_KEY, "order", id];
 
 const withCursor = (path: string, cursor: string | null) =>
   cursor ? `${path}?cursor=${encodeURIComponent(cursor)}` : path;

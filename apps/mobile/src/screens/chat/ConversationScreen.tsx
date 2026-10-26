@@ -22,6 +22,7 @@ import {
   useIsFocused,
   useNavigation,
 } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -66,8 +67,9 @@ import {
 import { useAnswerOffer } from "@/services/offers.service";
 import { colors } from "@/theme/colors";
 
-// Static navigation reads the params type from here
-type Props = StaticScreenProps<{ id: string }>;
+// Static navigation reads the params type from here. `makeOffer`: back
+// from the payment steps to change an agreed way of getting the item
+type Props = StaticScreenProps<{ id: string; makeOffer?: boolean }>;
 
 type Row = ChatMessage | OutgoingMessage;
 
@@ -80,7 +82,7 @@ const keyExtractor = (row: Row) => row.id;
 const REMOVE_CLIPPED_SUBVIEWS = Platform.OS === "android";
 
 export const ConversationScreen = ({ route }: Props) => {
-  const { id } = route.params;
+  const { id, makeOffer } = route.params;
   const {
     data: conversation,
     isPending,
@@ -97,7 +99,11 @@ export const ConversationScreen = ({ route }: Props) => {
     }, [id]),
   );
 
-  if (conversation) return <ConversationView conversation={conversation} />;
+  if (conversation) {
+    return (
+      <ConversationView conversation={conversation} makeOffer={makeOffer} />
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -120,8 +126,15 @@ export const ConversationScreen = ({ route }: Props) => {
   );
 };
 
-const ConversationView = ({ conversation }: { conversation: Conversation }) => {
-  const navigation = useNavigation();
+const ConversationView = ({
+  conversation,
+  makeOffer,
+}: {
+  conversation: Conversation;
+  makeOffer?: boolean;
+}) => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<ReactNavigation.RootParamList>>();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -228,6 +241,22 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
     [openSheet, pendingFromThem],
   );
 
+  // Asked from the payment steps: the sheet rises once this screen is back
+  useEffect(() => {
+    if (!makeOffer) return;
+    return navigation.addListener("transitionEnd", (event) => {
+      if (event.data.closing) return;
+      navigation.setParams({ makeOffer: undefined });
+      void onMakeOffer();
+    });
+  }, [makeOffer, navigation, onMakeOffer]);
+
+  // "Acheter" and "Payer": the payment steps, which read the deal
+  const onCheckout = useCallback(() => {
+    void KeyboardController.dismiss();
+    navigation.navigate("Checkout", { conversationId: conversation.id });
+  }, [navigation, conversation.id]);
+
   const refreshDeal = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: conversationQueryKey(conversation.id),
@@ -302,6 +331,7 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
           onAccept={onAccept}
           onCounter={onCounter}
           onDecline={onDecline}
+          onPay={onCheckout}
         />
       );
     },
@@ -316,6 +346,7 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
       onAccept,
       onCounter,
       onDecline,
+      onCheckout,
     ],
   );
 
@@ -350,6 +381,8 @@ const ConversationView = ({ conversation }: { conversation: Conversation }) => {
             navigation.navigate("ProductDetails", { id: product.id })
           }
           onMakeOffer={onMakeOffer}
+          onBuy={onCheckout}
+          onPay={onCheckout}
         />
       </View>
 
@@ -490,6 +523,7 @@ type MessageRowProps = {
   onAccept: (offer: Offer) => void;
   onCounter: (offer: Offer) => void;
   onDecline: (offer: Offer) => void;
+  onPay: () => void;
 };
 
 /** One row of the conversation: a day label when the day changes, then the message. */
@@ -507,6 +541,7 @@ const MessageRow = memo(function MessageRow({
   onAccept,
   onCounter,
   onDecline,
+  onPay,
 }: MessageRowProps) {
   let content: React.ReactNode;
   if (row.kind === "offer" && row.offer) {
@@ -527,7 +562,12 @@ const MessageRow = memo(function MessageRow({
     );
   } else if (row.kind === "deal" && row.order) {
     content = (
-      <DealMessage order={row.order} role={role} otherName={otherName} />
+      <DealMessage
+        order={row.order}
+        role={role}
+        otherName={otherName}
+        onPay={onPay}
+      />
     );
   } else {
     content = (

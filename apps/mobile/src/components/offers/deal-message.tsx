@@ -12,8 +12,7 @@ type Props = {
   order: Order;
   role: "buyer" | "seller";
   otherName: string;
-  /** Hidden until the payment screens exist. */
-  onPay?: (order: Order) => void;
+  onPay: () => void;
 };
 
 /** "Marché conclu": the agreed total and, for the buyer, "Payer"; then paid. */
@@ -45,11 +44,8 @@ function DealMessageBase({ order, role, otherName, onPay }: Props) {
           </Text>
           {status ? <Text style={styles.status}>{status}</Text> : null}
         </View>
-        {isBuyer && waiting && onPay ? (
-          <ActionButton
-            label={t("deal.pay", { amount })}
-            onPress={() => onPay(order)}
-          />
+        {isBuyer && waiting ? (
+          <ActionButton label={t("deal.pay", { amount })} onPress={onPay} />
         ) : null}
       </View>
       {paid || waiting ? (

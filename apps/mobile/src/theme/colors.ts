@@ -16,14 +16,23 @@ export const colors = {
   // Segmented control track, on white and on the background
   track: "#F2F0E8",
   trackOnBackground: "#EAE7DC",
+  // Between the rows of a card
+  hairline: "#ECEAE2",
   // Reassurance band ("Dily garde l'argent…")
   note: "#E9ECDF",
   noteText: "#2F4420",
+  // Rings and lines on the note color, steps still to come
+  noteRing: "#D3DBC6",
+  noteLine: "#C9D3B8",
+  stepNext: "#D6D3C8",
   // Agreed, reserved, paid
   success: "#E3E8D8",
   // Waiting for an answer
   warning: "#F6E7C8",
   warningText: "#6B4A0F",
+  // Mobile money operators' own colors, on their logos
+  orangeMoney: "#FF7900",
+  moovMoney: "#0B5CAB",
   outline: "#C9C6BA",
   outlineText: "#3A3A35",
   disabled: "#B9BCA9",

@@ -17,9 +17,8 @@ type Props = {
   userId: string | undefined;
   onOpenProduct: () => void;
   onMakeOffer: () => void;
-  /** Hidden until the payment screens exist. */
-  onBuy?: () => void;
-  onPay?: () => void;
+  onBuy: () => void;
+  onPay: () => void;
 };
 
 /**
@@ -50,7 +49,8 @@ function DealHeaderBase({
 
   const price = amountLabel(product.price);
   let priceLine: ReactNode;
-  if (order) {
+  // A direct buy is at the listed price: nothing was agreed
+  if (order && order.offerId !== null) {
     const agreed = amountLabel(order.amount);
     priceLine = (
       <>
@@ -93,7 +93,7 @@ function DealHeaderBase({
           : t("deal.reservedForBuyer", { name, time })}
       </Band>
     );
-    if (isBuyer && onPay) {
+    if (isBuyer) {
       actions = (
         <ActionButton
           label={t("deal.pay", { amount: amountLabel(order.amount) })}
@@ -129,13 +129,11 @@ function DealHeaderBase({
           onPress={onMakeOffer}
           style={styles.flex}
         />
-        {onBuy ? (
-          <ActionButton
-            label={t("deal.buy", { price })}
-            onPress={onBuy}
-            style={styles.flex}
-          />
-        ) : null}
+        <ActionButton
+          label={t("deal.buy", { price })}
+          onPress={onBuy}
+          style={styles.flex}
+        />
       </View>
     );
   }

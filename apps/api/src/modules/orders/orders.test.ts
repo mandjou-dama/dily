@@ -297,10 +297,40 @@ describe.skipIf(!hasTestServices)("orders", () => {
       expect((await buy(rival.token, deliveryBuy(rivals.id))).statusCode).toBe(
         409,
       );
-      // Twice is once too many
-      expect(
-        (await buy(buyer.token, deliveryBuy(conversation.id))).statusCode,
-      ).toBe(409);
+    });
+
+    it("replaces the buyer's unpaid direct buy: back to change how they get it", async () => {
+      const listing = await createListing();
+      const { id } = await openConversation(buyer.token, listing.id);
+      const first = await bought(buyer.token, deliveryBuy(id));
+      events.mockClear();
+
+      const second = await bought(buyer.token, {
+        conversationId: id,
+        fulfilment: "pickup",
+      });
+      expect(second).toMatchObject({
+        amount: 17200,
+        fulfilment: "pickup",
+        status: "awaiting_payment",
+      });
+      const dropped = { ...first, status: "cancelled" };
+      for (const userId of [buyer.id, seller.id]) {
+        expect(sentTo(userId, "order:updated")).toEqual([
+          { order: dropped },
+          { order: second },
+        ]);
+      }
+      expect((await orderDetails(buyer.token, first.id)).order.status).toBe(
+        "cancelled",
+      );
+
+      // Not while the operator is asking the buyer to confirm
+      await paying(buyer.token, second.id, { payerPhone: "+22370000097" });
+      expect((await buy(buyer.token, deliveryBuy(id))).statusCode).toBe(409);
+      expect((await orderDetails(buyer.token, second.id)).order.status).toBe(
+        "awaiting_payment",
+      );
     });
 
     it("is for the conversation's buyer, on an available listing", async () => {

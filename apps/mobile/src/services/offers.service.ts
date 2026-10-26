@@ -14,6 +14,7 @@ import {
   type Offer,
   offerSchema,
   type Order,
+  type OrderDetails,
 } from "@dily/shared";
 import { randomUUID } from "expo-crypto";
 
@@ -23,6 +24,7 @@ import {
   addMessageToCache,
   conversationQueryKey,
   messagesQueryKey,
+  orderQueryKey,
   refreshChatSummaries,
 } from "@/services/chat.service";
 
@@ -149,8 +151,12 @@ export function applyOfferToCache(queryClient: QueryClient, offer: Offer) {
   );
 }
 
-/** An order's new status: its card in the chat, and the deal at the top. */
+/** An order's new status: its card in the chat, the deal at the top, the payment screens. */
 export function applyOrderToCache(queryClient: QueryClient, order: Order) {
+  queryClient.setQueryData<OrderDetails>(
+    orderQueryKey(order.id),
+    (details) => details && { ...details, order },
+  );
   updateMessages(queryClient, order.conversationId, (message) =>
     message.order?.id === order.id ? { ...message, order } : null,
   );

@@ -102,7 +102,8 @@ export class OrdersService {
   /**
    * "Acheter": an order at the listed price, delivery included, held for
    * the buyer while they pay. It ends the negotiation: a pending offer in
-   * the conversation is replaced.
+   * the conversation is replaced. Buying again replaces one's own unpaid
+   * direct buy: the buyer went back to change how they get the item.
    */
   async buy(userId: string, input: DirectBuyInput): Promise<Order> {
     const conversation = await this.prisma.conversation.findFirst({
@@ -141,7 +142,8 @@ export class OrdersService {
     if (open.some((o) => o.conversationId !== conversation.id)) {
       throw reservedElsewhere();
     }
-    if (open.length > 0) {
+    const previous = open[0];
+    if (previous && (previous.offerId !== null || previous.status === "paid")) {
       throw conflict("You already have an order for this item.");
     }
 
@@ -149,6 +151,23 @@ export class OrdersService {
     try {
       created = await this.prisma.$transaction(async (tx) => {
         const lapsed = await expireLapsedOrders(tx, productId, now);
+        let dropped: OrderRow | null = null;
+        if (previous) {
+          const running = await tx.payment.findFirst({
+            where: { orderId: previous.id, status: "pending" },
+          });
+          if (running && paymentStatusAt(running, now) === "pending") {
+            throw paymentWaiting();
+          }
+          const { count } = await tx.order.updateMany({
+            where: { id: previous.id, status: "awaiting_payment" },
+            data: { status: "cancelled" },
+          });
+          if (count === 0) {
+            throw conflict("You already have an order for this item.");
+          }
+          dropped = { ...previous, status: "cancelled" };
+        }
         let replaced: OfferRow | null = null;
         const pending = await tx.offer.findFirst({
           where: { conversationId: conversation.id, status: "pending" },
@@ -179,7 +198,7 @@ export class OrdersService {
             createdAt: now,
           },
         });
-        return { order, replaced, lapsed };
+        return { order, replaced, dropped, lapsed };
       });
     } catch (error) {
       // Another buyer's order got there first
@@ -189,6 +208,11 @@ export class OrdersService {
 
     const order = toOrder(created.order, now);
     for (const id of [conversation.buyerId, conversation.sellerId]) {
+      if (created.dropped) {
+        this.deps.notifier.send(id, "order:updated", {
+          order: toOrder(created.dropped, now),
+        });
+      }
       this.deps.notifier.send(id, "order:updated", { order });
       if (created.replaced) {
         this.deps.notifier.send(id, "offer:updated", {

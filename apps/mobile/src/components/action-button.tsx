@@ -59,7 +59,14 @@ function ActionButtonBase({
           color={variant === "primary" ? colors.white : colors.primary}
         />
       ) : null}
-      <Text style={[styles.label, styles[`${variant}Label`]]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.label,
+          size === "large" && styles.largeLabel,
+          styles[`${variant}Label`],
+        ]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>
@@ -104,6 +111,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  largeLabel: {
+    fontWeight: "600",
   },
   primaryLabel: {
     color: colors.white,

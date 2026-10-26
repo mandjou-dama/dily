@@ -20,6 +20,8 @@ type Props<T extends string> = {
   accessibilityLabel: string;
   /** The track's color depends on what it sits on. */
   surface?: "white" | "background";
+  /** 14 pt titles, for longer ones next to a logo ("Orange Money"). */
+  compact?: boolean;
 };
 
 /**
@@ -33,6 +35,7 @@ function SegmentedControlBase<T extends string>({
   onChange,
   accessibilityLabel,
   surface = "white",
+  compact = false,
 }: Props<T>) {
   const { selection } = useHaptics();
 
@@ -61,7 +64,10 @@ function SegmentedControlBase<T extends string>({
           >
             {segment.leading?.(selected)}
             <View style={styles.text}>
-              <Text style={styles.title} numberOfLines={1}>
+              <Text
+                style={[styles.title, compact && styles.titleCompact]}
+                numberOfLines={1}
+              >
                 {segment.title}
               </Text>
               {segment.subtitle ? (
@@ -119,6 +125,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: colors.black,
+  },
+  titleCompact: {
+    fontSize: 14,
   },
   subtitle: {
     fontSize: 13,

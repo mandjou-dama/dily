@@ -21,6 +21,7 @@ import {
   applyOfferToCache,
   applyOrderToCache,
 } from "@/services/offers.service";
+import { applyPaymentToCache } from "@/services/orders.service";
 
 type RealtimeSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -101,6 +102,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     );
     socket.on("order:updated", ({ order }) =>
       applyOrderToCache(queryClient, order),
+    );
+    socket.on("payment:updated", ({ payment }) =>
+      applyPaymentToCache(queryClient, payment),
     );
     socket.on("conversation:read", (event) => {
       applyReadToCache(queryClient, event);
