@@ -30,6 +30,7 @@ import {
   PushService,
   type PushSender,
 } from "./modules/notifications/push.service.js";
+import { OffersService } from "./modules/offers/offers.service.js";
 import { ProductsService } from "./modules/products/products.service.js";
 import { UserNotifier } from "./modules/realtime/notifier.js";
 import { SellService } from "./modules/sell/sell.service.js";
@@ -114,6 +115,14 @@ export function createServices(input: ServicesInput): Services {
     sender: input.pushSender ?? expoPushSender(config.EXPO_ACCESS_TOKEN),
     logger: input.logger,
   });
+  const chatDeps = {
+    prisma,
+    notifier,
+    push,
+    rateLimiter,
+    logger: input.logger,
+    ...now,
+  };
 
   return {
     health: {
@@ -123,16 +132,10 @@ export function createServices(input: ServicesInput): Services {
     auth,
     me: new MeService({ prisma, media }),
     products: new ProductsService({ prisma, ...now }),
-    sell: new SellService({ prisma, media }),
+    sell: new SellService({ prisma, media, ...now }),
     media,
-    chat: new ChatService({
-      prisma,
-      notifier,
-      push,
-      rateLimiter,
-      logger: input.logger,
-      ...now,
-    }),
+    chat: new ChatService(chatDeps),
+    offers: new OffersService(chatDeps),
     push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),

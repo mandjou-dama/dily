@@ -66,6 +66,9 @@ export const productSchema = z.object({
   createdAt: z.iso.datetime(),
   categoryId: z.number().int().nullable(),
   categoryName: z.string().nullable(),
+  // How the buyer can get it: pickup, and delivery when it has a fee
+  pickup: z.boolean(),
+  deliveryFee: z.number().int().nullable(),
   seller: z.object({
     id: z.uuid(),
     name: z.string(),

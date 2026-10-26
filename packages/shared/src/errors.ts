@@ -6,6 +6,8 @@ export const apiErrorCodes = [
   "unauthorized",
   "forbidden",
   "not_found",
+  // The state changed: offer already answered, listing reserved or sold
+  "conflict",
   "rate_limited",
   "otp_invalid",
   "otp_expired",

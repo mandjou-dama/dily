@@ -2,11 +2,13 @@ import { type ReactNode, useState } from "react";
 import {
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   type TextInputProps,
   View,
 } from "react-native";
+import { MAX_DELIVERY_FEE } from "@dily/shared";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
@@ -44,6 +46,10 @@ export type ListingFormValues = {
   condition: ProductCondition | null;
   // Digits only; shown with spaces
   price: string;
+  pickup: boolean;
+  delivery: boolean;
+  // Digits only, used when `delivery` is on
+  deliveryFee: string;
 };
 
 export const EMPTY_LISTING: ListingFormValues = {
@@ -54,6 +60,9 @@ export const EMPTY_LISTING: ListingFormValues = {
   size: "",
   condition: null,
   price: "",
+  pickup: true,
+  delivery: false,
+  deliveryFee: "",
 };
 
 type Errors = Partial<Record<keyof ListingFormValues, string>>;
@@ -72,6 +81,16 @@ function validate(values: ListingFormValues): Errors {
     errors.price = "Set a price.";
   } else if (price < PRICE_MIN || price > PRICE_MAX) {
     errors.price = `Between ${formatPrice(PRICE_MIN)} and ${formatPrice(PRICE_MAX)} F CFA.`;
+  }
+  if (!values.pickup && !values.delivery) {
+    errors.pickup = "Offer pickup, delivery, or both.";
+  }
+  if (values.delivery) {
+    if (!values.deliveryFee) {
+      errors.deliveryFee = "Set what delivery costs the buyer.";
+    } else if (Number(values.deliveryFee) > MAX_DELIVERY_FEE) {
+      errors.deliveryFee = `At most ${formatPrice(MAX_DELIVERY_FEE)} F CFA.`;
+    }
   }
   return errors;
 }
@@ -121,6 +140,8 @@ export function ListingForm({
       size: values.size,
       condition: values.condition!,
       price: Number(values.price),
+      pickup: values.pickup,
+      deliveryFee: values.delivery ? Number(values.deliveryFee) : null,
     });
   };
 
@@ -249,6 +270,48 @@ export function ListingForm({
               </View>
             </Field>
           </Section>
+
+          <Section>
+            <ToggleRow
+              label="Pickup"
+              description="The buyer comes to your neighbourhood"
+              value={values.pickup}
+              onValueChange={(pickup) => set("pickup", pickup)}
+            />
+            <Divider />
+            <ToggleRow
+              label="Delivery"
+              description="You send a courier in your city"
+              value={values.delivery}
+              onValueChange={(delivery) => set("delivery", delivery)}
+            />
+            {values.delivery ? (
+              <Field label="Delivery fee" error={errors.deliveryFee}>
+                <View style={styles.priceRow}>
+                  <Input
+                    value={
+                      values.deliveryFee
+                        ? formatPrice(Number(values.deliveryFee))
+                        : ""
+                    }
+                    onChangeText={(text) =>
+                      set("deliveryFee", text.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder="1 500"
+                    keyboardType="number-pad"
+                    style={styles.feeInput}
+                    accessibilityLabel="Delivery fee in F CFA"
+                  />
+                  <Text style={styles.currency}>F CFA</Text>
+                </View>
+              </Field>
+            ) : null}
+            {errors.pickup ? (
+              <Text style={[styles.error, styles.sectionError]}>
+                {errors.pickup}
+              </Text>
+            ) : null}
+          </Section>
         </View>
       </KeyboardAwareScrollView>
 
@@ -301,6 +364,31 @@ const Field = ({
     </View>
     {children}
     {error ? <Text style={styles.error}>{error}</Text> : null}
+  </View>
+);
+
+const ToggleRow = ({
+  label,
+  description,
+  value,
+  onValueChange,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}) => (
+  <View style={styles.toggleRow}>
+    <View style={styles.toggleText}>
+      <Text style={styles.toggleLabel}>{label}</Text>
+      <Text style={styles.hint}>{description}</Text>
+    </View>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ true: colors.primary }}
+      accessibilityLabel={label}
+    />
   </View>
 );
 
@@ -437,6 +525,30 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
+  },
+  feeInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+  },
+  toggleText: {
+    flex: 1,
+    gap: 2,
+  },
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.black,
+  },
+  sectionError: {
+    paddingBottom: 12,
   },
   currency: {
     fontSize: 15,

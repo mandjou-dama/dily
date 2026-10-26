@@ -69,6 +69,10 @@ export default function EditProductScreen({ route }: Props) {
         size: product.size ?? "",
         condition: product.condition,
         price: String(product.price),
+        pickup: product.pickup,
+        delivery: product.deliveryFee !== null,
+        deliveryFee:
+          product.deliveryFee === null ? "" : String(product.deliveryFee),
       }}
       isSubmitting={updateListing.isPending}
       progress={updateListing.progress}

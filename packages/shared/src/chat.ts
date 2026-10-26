@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { offerSchema, orderSchema } from "./offers";
 import { productStatusSchema } from "./products";
 
 /** Same limit as the `messages_body_check` constraint. */
@@ -6,16 +7,44 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const MESSAGES_PAGE_SIZE = 30;
 export const CONVERSATIONS_PAGE_SIZE = 20;
 
+export const messageKinds = [
+  "text",
+  // A price offer: its card shows the offer as it stands now
+  "offer",
+  // An offer was accepted: the order waits for payment
+  "deal",
+] as const;
+export const messageKindSchema = z.enum(messageKinds);
+export type MessageKind = z.infer<typeof messageKindSchema>;
+
 export const chatMessageSchema = z.object({
   id: z.uuid(),
   conversationId: z.uuid(),
   senderId: z.uuid(),
+  kind: messageKindSchema,
+  // What the person wrote; for an offer or a deal, a French summary
+  // ("Offre : 17 200 F, livraison comprise")
   body: z.string(),
+  // Offer messages only
+  offer: offerSchema.nullable(),
+  // Deal messages only
+  order: orderSchema.nullable(),
   createdAt: z.iso.datetime(),
   // Set when the other participant opened the conversation
   readAt: z.iso.datetime().nullable(),
 });
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
+
+/** Where the negotiation stands: what the product card at the top shows. */
+export const conversationDealSchema = z.object({
+  // The newest offer, whatever its status; null before the first one
+  offer: offerSchema.nullable(),
+  // This conversation's newest order, whatever its status
+  order: orderSchema.nullable(),
+  // The listing is held for another buyer until then
+  reservedElsewhereUntil: z.iso.datetime().nullable(),
+});
+export type ConversationDeal = z.infer<typeof conversationDealSchema>;
 
 /** A conversation as the signed-in user sees it: about one listing, with one other person. */
 export const conversationSchema = z.object({
@@ -27,17 +56,23 @@ export const conversationSchema = z.object({
     status: productStatusSchema,
     // The cover image
     imagePath: z.string().nullable(),
+    // How the buyer can get it: pickup, and delivery when it has a fee
+    pickup: z.boolean(),
+    deliveryFee: z.number().int().nullable(),
   }),
   otherUser: z.object({
     id: z.uuid(),
     name: z.string(),
     avatarPath: z.string().nullable(),
+    // "Badalabougou, Bamako", or just the city
+    location: z.string(),
   }),
   // "buyer" when the signed-in user wrote to the seller
   role: z.enum(["buyer", "seller"]),
   lastMessage: chatMessageSchema.nullable(),
   // Messages from the other person not read yet
   unreadCount: z.number().int(),
+  deal: conversationDealSchema,
 });
 export type Conversation = z.infer<typeof conversationSchema>;
 

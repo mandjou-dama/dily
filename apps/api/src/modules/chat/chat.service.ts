@@ -9,15 +9,12 @@ import {
   type MessagePushData,
 } from "@dily/shared";
 import type { FastifyBaseLogger } from "fastify";
-import {
-  Prisma,
-  type Message,
-  type PrismaClient,
-} from "../../generated/prisma/client.js";
+import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import { decodeCursor, encodeCursor, toPage } from "../../lib/cursor.js";
 import { AppError, notFound } from "../../lib/errors.js";
 import type { RateLimiter, RateLimitRule } from "../../lib/rate-limit.js";
 import type { PushService } from "../notifications/push.service.js";
+import { toOffer, toOrder } from "../offers/offer-rows.js";
 import type { UserNotifier } from "../realtime/notifier.js";
 
 /** New conversations per user, far above a real buyer's pace: bounds spam. */
@@ -36,9 +33,30 @@ const PERSON_SELECT = {
   id: true,
   fullName: true,
   avatarPath: true,
+  neighbourhood: true,
+  city: true,
 } satisfies Prisma.UserSelect;
 
-const participantOf = (userId: string) =>
+/** "Badalabougou, Bamako", or just the city. */
+const locationOf = (person: { neighbourhood: string | null; city: string }) =>
+  [person.neighbourhood, person.city].filter(Boolean).join(", ");
+
+/** What a message brings along: its offer or its order, as they stand now. */
+export const MESSAGE_INCLUDE = {
+  offer: true,
+  order: true,
+} satisfies Prisma.MessageInclude;
+
+export type MessageRow = Prisma.MessageGetPayload<{
+  include: typeof MESSAGE_INCLUDE;
+}>;
+
+const NEWEST_FIRST = [
+  { createdAt: "desc" },
+  { id: "desc" },
+] satisfies Prisma.MessageOrderByWithRelationInput[];
+
+export const participantOf = (userId: string) =>
   ({
     OR: [{ buyerId: userId }, { sellerId: userId }],
   }) satisfies Prisma.ConversationWhereInput;
@@ -61,16 +79,25 @@ const conversationSelect = (userId: string) =>
         title: true,
         price: true,
         status: true,
+        pickup: true,
+        deliveryFee: true,
         images: {
           select: { path: true },
           orderBy: { position: "asc" },
           take: 1,
         },
+        // Who the listing is held for, if anyone
+        orders: {
+          where: { status: "awaiting_payment" },
+          select: { conversationId: true, reservedUntil: true },
+        },
       },
     },
     buyer: { select: PERSON_SELECT },
     seller: { select: PERSON_SELECT },
-    messages: { orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 1 },
+    messages: { orderBy: NEWEST_FIRST, take: 1, include: MESSAGE_INCLUDE },
+    offers: { orderBy: NEWEST_FIRST, take: 1 },
+    orders: { orderBy: NEWEST_FIRST, take: 1 },
     _count: { select: { messages: { where: unreadBy(userId) } } },
   }) satisfies Prisma.ConversationSelect;
 
@@ -78,19 +105,31 @@ type ConversationRow = Prisma.ConversationGetPayload<{
   select: ReturnType<typeof conversationSelect>;
 }>;
 
-const toChatMessage = (message: Message): ChatMessage => ({
+export const toChatMessage = (message: MessageRow, now: Date): ChatMessage => ({
   id: message.id,
   conversationId: message.conversationId,
   senderId: message.senderId,
+  kind: message.kind,
   body: message.body,
+  offer: message.offer ? toOffer(message.offer, now) : null,
+  order: message.order ? toOrder(message.order, now) : null,
   createdAt: message.createdAt.toISOString(),
   readAt: message.readAt?.toISOString() ?? null,
 });
 
-function toConversation(userId: string, row: ConversationRow): Conversation {
+function toConversation(
+  userId: string,
+  row: ConversationRow,
+  now: Date,
+): Conversation {
   const isBuyer = row.buyerId === userId;
   const other = isBuyer ? row.seller : row.buyer;
   const last = row.messages[0];
+  const offer = row.offers[0];
+  const order = row.orders[0];
+  const heldElsewhere = row.product.orders.find(
+    (o) => o.conversationId !== row.id && o.reservedUntil > now,
+  );
   return {
     id: row.id,
     product: {
@@ -99,15 +138,24 @@ function toConversation(userId: string, row: ConversationRow): Conversation {
       price: row.product.price,
       status: row.product.status,
       imagePath: row.product.images[0]?.path ?? null,
+      pickup: row.product.pickup,
+      deliveryFee: row.product.deliveryFee,
     },
     otherUser: {
       id: other.id,
       name: other.fullName ?? "Dily",
       avatarPath: other.avatarPath,
+      location: locationOf(other),
     },
     role: isBuyer ? "buyer" : "seller",
-    lastMessage: last ? toChatMessage(last) : null,
+    lastMessage: last ? toChatMessage(last, now) : null,
     unreadCount: row._count.messages,
+    deal: {
+      offer: offer ? toOffer(offer, now) : null,
+      order: order ? toOrder(order, now) : null,
+      reservedElsewhereUntil:
+        heldElsewhere?.reservedUntil.toISOString() ?? null,
+    },
   };
 }
 
@@ -116,11 +164,12 @@ const preview = (body: string) =>
     ? `${body.slice(0, PUSH_PREVIEW_LENGTH - 1).trimEnd()}…`
     : body;
 
-const isUniqueViolation = (error: unknown) =>
+export const isUniqueViolation = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError &&
   error.code === "P2002";
 
-const conversationNotFound = () => notFound("This conversation doesn't exist.");
+export const conversationNotFound = () =>
+  notFound("This conversation doesn't exist.");
 
 export interface ChatServiceDeps {
   prisma: PrismaClient;
@@ -175,7 +224,7 @@ export class ChatService {
         data: { productId, buyerId: userId, sellerId: product.sellerId },
         select: conversationSelect(userId),
       });
-      return toConversation(userId, row);
+      return toConversation(userId, row, this.now());
     } catch (error) {
       // Two taps at once: the other request created it
       if (isUniqueViolation(error)) {
@@ -192,7 +241,7 @@ export class ChatService {
       select: conversationSelect(userId),
     });
     if (!row) throw conversationNotFound();
-    return toConversation(userId, row);
+    return toConversation(userId, row, this.now());
   }
 
   /** The user's conversations, latest message first; empty ones are left out. */
@@ -219,10 +268,11 @@ export class ChatService {
       take: CONVERSATIONS_PAGE_SIZE + 1,
       select: conversationSelect(userId),
     });
+    const now = this.now();
     return toPage(
       rows,
       CONVERSATIONS_PAGE_SIZE,
-      (row) => toConversation(userId, row),
+      (row) => toConversation(userId, row, now),
       // Never null here: empty conversations are filtered out
       (row) => encodeCursor(row.lastMessageAt ?? new Date(0), row.id),
     );
@@ -248,11 +298,16 @@ export class ChatService {
             }
           : {}),
       },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: NEWEST_FIRST,
       take: MESSAGES_PAGE_SIZE + 1,
+      include: MESSAGE_INCLUDE,
     });
-    return toPage(rows, MESSAGES_PAGE_SIZE, toChatMessage, (row) =>
-      encodeCursor(row.createdAt, row.id),
+    const now = this.now();
+    return toPage(
+      rows,
+      MESSAGES_PAGE_SIZE,
+      (row) => toChatMessage(row, now),
+      (row) => encodeCursor(row.createdAt, row.id),
     );
   }
 
@@ -275,7 +330,7 @@ export class ChatService {
       MESSAGE_RATE_LIMIT,
     );
 
-    let message: Message;
+    let message: MessageRow;
     try {
       message = await this.prisma.message.create({
         data: {
@@ -285,22 +340,24 @@ export class ChatService {
           body: input.body,
           createdAt: this.now(),
         },
+        include: MESSAGE_INCLUDE,
       });
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
       const saved = await this.prisma.message.findUnique({
         where: { id: input.id },
+        include: MESSAGE_INCLUDE,
       });
       if (
         saved?.senderId === userId &&
         saved.conversationId === conversationId
       ) {
-        return toChatMessage(saved);
+        return toChatMessage(saved, this.now());
       }
       throw new AppError(400, "validation_error", "Invalid message id.");
     }
 
-    const chatMessage = toChatMessage(message);
+    const chatMessage = toChatMessage(message, this.now());
     const recipientId = buyerId === userId ? sellerId : buyerId;
     for (const id of [recipientId, userId]) {
       this.deps.notifier.send(id, "message:new", { message: chatMessage });
@@ -348,7 +405,7 @@ export class ChatService {
       where: { productId_buyerId: { productId, buyerId: userId } },
       select: conversationSelect(userId),
     });
-    return row ? toConversation(userId, row) : null;
+    return row ? toConversation(userId, row, this.now()) : null;
   }
 
   /** 404 unless the user takes part in the conversation: others can't tell it exists. */

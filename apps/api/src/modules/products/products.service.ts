@@ -218,6 +218,8 @@ export class ProductsService {
       createdAt: row.createdAt.toISOString(),
       categoryId: row.categoryId,
       categoryName: row.category?.name ?? null,
+      pickup: row.pickup,
+      deliveryFee: row.deliveryFee,
       seller: {
         id: row.seller.id,
         name: row.seller.fullName ?? "Dily",

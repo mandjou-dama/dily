@@ -12,14 +12,17 @@ const listingNotFound = () =>
 export interface SellServiceDeps {
   prisma: PrismaClient;
   media: MediaService;
+  now?: () => Date;
 }
 
 /** A seller's own listings. Every write checks the listing belongs to the caller. */
 export class SellService {
   private readonly prisma: PrismaClient;
+  private readonly now: () => Date;
 
   constructor(private readonly deps: SellServiceDeps) {
     this.prisma = deps.prisma;
+    this.now = deps.now ?? (() => new Date());
   }
 
   /** Publishes a listing with photos the seller already uploaded; returns its id. */
@@ -85,6 +88,7 @@ export class SellService {
 
   /** Sold listings stay visible (with a Sold badge) but leave the feed. */
   async setSold(sellerId: string, id: string, sold: boolean): Promise<void> {
+    await this.assertNoOpenOrder(id);
     const { count } = await this.prisma.product.updateMany({
       where: { id, sellerId },
       data: { status: sold ? "sold" : "active" },
@@ -98,6 +102,7 @@ export class SellService {
       select: { images: { select: { path: true } } },
     });
     if (!product) throw listingNotFound();
+    await this.assertNoOpenOrder(id);
 
     // Rows first (images cascade): if this fails, nothing is lost
     await this.prisma.product.delete({ where: { id } });
@@ -112,7 +117,32 @@ export class SellService {
       categoryId: listing.categoryId,
       condition: listing.condition,
       size: listing.size,
+      pickup: listing.pickup,
+      deliveryFee: listing.deliveryFee,
     };
+  }
+
+  /**
+   * A buyer agreed on the listing and may be paying, or has paid: it can't
+   * be marked sold, put back or deleted under them.
+   */
+  private async assertNoOpenOrder(productId: string): Promise<void> {
+    const open = await this.prisma.order.count({
+      where: {
+        productId,
+        OR: [
+          { status: "paid" },
+          { status: "awaiting_payment", reservedUntil: { gt: this.now() } },
+        ],
+      },
+    });
+    if (open > 0) {
+      throw new AppError(
+        409,
+        "conflict",
+        "A buyer has an order in progress for this listing.",
+      );
+    }
   }
 
   private async assertCategory(categoryId: number): Promise<void> {

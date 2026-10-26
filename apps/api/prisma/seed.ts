@@ -62,11 +62,14 @@ const sellers = [
 
 const sellerId = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
 
-// likesCount set directly: the mock counts have no matching users
+// likesCount set directly: the mock counts have no matching users. Pickup
+// and delivery cover every case: both, pickup only (3), delivery only (4)
 const products = [
   {
     n: 1,
     seller: 1,
+    pickup: true,
+    deliveryFee: 1000,
     category: "clothing",
     title: "Vintage Denim Jacket",
     price: 23000,
@@ -81,6 +84,8 @@ const products = [
   {
     n: 2,
     seller: 2,
+    pickup: true,
+    deliveryFee: 1500,
     category: "shoes",
     title: "Nike Air Force 1",
     price: 17200,
@@ -95,6 +100,8 @@ const products = [
   {
     n: 3,
     seller: 3,
+    pickup: true,
+    deliveryFee: null,
     category: "designers",
     title: "Minimalist Leather Handbag",
     price: 35000,
@@ -108,6 +115,8 @@ const products = [
   {
     n: 4,
     seller: 4,
+    pickup: false,
+    deliveryFee: 2000,
     category: "clothing",
     title: "Oversized Hoodie",
     price: 40000,
@@ -121,6 +130,8 @@ const products = [
   {
     n: 5,
     seller: 5,
+    pickup: true,
+    deliveryFee: 1000,
     category: "designers",
     title: "Summer Floral Dress",
     price: 28000,
@@ -135,6 +146,8 @@ const products = [
   {
     n: 6,
     seller: 6,
+    pickup: true,
+    deliveryFee: 1500,
     category: "shoes",
     title: "Casual Canvas Sneakers",
     price: 32000,
@@ -177,9 +190,14 @@ await prisma.$transaction(async (tx) => {
     const category = await tx.category.findUniqueOrThrow({
       where: { slug: product.category },
     });
+    const fulfilment = {
+      pickup: product.pickup,
+      deliveryFee: product.deliveryFee,
+    };
     await tx.product.upsert({
       where: { id },
-      update: {},
+      // Seeded before pickup and delivery existed: give them their values
+      update: fulfilment,
       create: {
         id,
         sellerId: sellerId(product.seller),
@@ -190,6 +208,7 @@ await prisma.$transaction(async (tx) => {
         size: product.size,
         condition: product.condition,
         likesCount: product.likes,
+        ...fulfilment,
         createdAt: hoursAgo(product.hours),
         images: { create: [{ path: pexels(product.image), position: 0 }] },
       },

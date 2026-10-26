@@ -48,6 +48,9 @@ export type ListingInput = {
   size: string;
   // In display order: the first one is the cover
   photos: ListingPhoto[];
+  pickup: boolean;
+  // Null: no delivery
+  deliveryFee: number | null;
 };
 
 export type UploadProgress = { done: number; total: number };
@@ -103,6 +106,8 @@ const toBody = (input: ListingInput, imagePaths: string[]): ListingBody => ({
   condition: input.condition,
   size: input.size,
   imagePaths,
+  pickup: input.pickup,
+  deliveryFee: input.deliveryFee,
 });
 
 /** Publishes a new listing; resolves to its id. */
