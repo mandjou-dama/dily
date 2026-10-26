@@ -88,12 +88,27 @@ const envSchema = z
     MEDIA_DIR: z.string().min(1).default("./uploads"),
     /** Only when "Enhanced security for push notifications" is on in the Expo project. */
     EXPO_ACCESS_TOKEN: optional(z.string().min(1)),
+    /**
+     * Orange Money and Moov Money. `simulated`: no money moves, payments
+     * succeed after PAYMENT_SIMULATED_DELAY_MS except for test payer numbers
+     * (development, refused in production). Real operators come later.
+     */
+    PAYMENT_GATEWAY: z.enum(["simulated"]).default("simulated"),
+    PAYMENT_SIMULATED_DELAY_MS: z.coerce.number().int().min(0).default(4000),
   })
   .refine(
     (env) => !(env.NODE_ENV === "production" && env.OTP_SENDER === "console"),
     {
       message: "OTP_SENDER=console is refused in production",
       path: ["OTP_SENDER"],
+    },
+  )
+  .refine(
+    (env) =>
+      !(env.NODE_ENV === "production" && env.PAYMENT_GATEWAY === "simulated"),
+    {
+      message: "PAYMENT_GATEWAY=simulated is refused in production",
+      path: ["PAYMENT_GATEWAY"],
     },
   )
   .refine(

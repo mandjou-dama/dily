@@ -1,6 +1,7 @@
 import type { ChatMessage } from "./chat";
 import type { ApiError } from "./errors";
-import type { Offer, Order } from "./offers";
+import type { Offer } from "./offers";
+import type { Order, Payment } from "./orders";
 
 /**
  * A connection lost for less than this gets its missed events on
@@ -27,6 +28,10 @@ export interface OrderUpdatedEvent {
   order: Order;
 }
 
+export interface PaymentUpdatedEvent {
+  payment: Payment;
+}
+
 /** Events the API sends to the app (Socket.IO). */
 export interface ServerToClientEvents {
   /** A message in one of the user's conversations, theirs included (other devices). */
@@ -36,6 +41,8 @@ export interface ServerToClientEvents {
   "offer:updated": (payload: OfferUpdatedEvent) => void;
   /** An order of the user's, as buyer or seller, changed status. */
   "order:updated": (payload: OrderUpdatedEvent) => void;
+  /** The operator answered, or the buyer gave up: the buyer's devices only. */
+  "payment:updated": (payload: PaymentUpdatedEvent) => void;
 }
 
 /** The app sends nothing over the socket: messages go through HTTP. */

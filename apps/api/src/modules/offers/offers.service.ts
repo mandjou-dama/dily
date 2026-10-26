@@ -28,12 +28,15 @@ import {
 } from "../chat/chat.service.js";
 import type { PushService } from "../notifications/push.service.js";
 import type { UserNotifier } from "../realtime/notifier.js";
+import { offerStatusAt, toOffer, toOrder } from "./offer-rows.js";
 import {
-  offerStatusAt,
-  orderStatusAt,
-  toOffer,
-  toOrder,
-} from "./offer-rows.js";
+  announceExpired,
+  buyerTerms,
+  expireLapsedOrders,
+  openOrdersOf,
+  reservedElsewhere,
+  unavailable,
+} from "./terms.js";
 
 export type OfferInput = z.output<typeof offerBodySchema>;
 
@@ -56,13 +59,6 @@ const offerNotFound = () => notFound("This offer doesn't exist.");
 const offerClosed = () => conflict("This offer is no longer open.");
 const justChanged = () =>
   conflict("The negotiation just changed. Check the conversation first.");
-const unavailable = () => conflict("This item is no longer available.");
-const reservedElsewhere = () =>
-  conflict("This item is reserved for another buyer.");
-
-/** Same comparison for the buyer's and the seller's city: free text in profiles. */
-const sameCity = (a: string, b: string) =>
-  a.trim().toLocaleLowerCase("fr") === b.trim().toLocaleLowerCase("fr");
 
 export interface OffersServiceDeps {
   prisma: PrismaClient;
@@ -146,18 +142,12 @@ export class OffersService {
     const isBuyer = userId === buyerId;
     if (product.status !== "active") throw unavailable();
 
-    const [pending, orders] = await Promise.all([
+    const [pending, openOrders] = await Promise.all([
       this.prisma.offer.findFirst({
         where: { conversationId, status: "pending" },
       }),
-      this.prisma.order.findMany({
-        where: { productId, status: { in: ["awaiting_payment", "paid"] } },
-      }),
+      openOrdersOf(this.prisma, productId, now),
     ]);
-    const openOrders = orders.filter((o) => {
-      const status = orderStatusAt(o, now);
-      return status === "awaiting_payment" || status === "paid";
-    });
     if (openOrders.some((o) => o.conversationId !== conversationId)) {
       throw reservedElsewhere();
     }
@@ -174,7 +164,7 @@ export class OffersService {
     };
     if (isBuyer) {
       terms = {
-        ...this.buyerTerms(input, product, conversation),
+        ...buyerTerms(input, product, conversation),
         listPrice: product.price,
       };
     } else {
@@ -303,19 +293,11 @@ export class OffersService {
     try {
       accepted = await this.prisma.$transaction(async (tx) => {
         // Unpaid in time: the listing is free again
-        const lapsed = await tx.order.findMany({
-          where: {
-            productId: conversation.productId,
-            status: "awaiting_payment",
-            reservedUntil: { lte: now },
-          },
-        });
-        if (lapsed.length > 0) {
-          await tx.order.updateMany({
-            where: { id: { in: lapsed.map((o) => o.id) } },
-            data: { status: "expired" },
-          });
-        }
+        const lapsed = await expireLapsedOrders(
+          tx,
+          conversation.productId,
+          now,
+        );
         const { count } = await tx.offer.updateMany({
           where: { id: offerId, status: "pending", expiresAt: { gt: now } },
           data: { status: "accepted", respondedAt: now },
@@ -372,12 +354,7 @@ export class OffersService {
       this.deps.notifier.send(id, "message:new", { message: chatMessage });
       this.deps.notifier.send(id, "order:updated", { order: result.order });
     }
-    for (const order of accepted.lapsed) {
-      const expired = toOrder({ ...order, status: "expired" }, now);
-      for (const id of [order.buyerId, order.sellerId]) {
-        this.deps.notifier.send(id, "order:updated", { order: expired });
-      }
-    }
+    announceExpired(this.deps.notifier, accepted.lapsed, now);
     void this.notify(offer.authorId, userId, conversation.id, chatMessage.body);
     return result;
   }
@@ -409,47 +386,6 @@ export class OffersService {
       declinedSummary(offer),
     );
     return declined;
-  }
-
-  /** The buyer's choice, checked against what the listing offers. */
-  private buyerTerms(
-    input: OfferInput,
-    product: { pickup: boolean; deliveryFee: number | null },
-    cities: { buyer: { city: string }; seller: { city: string } },
-  ) {
-    if (input.fulfilment === "pickup") {
-      if (!product.pickup) {
-        throw new AppError(
-          400,
-          "validation_error",
-          "This item is delivery only.",
-        );
-      }
-      return {
-        fulfilment: "pickup" as const,
-        deliveryFee: null,
-        deliveryArea: null,
-      };
-    }
-    if (product.deliveryFee === null) {
-      throw new AppError(400, "validation_error", "This item is pickup only.");
-    }
-    if (!input.deliveryArea) {
-      throw new AppError(400, "validation_error", "Say where to deliver.");
-    }
-    // v1: the seller's courier stays in town
-    if (!sameCity(cities.buyer.city, cities.seller.city)) {
-      throw new AppError(
-        400,
-        "validation_error",
-        `Delivery is only available in ${cities.seller.city}.`,
-      );
-    }
-    return {
-      fulfilment: "delivery" as const,
-      deliveryFee: product.deliveryFee,
-      deliveryArea: input.deliveryArea,
-    };
   }
 
   /** An offer the user can accept or decline: someone else's, still pending. */

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { offerSchema, orderSchema } from "./offers";
+import { offerSchema } from "./offers";
+import { orderSchema } from "./orders";
 import { productStatusSchema } from "./products";
 
 /** Same limit as the `messages_body_check` constraint. */

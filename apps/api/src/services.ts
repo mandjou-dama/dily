@@ -31,6 +31,11 @@ import {
   type PushSender,
 } from "./modules/notifications/push.service.js";
 import { OffersService } from "./modules/offers/offers.service.js";
+import { OrdersService } from "./modules/orders/orders.service.js";
+import {
+  SimulatedPaymentGateway,
+  type PaymentGateway,
+} from "./modules/orders/payment-gateway.js";
 import { ProductsService } from "./modules/products/products.service.js";
 import { UserNotifier } from "./modules/realtime/notifier.js";
 import { SellService } from "./modules/sell/sell.service.js";
@@ -52,6 +57,8 @@ type ServicesConfig = Pick<
   | "WHATSAPP_TEMPLATE_LANGUAGE"
   | "MEDIA_DIR"
   | "EXPO_ACCESS_TOKEN"
+  | "PAYMENT_GATEWAY"
+  | "PAYMENT_SIMULATED_DELAY_MS"
 >;
 
 export interface ServicesInput {
@@ -65,6 +72,8 @@ export interface ServicesInput {
   mediaStorage?: MediaStorage;
   /** Replaces Expo Push (tests). */
   pushSender?: PushSender;
+  /** Replaces the mobile money operators (tests). */
+  paymentGateway?: PaymentGateway;
   now?: () => Date;
 }
 
@@ -136,6 +145,11 @@ export function createServices(input: ServicesInput): Services {
     media,
     chat: new ChatService(chatDeps),
     offers: new OffersService(chatDeps),
+    orders: new OrdersService({
+      ...chatDeps,
+      gateway:
+        input.paymentGateway ?? createPaymentGateway(config, input.logger),
+    }),
     push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),
@@ -143,6 +157,19 @@ export function createServices(input: ServicesInput): Services {
     notifier,
     mediaDir,
   };
+}
+
+function createPaymentGateway(
+  config: ServicesConfig,
+  logger: FastifyBaseLogger,
+): PaymentGateway {
+  switch (config.PAYMENT_GATEWAY) {
+    case "simulated":
+      return new SimulatedPaymentGateway(
+        config.PAYMENT_SIMULATED_DELAY_MS,
+        logger,
+      );
+  }
 }
 
 function createOtpSender(

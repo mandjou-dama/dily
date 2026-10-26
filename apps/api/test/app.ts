@@ -13,6 +13,12 @@ import type {
   PushResult,
   PushSender,
 } from "../src/modules/notifications/push.service.js";
+import type {
+  PaymentGateway,
+  PaymentOutcome,
+  PaymentOutcomeHandler,
+  PaymentRequest,
+} from "../src/modules/orders/payment-gateway.js";
 import { attachRealtime } from "../src/modules/realtime/realtime.js";
 import { createServices } from "../src/services.js";
 
@@ -48,14 +54,43 @@ export class FakePushSender implements PushSender {
   }
 }
 
+/** Mobile money operator the test drives: requests are kept, answers sent by hand. */
+export class FakePaymentGateway implements PaymentGateway {
+  readonly requests: PaymentRequest[] = [];
+  /** True: the operator can't be reached. */
+  unreachable = false;
+  private handler: PaymentOutcomeHandler | null = null;
+
+  onOutcome(handler: PaymentOutcomeHandler): void {
+    this.handler = handler;
+  }
+
+  async request(payment: PaymentRequest): Promise<void> {
+    if (this.unreachable) throw new Error("Operator unreachable");
+    this.requests.push(payment);
+  }
+
+  /** The operator's answer for a payment. */
+  answer(paymentId: string, outcome: PaymentOutcome): Promise<void> {
+    if (!this.handler) throw new Error("No outcome handler");
+    return this.handler(paymentId, outcome);
+  }
+}
+
 /** Full app on the test Postgres and Redis, with captured codes and a controllable clock. */
 export async function createTestApp(
   prisma: PrismaClient,
   redis: Redis,
-  options: { testPhones?: PhoneE164[]; testPhoneCode?: string } = {},
+  options: {
+    testPhones?: PhoneE164[];
+    testPhoneCode?: string;
+    /** The app's simulated operator, answering at once, instead of the fake. */
+    simulatedPayments?: boolean;
+  } = {},
 ) {
   const otp = new FakeOtpSender();
   const push = new FakePushSender();
+  const payments = new FakePaymentGateway();
   const mediaDir = await mkdtemp(join(tmpdir(), "dily-media-"));
   let now = new Date();
   const services = createServices({
@@ -74,12 +109,15 @@ export async function createTestApp(
       WHATSAPP_TEMPLATE_LANGUAGE: "fr",
       MEDIA_DIR: mediaDir,
       EXPO_ACCESS_TOKEN: undefined,
+      PAYMENT_GATEWAY: "simulated",
+      PAYMENT_SIMULATED_DELAY_MS: 0,
     },
     prisma,
     redis,
     logger: Fastify().log,
     otpSender: otp,
     pushSender: push,
+    ...(options.simulatedPayments ? {} : { paymentGateway: payments }),
     now: () => now,
   });
   const app = buildApp(services);
@@ -92,6 +130,7 @@ export async function createTestApp(
     services,
     otp,
     push,
+    payments,
     mediaDir,
     /** Listens on a free port, for Socket.IO clients; returns the server's URL. */
     async listen() {

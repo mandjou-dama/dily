@@ -1,16 +1,14 @@
 import { z } from "zod";
+import {
+  DELIVERY_AREA_MAX_LENGTH,
+  fulfilmentSchema,
+  orderSchema,
+} from "./orders";
 
 /** Unanswered this long, an offer expires. */
 export const OFFER_TTL_HOURS = 24;
 /** After an accepted offer, the listing is held for the buyer this long, waiting for payment. */
 export const RESERVATION_HOURS = 24;
-/** Same limit as the `*_delivery_area_length_check` constraints. */
-export const DELIVERY_AREA_MAX_LENGTH = 60;
-
-export const fulfilments = ["pickup", "delivery"] as const;
-/** Pickup in the seller's neighbourhood, or delivery by a courier the seller sends. */
-export const fulfilmentSchema = z.enum(fulfilments);
-export type Fulfilment = z.infer<typeof fulfilmentSchema>;
 
 export const offerStatuses = [
   "pending",
@@ -46,40 +44,6 @@ export const offerSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type Offer = z.infer<typeof offerSchema>;
-
-export const orderStatuses = [
-  "awaiting_payment",
-  "paid",
-  // The buyer made a new offer instead of paying
-  "cancelled",
-  // Not paid in time: the listing is free again
-  "expired",
-] as const;
-export const orderStatusSchema = z.enum(orderStatuses);
-export type OrderStatus = z.infer<typeof orderStatusSchema>;
-
-/** A purchase: an accepted offer, or a direct buy. */
-export const orderSchema = z.object({
-  id: z.uuid(),
-  conversationId: z.uuid(),
-  productId: z.uuid(),
-  buyerId: z.uuid(),
-  sellerId: z.uuid(),
-  // Null for a direct buy
-  offerId: z.uuid().nullable(),
-  // Total the buyer pays, delivery included
-  amount: z.number().int(),
-  listPrice: z.number().int(),
-  fulfilment: fulfilmentSchema,
-  deliveryFee: z.number().int().nullable(),
-  deliveryArea: z.string().nullable(),
-  status: orderStatusSchema,
-  // While awaiting payment, the listing is held for the buyer until then
-  reservedUntil: z.iso.datetime(),
-  paidAt: z.iso.datetime().nullable(),
-  createdAt: z.iso.datetime(),
-});
-export type Order = z.infer<typeof orderSchema>;
 
 /** The listed price for a way of getting the item: what an offer compares to. */
 export const listedTotal = ({

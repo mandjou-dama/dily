@@ -5,6 +5,7 @@ export * from "./profile";
 export * from "./products";
 export * from "./sell";
 export * from "./media";
+export * from "./orders";
 export * from "./offers";
 export * from "./chat";
 export * from "./realtime";
