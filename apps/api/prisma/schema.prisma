@@ -1,0 +1,182 @@
+// Dily data model. Models and fields are camelCase in TypeScript, tables and
+// columns snake_case in the database. Prices are whole F CFA (XOF has no
+// minor unit). Image columns hold a media path; a value starting with "http"
+// is an external URL (seed data only).
+//
+// Not expressed here, so only in migrations: the pg_trgm extension, CHECK
+// constraints and the triggers that keep `likes_count` and
+// `last_message_at` up to date.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// E.164, e.g. "+22370000000"
+  phoneE164     String   @unique @map("phone_e164")
+  /// HMAC-SHA256 of the number (src/lib/phone-hash.ts): finds the account
+  /// without looking the number up in clear
+  phoneHash     String   @unique @map("phone_hash")
+  fullName      String?  @map("full_name")
+  avatarPath    String?  @map("avatar_path")
+  /// Where the seller meets buyers: "Hamdallaye ACI"
+  neighbourhood String?
+  city          String   @default("Bamako")
+  /// Test number (TEST_PHONES): set at sign-in, never by the app
+  isTester      Boolean  @default(false) @map("is_tester")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  refreshTokens         RefreshToken[]
+  products              Product[]
+  likes                 Like[]
+  conversationsAsBuyer  Conversation[] @relation("ConversationBuyer")
+  conversationsAsSeller Conversation[] @relation("ConversationSeller")
+  messages              Message[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  /// SHA-256 of the token; the token itself is never stored
+  tokenHash    String    @unique @map("token_hash")
+  deviceId     String    @map("device_id")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(3)
+  /// Set when the token was rotated: id of its successor
+  replacedById String?   @map("replaced_by_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deviceId])
+  @@map("refresh_tokens")
+}
+
+model Category {
+  id       Int    @id @default(autoincrement()) @db.SmallInt
+  slug     String @unique
+  name     String
+  position Int    @default(0) @db.SmallInt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+enum ProductStatus {
+  active
+  sold
+  archived
+
+  @@map("product_status")
+}
+
+enum ProductCondition {
+  new
+  like_new
+  good
+  used
+
+  @@map("product_condition")
+}
+
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  sellerId    String           @map("seller_id") @db.Uuid
+  categoryId  Int?             @map("category_id") @db.SmallInt
+  title       String
+  description String?
+  price       Int
+  currency    String           @default("XOF") @db.Char(3)
+  size        String?
+  condition   ProductCondition @default(good)
+  status      ProductStatus    @default(active)
+  /// Kept by the likes trigger, never written by the API
+  likesCount  Int              @default(0) @map("likes_count")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  seller        User           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images        ProductImage[]
+  likes         Like[]
+  conversations Conversation[]
+
+  @@index([status, createdAt(sort: Desc)], map: "products_feed_idx")
+  @@index([categoryId, status, createdAt(sort: Desc)], map: "products_category_feed_idx")
+  @@index([sellerId, createdAt(sort: Desc)], map: "products_seller_idx")
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_title_trgm_idx")
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  path      String
+  position  Int      @default(0) @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, position])
+  @@index([path])
+  @@map("product_images")
+}
+
+model Like {
+  userId    String   @map("user_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([productId])
+  @@map("likes")
+}
+
+model Conversation {
+  id            String    @id @default(uuid()) @db.Uuid
+  productId     String    @map("product_id") @db.Uuid
+  buyerId       String    @map("buyer_id") @db.Uuid
+  sellerId      String    @map("seller_id") @db.Uuid
+  /// Kept by the messages trigger
+  lastMessageAt DateTime? @map("last_message_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer    User      @relation("ConversationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller   User      @relation("ConversationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([productId, buyerId])
+  @@index([buyerId, lastMessageAt(sort: Desc)])
+  @@index([sellerId, lastMessageAt(sort: Desc)])
+  @@map("conversations")
+}
+
+model Message {
+  /// Client-generated ids allow optimistic sends without duplicates
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  body           String
+  readAt         DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@map("messages")
+}

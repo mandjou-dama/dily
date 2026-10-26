@@ -1,0 +1,139 @@
+import { resolve } from "node:path";
+import type { FastifyBaseLogger } from "fastify";
+import type { Redis } from "ioredis";
+import type { AppDeps } from "./app.js";
+import type { Config } from "./config.js";
+import type { PrismaClient } from "./generated/prisma/client.js";
+import {
+  createAuthenticator,
+  createRequireAuth,
+  type Authenticate,
+} from "./lib/auth-guard.js";
+import { RateLimiter } from "./lib/rate-limit.js";
+import { AuthService } from "./modules/auth/auth.service.js";
+import {
+  ConsoleOtpSender,
+  NoOtpSender,
+  WhatsAppOtpSender,
+  type OtpSender,
+} from "./modules/auth/otp-sender.js";
+import { OtpService } from "./modules/auth/otp.service.js";
+import { AccessTokenSigner } from "./modules/auth/tokens.js";
+import { MediaService } from "./modules/media/media.service.js";
+import {
+  DiskMediaStorage,
+  type MediaStorage,
+} from "./modules/media/storage.js";
+import { ProductsService } from "./modules/products/products.service.js";
+import { SellService } from "./modules/sell/sell.service.js";
+import { MeService } from "./modules/users/me.service.js";
+
+type ServicesConfig = Pick<
+  Config,
+  | "PHONE_HASH_PEPPER"
+  | "JWT_ACCESS_SECRET"
+  | "JWT_ACCESS_TTL_SECONDS"
+  | "REFRESH_TOKEN_TTL_SECONDS"
+  | "OTP_SENDER"
+  | "TEST_PHONES"
+  | "TEST_PHONE_CODE"
+  | "WHATSAPP_API_BASE"
+  | "WHATSAPP_PHONE_NUMBER_ID"
+  | "WHATSAPP_ACCESS_TOKEN"
+  | "WHATSAPP_TEMPLATE_NAME"
+  | "WHATSAPP_TEMPLATE_LANGUAGE"
+  | "MEDIA_DIR"
+>;
+
+export interface ServicesInput {
+  config: ServicesConfig;
+  prisma: PrismaClient;
+  redis: Redis;
+  logger: FastifyBaseLogger;
+  /** Replaces the code sender (tests). */
+  otpSender?: OtpSender;
+  /** Replaces the image store (tests). */
+  mediaStorage?: MediaStorage;
+  now?: () => Date;
+}
+
+export interface Services extends AppDeps {
+  authenticate: Authenticate;
+}
+
+/** Builds the domain services from the infrastructure. */
+export function createServices(input: ServicesInput): Services {
+  const { config, prisma, redis } = input;
+  const now = input.now ? { now: input.now } : {};
+
+  const otp = new OtpService(
+    redis,
+    input.otpSender ?? createOtpSender(config, input.logger),
+    {
+      pepper: config.PHONE_HASH_PEPPER,
+      testPhones: config.TEST_PHONES,
+      testCode: config.TEST_PHONE_CODE,
+    },
+  );
+  const rateLimiter = new RateLimiter(redis);
+  const accessTokens = new AccessTokenSigner({
+    secret: config.JWT_ACCESS_SECRET,
+    ttlSeconds: config.JWT_ACCESS_TTL_SECONDS,
+  });
+  const auth = new AuthService({
+    prisma,
+    otp,
+    rateLimiter,
+    accessTokens,
+    pepper: config.PHONE_HASH_PEPPER,
+    refreshTokenTtlSeconds: config.REFRESH_TOKEN_TTL_SECONDS,
+    ...now,
+  });
+
+  const mediaDir = resolve(config.MEDIA_DIR);
+  const media = new MediaService({
+    prisma,
+    storage: input.mediaStorage ?? new DiskMediaStorage(mediaDir),
+  });
+  const authenticate = createAuthenticator({ prisma, accessTokens, ...now });
+
+  return {
+    health: {
+      postgres: () => prisma.$queryRaw`SELECT 1`,
+      redis: () => redis.ping(),
+    },
+    auth,
+    me: new MeService({ prisma, media }),
+    products: new ProductsService({ prisma, ...now }),
+    sell: new SellService({ prisma, media }),
+    media,
+    rateLimiter,
+    requireAuth: createRequireAuth(authenticate, rateLimiter),
+    authenticate,
+    mediaDir,
+  };
+}
+
+function createOtpSender(
+  config: ServicesConfig,
+  logger: FastifyBaseLogger,
+): OtpSender {
+  switch (config.OTP_SENDER) {
+    case "console":
+      return new ConsoleOtpSender(logger);
+    case "none":
+      return new NoOtpSender();
+    case "whatsapp":
+      return new WhatsAppOtpSender(
+        {
+          apiBase: config.WHATSAPP_API_BASE,
+          // Both checked by loadConfig when OTP_SENDER=whatsapp
+          phoneNumberId: config.WHATSAPP_PHONE_NUMBER_ID ?? "",
+          accessToken: config.WHATSAPP_ACCESS_TOKEN ?? "",
+          templateName: config.WHATSAPP_TEMPLATE_NAME,
+          templateLanguage: config.WHATSAPP_TEMPLATE_LANGUAGE,
+        },
+        logger,
+      );
+  }
+}

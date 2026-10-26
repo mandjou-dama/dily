@@ -5,3 +5,5 @@ public/
 pnpm-lock.yaml
 .expo/
 .claude/
+apps/api/src/generated/
+apps/api/uploads/

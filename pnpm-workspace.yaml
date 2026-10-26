@@ -1,5 +1,12 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
 nodeLinker: hoisted
 
 onlyBuiltDependencies:
+  - "@prisma/engines"
   - "@shopify/react-native-skia"
+  - esbuild
+  - prisma
   - sharp

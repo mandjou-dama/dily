@@ -30,6 +30,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -40,3 +41,7 @@ app-example
 # Native
 ios/
 android/
+
+# API
+apps/api/src/generated/
+apps/api/uploads/
