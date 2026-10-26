@@ -1,7 +1,6 @@
 import type { Conversation } from "@dily/shared";
 import { forwardRef, useImperativeHandle, useRef } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
-import { Lock } from "lucide-react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 import { ActionButton } from "@/components/action-button";
@@ -25,7 +24,8 @@ type Props = {
 
 /**
  * The buyer's handover code, to give once they have the item and checked
- * it; or "J'ai reçu l'article", or a problem to report.
+ * it: the one way to finish. A problem can be reported instead; when the
+ * seller can't type the code, a small link lets the buyer confirm.
  */
 export const HandoverCodeSheet = forwardRef<HandoverCodeSheetRef, Props>(
   function HandoverCodeSheet({ conversation, orderId, onReport }, ref) {
@@ -78,67 +78,163 @@ export const HandoverCodeSheet = forwardRef<HandoverCodeSheetRef, Props>(
             : t("handover.codeForSeller", { name: seller })
         }
         dismissible={!confirm.isPending}
-        footer={
-          <>
-            {disputed ? null : (
-              <ActionButton
-                label={t("handover.report")}
-                variant="quiet"
-                onPress={onReport}
-                style={styles.flex}
-              />
-            )}
-            <ActionButton
-              label={t("handover.received")}
-              onPress={onReceived}
-              isLoading={confirm.isPending}
-              style={styles.flex}
-            />
-          </>
-        }
       >
-        <View style={styles.code}>
-          {data?.handoverCode ? (
-            <HandoverCodeDigits code={data.handoverCode} />
-          ) : (
-            <Spinner color={colors.primary} size={28} />
-          )}
-        </View>
-        <View style={[styles.note, disputed && styles.noteDisputed]}>
-          <Lock size={16} color={colors.warningText} strokeWidth={2} />
-          <Text style={styles.noteText}>
-            {disputed ? t("handover.disputed") : t("handover.neverEarly")}
+        <CodeNotice code={data?.handoverCode ?? null}>
+          {disputed ? t("handover.disputed") : t("handover.neverEarly")}
+        </CodeNotice>
+        {disputed ? null : (
+          <ActionButton
+            label={t("handover.report")}
+            variant="quiet"
+            onPress={onReport}
+            disabled={confirm.isPending}
+          />
+        )}
+        <View style={styles.fallback}>
+          <Text style={styles.fallbackText}>
+            {t("handover.receivedHint", { name: seller })}
           </Text>
+          <Pressable
+            onPress={onReceived}
+            disabled={confirm.isPending}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityState={{ busy: confirm.isPending }}
+            style={({ pressed }) => [
+              styles.fallbackLink,
+              (pressed || confirm.isPending) && styles.pressed,
+            ]}
+          >
+            {confirm.isPending ? (
+              <Spinner color={colors.primary} size={14} />
+            ) : null}
+            <Text style={styles.fallbackLinkText}>
+              {t("handover.receivedLink")}
+            </Text>
+          </Pressable>
         </View>
       </Sheet>
     );
   },
 );
 
+/** Where the tab meets the band: a concave curve on each side. */
+const JOIN = 14;
+
+/**
+ * The code and its warning as one shape: the digits sit in a tab that
+ * rises from the warning band.
+ */
+function CodeNotice({
+  code,
+  children,
+}: {
+  code: string | null;
+  children: string;
+}) {
+  return (
+    <View style={styles.notice}>
+      <View style={styles.tab}>
+        {code ? (
+          <HandoverCodeDigits code={code} onTint />
+        ) : (
+          <View style={styles.loading}>
+            <Spinner color={colors.primary} size={28} />
+          </View>
+        )}
+        <View style={[styles.join, styles.joinLeft]}>
+          <View style={[styles.joinCut, styles.joinCutLeft]} />
+        </View>
+        <View style={[styles.join, styles.joinRight]}>
+          <View style={[styles.joinCut, styles.joinCutRight]} />
+        </View>
+      </View>
+      <View style={styles.band}>
+        <Text style={styles.bandText}>{children}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
+  notice: {
+    alignItems: "center",
   },
-  code: {
-    minHeight: 68,
-    justifyContent: "center",
-  },
-  note: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    padding: 12,
-    borderRadius: 14,
+  tab: {
+    padding: 8,
+    // The digit boxes' 16 pt corners plus the padding: concentric
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderCurve: "continuous",
     backgroundColor: colors.warning,
   },
-  noteDisputed: {
+  loading: {
+    width: 262,
+    height: 68,
     alignItems: "center",
+    justifyContent: "center",
   },
-  noteText: {
+  // A square of the band's color, its outer corner cut by a quarter circle
+  // of the sheet's: the band curves up into the tab
+  join: {
+    position: "absolute",
+    bottom: 0,
+    width: JOIN,
+    height: JOIN,
+    backgroundColor: colors.warning,
+  },
+  joinLeft: {
+    left: -JOIN,
+  },
+  joinRight: {
+    right: -JOIN,
+  },
+  joinCut: {
     flex: 1,
+    backgroundColor: colors.white,
+  },
+  joinCutLeft: {
+    borderBottomRightRadius: JOIN,
+  },
+  joinCutRight: {
+    borderBottomLeftRadius: JOIN,
+  },
+  band: {
+    alignSelf: "stretch",
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderRadius: 16,
+    borderCurve: "continuous",
+    backgroundColor: colors.warning,
+  },
+  bandText: {
     fontSize: 13,
     lineHeight: 18,
     color: colors.warningText,
+    textAlign: "center",
+  },
+  fallback: {
+    alignItems: "center",
+    gap: 2,
+  },
+  fallbackText: {
+    fontSize: 13,
+    color: colors.muted,
+    textAlign: "center",
+  },
+  fallbackLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  fallbackLinkText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.primary,
+    textDecorationLine: "underline",
+  },
+  pressed: {
+    opacity: 0.6,
   },
 });

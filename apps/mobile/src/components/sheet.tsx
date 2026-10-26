@@ -45,6 +45,8 @@ const GAP = 18;
 const KEYBOARD_GAP = 14;
 /** The design leaves 40 pt under the buttons, home indicator included. */
 const BOTTOM_SPACE = 40;
+const TITLE_LINE = 28;
+const CLOSE_SIZE = 40;
 
 /**
  * Bottom sheet as in payme-business (`@gorhom/bottom-sheet`): slides up
@@ -178,7 +180,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    // The close button on the title's line, not the subtitle's
+    alignItems: "flex-start",
     gap: 12,
     marginTop: GAP,
   },
@@ -188,6 +191,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
+    lineHeight: TITLE_LINE,
     fontWeight: "600",
     letterSpacing: -0.3,
     color: colors.black,
@@ -197,8 +201,10 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   close: {
-    width: 40,
-    height: 40,
+    width: CLOSE_SIZE,
+    height: CLOSE_SIZE,
+    // Centered on the title's line
+    marginTop: (TITLE_LINE - CLOSE_SIZE) / 2,
     borderRadius: 15,
     borderCurve: "continuous",
     alignItems: "center",

@@ -8,10 +8,13 @@ import { colors } from "@/theme/colors";
 function HandoverCodeDigitsBase({
   code,
   compact = false,
+  onTint = false,
 }: {
   code: string;
   /** Smaller boxes, inside a card. */
   compact?: boolean;
+  /** White boxes, on a colored surface. */
+  onTint?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -23,7 +26,14 @@ function HandoverCodeDigitsBase({
       })}
     >
       {code.split("").map((digit, index) => (
-        <View key={index} style={[styles.box, compact && styles.boxCompact]}>
+        <View
+          key={index}
+          style={[
+            styles.box,
+            compact && styles.boxCompact,
+            onTint && styles.boxOnTint,
+          ]}
+        >
           <Text style={[styles.digit, compact && styles.digitCompact]}>
             {digit}
           </Text>
@@ -55,6 +65,9 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 12,
     backgroundColor: colors.background,
+  },
+  boxOnTint: {
+    backgroundColor: colors.white,
   },
   digit: {
     fontSize: 32,
