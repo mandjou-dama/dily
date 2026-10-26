@@ -6,9 +6,13 @@ import {
   type FeedQuery,
   type Product,
 } from "@dily/shared";
-import { z } from "zod";
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.js";
-import { AppError, notFound } from "../../lib/errors.js";
+import {
+  decodeCursor,
+  encodeCursor,
+  toPage as toKeysetPage,
+} from "../../lib/cursor.js";
+import { notFound } from "../../lib/errors.js";
 
 // Only what a card shows: the cover image, the seller's name, a Sold badge
 const FEED_SELECT = {
@@ -37,23 +41,6 @@ const toFeedProduct = (row: FeedRow): FeedProduct => ({
 
 // Newest first; the cursor is the last card's (date, id): its created_at in
 // the feed, the moment it was liked in favorites
-const cursorSchema = z.object({ c: z.iso.datetime(), i: z.uuid() });
-
-const encodeCursor = (date: Date, id: string) =>
-  Buffer.from(JSON.stringify({ c: date.toISOString(), i: id })).toString(
-    "base64url",
-  );
-
-function decodeCursor(cursor: string) {
-  try {
-    const { c, i } = cursorSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")),
-    );
-    return { date: new Date(c), id: i };
-  } catch {
-    throw new AppError(400, "validation_error", "Invalid cursor.");
-  }
-}
 
 /** Rows strictly after the cursor in (date desc, id desc) order. */
 const productsAfter = (cursor: string | undefined) => {
@@ -67,19 +54,11 @@ const productsAfter = (cursor: string | undefined) => {
   } satisfies Prisma.ProductWhereInput;
 };
 
-/** One page out of PAGE_SIZE + 1 rows: the extra one tells whether another page follows. */
-function toPage<T>(
+const toPage = <T>(
   rows: T[],
   toItem: (row: T) => FeedProduct,
   cursorOf: (row: T) => string,
-): FeedPage {
-  const page = rows.slice(0, FEED_PAGE_SIZE);
-  const last = page.at(-1);
-  return {
-    items: page.map(toItem),
-    nextCursor: rows.length > FEED_PAGE_SIZE && last ? cursorOf(last) : null,
-  };
-}
+): FeedPage => toKeysetPage(rows, FEED_PAGE_SIZE, toItem, cursorOf);
 
 const feedCursor = (row: FeedRow) => encodeCursor(row.createdAt, row.id);
 

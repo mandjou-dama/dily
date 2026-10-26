@@ -41,6 +41,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#3C5627"
+        }
+      ],
       "expo-image",
       "./plugins/with-min-pod-deployment-target",
       "./plugins/with-scene-lifecycle"

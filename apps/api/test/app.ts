@@ -8,6 +8,12 @@ import sharp from "sharp";
 import { buildApp } from "../src/app.js";
 import type { PrismaClient } from "../src/generated/prisma/client.js";
 import type { OtpSender } from "../src/modules/auth/otp-sender.js";
+import type {
+  PushMessage,
+  PushResult,
+  PushSender,
+} from "../src/modules/notifications/push.service.js";
+import { attachRealtime } from "../src/modules/realtime/realtime.js";
 import { createServices } from "../src/services.js";
 
 /** Captures sent codes so tests can read the code received. */
@@ -25,6 +31,23 @@ export class FakeOtpSender implements OtpSender {
   }
 }
 
+/** Captures push notifications; tokens in `unregistered` answer DeviceNotRegistered. */
+export class FakePushSender implements PushSender {
+  readonly sent: (PushMessage & { to: string })[] = [];
+  readonly unregistered = new Set<string>();
+
+  async send(
+    messages: (PushMessage & { to: string })[],
+  ): Promise<PushResult[]> {
+    this.sent.push(...messages);
+    return messages.map((m) =>
+      this.unregistered.has(m.to)
+        ? { ok: false, deviceNotRegistered: true }
+        : { ok: true },
+    );
+  }
+}
+
 /** Full app on the test Postgres and Redis, with captured codes and a controllable clock. */
 export async function createTestApp(
   prisma: PrismaClient,
@@ -32,6 +55,7 @@ export async function createTestApp(
   options: { testPhones?: PhoneE164[]; testPhoneCode?: string } = {},
 ) {
   const otp = new FakeOtpSender();
+  const push = new FakePushSender();
   const mediaDir = await mkdtemp(join(tmpdir(), "dily-media-"));
   let now = new Date();
   const services = createServices({
@@ -49,20 +73,34 @@ export async function createTestApp(
       WHATSAPP_TEMPLATE_NAME: "dily_login_code",
       WHATSAPP_TEMPLATE_LANGUAGE: "fr",
       MEDIA_DIR: mediaDir,
+      EXPO_ACCESS_TOKEN: undefined,
     },
     prisma,
     redis,
     logger: Fastify().log,
     otpSender: otp,
+    pushSender: push,
     now: () => now,
   });
   const app = buildApp(services);
+  // As in server.ts: before the app starts, which the first request does
+  const realtime = attachRealtime(app, { authenticate: services.authenticate });
+  services.notifier.bind(realtime.emitToUser);
 
   return {
     app,
     services,
     otp,
+    push,
     mediaDir,
+    /** Listens on a free port, for Socket.IO clients; returns the server's URL. */
+    async listen() {
+      await app.listen({ host: "127.0.0.1", port: 0 });
+      const address = app.server.address();
+      if (!address || typeof address === "string")
+        throw new Error("Unexpected server address");
+      return `http://127.0.0.1:${address.port}`;
+    },
     advance: (seconds: number) => {
       now = new Date(now.getTime() + seconds * 1000);
     },

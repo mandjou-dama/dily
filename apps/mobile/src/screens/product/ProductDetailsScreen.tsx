@@ -44,6 +44,8 @@ import {
   useToggleLike,
 } from "@/services/products.service";
 import { useDeleteListing, useSetListingSold } from "@/services/sell.service";
+import { useOpenConversation } from "@/services/chat.service";
+import { apiErrorMessage } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
 import { useNotify } from "@/components/notify";
 import { Spinner } from "@/components/spinner";
@@ -107,6 +109,7 @@ const ProductView = ({ product }: { product: Product }) => {
   const { impact, notification } = useHaptics();
   const setSold = useSetListingSold();
   const deleteListing = useDeleteListing();
+  const openConversation = useOpenConversation();
 
   const { data: likedIds = NO_LIKES } = useLikedIds();
   const { mutate: toggleLike } = useToggleLike();
@@ -153,10 +156,17 @@ const ProductView = ({ product }: { product: Product }) => {
     });
   };
 
-  // TODO: open the conversation once chat exists (phase 6)
   const onMessage = () =>
-    notify("Chat is coming soon", {
-      description: `You'll be able to message ${product.seller.name} here.`,
+    openConversation.mutate(product.id, {
+      onSuccess: (conversation) =>
+        navigation.navigate("Conversation", { id: conversation.id }),
+      onError: (error) =>
+        notify("Couldn't open the chat", {
+          description: apiErrorMessage(
+            error,
+            "Check your connection and try again.",
+          ),
+        }),
     });
 
   const onEdit = () => navigation.navigate("EditProduct", { id: product.id });
@@ -393,15 +403,17 @@ const ProductView = ({ product }: { product: Product }) => {
         ) : (
           <Pressable
             onPress={onMessage}
-            disabled={isSold}
+            disabled={isSold || openConversation.isPending}
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.messageButton,
               isSold && styles.messageButtonDisabled,
-              pressed && styles.pressed,
+              (pressed || openConversation.isPending) && styles.pressed,
             ]}
           >
-            {isSold ? null : (
+            {isSold ? null : openConversation.isPending ? (
+              <Spinner size={18} />
+            ) : (
               <MessageCircle size={18} color={colors.white} strokeWidth={2} />
             )}
             <Text style={styles.messageText} numberOfLines={1}>

@@ -10,6 +10,7 @@ import UserInfosScreen from "../screens/auth/UserInfosScreen";
 import SearchScreen from "../screens/search/SearchScreen";
 import EditProductScreen from "../screens/product/EditProductScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
+import { ConversationScreen } from "../screens/chat/ConversationScreen";
 import { NotFound } from "../screens/NotFound";
 import {
   useIsSignedIn,
@@ -44,6 +45,11 @@ const RootStack = createNativeStackNavigator({
         },
         EditProfile: {
           screen: EditProfileScreen,
+        },
+        Conversation: {
+          screen: ConversationScreen,
+          // dily://chat/<uuid>, also what a message notification opens
+          linking: { path: "chat/:id" },
         },
       },
     },

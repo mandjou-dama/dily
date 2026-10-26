@@ -11,6 +11,7 @@ import {
 } from "./lib/auth-guard.js";
 import { RateLimiter } from "./lib/rate-limit.js";
 import { AuthService } from "./modules/auth/auth.service.js";
+import { ChatService } from "./modules/chat/chat.service.js";
 import {
   ConsoleOtpSender,
   NoOtpSender,
@@ -24,7 +25,13 @@ import {
   DiskMediaStorage,
   type MediaStorage,
 } from "./modules/media/storage.js";
+import {
+  expoPushSender,
+  PushService,
+  type PushSender,
+} from "./modules/notifications/push.service.js";
 import { ProductsService } from "./modules/products/products.service.js";
+import { UserNotifier } from "./modules/realtime/notifier.js";
 import { SellService } from "./modules/sell/sell.service.js";
 import { MeService } from "./modules/users/me.service.js";
 
@@ -43,6 +50,7 @@ type ServicesConfig = Pick<
   | "WHATSAPP_TEMPLATE_NAME"
   | "WHATSAPP_TEMPLATE_LANGUAGE"
   | "MEDIA_DIR"
+  | "EXPO_ACCESS_TOKEN"
 >;
 
 export interface ServicesInput {
@@ -54,11 +62,15 @@ export interface ServicesInput {
   otpSender?: OtpSender;
   /** Replaces the image store (tests). */
   mediaStorage?: MediaStorage;
+  /** Replaces Expo Push (tests). */
+  pushSender?: PushSender;
   now?: () => Date;
 }
 
 export interface Services extends AppDeps {
   authenticate: Authenticate;
+  /** Bound to Socket.IO once it's attached (server.ts). */
+  notifier: UserNotifier;
 }
 
 /** Builds the domain services from the infrastructure. */
@@ -96,6 +108,12 @@ export function createServices(input: ServicesInput): Services {
     storage: input.mediaStorage ?? new DiskMediaStorage(mediaDir),
   });
   const authenticate = createAuthenticator({ prisma, accessTokens, ...now });
+  const notifier = new UserNotifier();
+  const push = new PushService({
+    prisma,
+    sender: input.pushSender ?? expoPushSender(config.EXPO_ACCESS_TOKEN),
+    logger: input.logger,
+  });
 
   return {
     health: {
@@ -107,9 +125,19 @@ export function createServices(input: ServicesInput): Services {
     products: new ProductsService({ prisma, ...now }),
     sell: new SellService({ prisma, media }),
     media,
+    chat: new ChatService({
+      prisma,
+      notifier,
+      push,
+      rateLimiter,
+      logger: input.logger,
+      ...now,
+    }),
+    push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),
     authenticate,
+    notifier,
     mediaDir,
   };
 }

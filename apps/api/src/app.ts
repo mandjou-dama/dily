@@ -10,8 +10,12 @@ import { AppError } from "./lib/errors.js";
 import type { RateLimiter } from "./lib/rate-limit.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import type { AuthService } from "./modules/auth/auth.service.js";
+import { chatRoutes } from "./modules/chat/chat.routes.js";
+import type { ChatService } from "./modules/chat/chat.service.js";
 import { mediaRoutes } from "./modules/media/media.routes.js";
 import type { MediaService } from "./modules/media/media.service.js";
+import { pushRoutes } from "./modules/notifications/push.routes.js";
+import type { PushService } from "./modules/notifications/push.service.js";
 import { productsRoutes } from "./modules/products/products.routes.js";
 import type { ProductsService } from "./modules/products/products.service.js";
 import { sellRoutes } from "./modules/sell/sell.routes.js";
@@ -27,6 +31,8 @@ export interface AppDeps {
   products: ProductsService;
   sell: SellService;
   media: MediaService;
+  chat: ChatService;
+  push: PushService;
   rateLimiter: RateLimiter;
   requireAuth: preHandlerAsyncHookHandler;
   /** Folder served under /media (disk storage). */
@@ -98,5 +104,7 @@ export function buildApp(
   app.register(productsRoutes, { products: deps.products, requireAuth });
   app.register(sellRoutes, { sell: deps.sell, requireAuth });
   app.register(mediaRoutes, { media: deps.media, rateLimiter, requireAuth });
+  app.register(chatRoutes, { chat: deps.chat, requireAuth });
+  app.register(pushRoutes, { push: deps.push, requireAuth });
   return app;
 }

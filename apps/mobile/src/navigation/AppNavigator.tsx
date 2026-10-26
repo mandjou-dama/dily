@@ -7,6 +7,7 @@ import HomeScreen from "@/screens/home/HomeScreen";
 import { CreateProductScreen } from "@/screens/product/CreateProductScreen";
 import { ChatScreen } from "@/screens/chat/ChatScreen";
 import { ProfileScreen } from "@/screens/profile/ProfileScreen";
+import { useUnreadCount } from "@/services/chat.service";
 
 import Animated, {
   Easing,
@@ -35,6 +36,7 @@ const ANIMATED_BAR_HEIGHT = 1;
 export const AppNavigator = () => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const { data: unreadCount = 0 } = useUnreadCount();
 
   const tabBarPaddingBottom = insets.bottom + 10;
   const tabBarHeight = tabBarPaddingBottom + TAB_BAR_HEIGHT_WITHOUT_INSET;
@@ -151,6 +153,18 @@ export const AppNavigator = () => {
             headerTransparent: false,
             tabBarLabel: "Chat",
             headerTitleAlign: "center",
+            tabBarBadge:
+              unreadCount > 0
+                ? unreadCount > 99
+                  ? "99+"
+                  : unreadCount
+                : undefined,
+            tabBarBadgeStyle: {
+              backgroundColor: colors.primary,
+              color: colors.white,
+              fontSize: 11,
+              fontWeight: "700",
+            },
             tabBarIcon: ({ focused }) => (
               <MessagesSquare
                 style={{

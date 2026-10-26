@@ -1,7 +1,8 @@
 import { Assets as NavigationAssets } from "@react-navigation/elements";
 import { DarkTheme, DefaultTheme } from "@react-navigation/native";
 import { Asset } from "expo-asset";
-import { createURL } from "expo-linking";
+import * as Linking from "expo-linking";
+import * as Notifications from "expo-notifications";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { Platform, StatusBar, useColorScheme } from "react-native";
@@ -16,10 +17,13 @@ import BootSplash from "react-native-bootsplash";
 import { NotifyProvider } from "./components/notify";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
+import { ChatProvider } from "@/providers/chat-provider";
+import { notificationUrl, setupNotifications } from "@/lib/push";
 
 Asset.loadAsync([...NavigationAssets, require("assets/splash-icon-light.png")]);
+setupNotifications();
 
-const prefix = createURL("/");
+const prefix = Linking.createURL("/");
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +34,32 @@ const queryClient = new QueryClient({
   },
 });
 
-const linking = { enabled: "auto" as const, prefixes: [prefix] };
+// A tapped message notification opens its conversation, like a dily://chat/<id> link
+const linking = {
+  enabled: "auto" as const,
+  prefixes: [prefix],
+  async getInitialURL() {
+    const url = await Linking.getInitialURL();
+    if (url) return url;
+    const tapped = Notifications.getLastNotificationResponse();
+    // Read once: a later launch from the icon must not reopen it
+    Notifications.clearLastNotificationResponse();
+    return notificationUrl(tapped);
+  },
+  subscribe(listener: (url: string) => void) {
+    const links = Linking.addEventListener("url", ({ url }) => listener(url));
+    const taps = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const url = notificationUrl(response);
+        if (url) listener(url);
+      },
+    );
+    return () => {
+      links.remove();
+      taps.remove();
+    };
+  },
+};
 
 // The `if` hooks of the root stack need the restored session: mounting before
 // it is read would show the auth screens for a frame to signed-in users
@@ -66,7 +95,9 @@ export function App() {
           <KeyboardProvider preload={false}>
             <NotifyProvider>
               <AuthProvider>
-                <AppNavigation theme={theme} />
+                <ChatProvider>
+                  <AppNavigation theme={theme} />
+                </ChatProvider>
               </AuthProvider>
 
               {/* Splash overlay */}

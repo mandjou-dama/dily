@@ -10,6 +10,7 @@ import {
 
 import { api, apiErrorMessage } from "@/lib/api";
 import { getDeviceId } from "@/lib/device-id";
+import { forgetPushToken, unregisterPush } from "@/lib/push";
 import { endSession, startSession } from "@/lib/session";
 import { compressImage, imageFormData } from "@/lib/upload";
 
@@ -75,6 +76,8 @@ export function useSignOut() {
 
   return useMutation({
     mutationFn: async () => {
+      // While the session still works: the API must know whose token it was
+      await unregisterPush();
       await api.signOut();
       await endSession();
     },
@@ -92,6 +95,7 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: async () => {
       await api.request("/me", { method: "DELETE" });
+      forgetPushToken();
       await api.forgetSession();
       await endSession();
     },

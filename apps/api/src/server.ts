@@ -4,6 +4,7 @@ import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPrisma } from "./lib/prisma.js";
 import { createRedis } from "./lib/redis.js";
+import { attachRealtime } from "./modules/realtime/realtime.js";
 import { createServices } from "./services.js";
 
 const config = loadConfig();
@@ -20,6 +21,8 @@ const app = buildApp(services, {
   loggerInstance: logger,
   trustProxy: config.TRUST_PROXY,
 });
+const realtime = attachRealtime(app, { authenticate: services.authenticate });
+services.notifier.bind(realtime.emitToUser);
 
 async function shutdown(signal: string): Promise<void> {
   app.log.info({ signal }, "shutting down");

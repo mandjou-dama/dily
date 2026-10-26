@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { ListingForm } from "@/components/sell/listing-form";
 import { useNotify } from "@/components/notify";
 import { useHaptics } from "@/hooks/use-haptics";
+import { registerForPush } from "@/lib/push";
 import { type ListingInput, useCreateListing } from "@/services/sell.service";
 
 export const CreateProductScreen = () => {
@@ -20,6 +21,8 @@ export const CreateProductScreen = () => {
         notification("success");
         setFormKey((key) => key + 1);
         navigation.navigate("ProductDetails", { id });
+        // Buyers will write: the moment to allow notifications
+        void registerForPush(true);
       },
       onError: () => {
         notification("error");

@@ -39,8 +39,31 @@ model User {
   conversationsAsBuyer  Conversation[] @relation("ConversationBuyer")
   conversationsAsSeller Conversation[] @relation("ConversationSeller")
   messages              Message[]
+  pushTokens            PushToken[]
 
   @@map("users")
+}
+
+enum PushPlatform {
+  ios
+  android
+
+  @@map("push_platform")
+}
+
+/// Expo Push token of a signed-in device; a token belongs to one account at a time
+model PushToken {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  token     String       @unique
+  platform  PushPlatform
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
 }
 
 model RefreshToken {

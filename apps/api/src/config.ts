@@ -86,6 +86,8 @@ const envSchema = z
     WHATSAPP_TEMPLATE_LANGUAGE: z.string().min(2).default("fr"),
     /** Folder of uploaded images, served under /media. */
     MEDIA_DIR: z.string().min(1).default("./uploads"),
+    /** Only when "Enhanced security for push notifications" is on in the Expo project. */
+    EXPO_ACCESS_TOKEN: optional(z.string().min(1)),
   })
   .refine(
     (env) => !(env.NODE_ENV === "production" && env.OTP_SENDER === "console"),
