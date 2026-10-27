@@ -30,6 +30,7 @@ import {
   PushService,
   type PushSender,
 } from "./modules/notifications/push.service.js";
+import { ModerationService } from "./modules/moderation/moderation.service.js";
 import { OffersService } from "./modules/offers/offers.service.js";
 import { HandoverService } from "./modules/orders/handover.service.js";
 import { OrdersService } from "./modules/orders/orders.service.js";
@@ -155,6 +156,7 @@ export function createServices(input: ServicesInput): Services {
     offers: new OffersService(chatDeps),
     orders: new OrdersService({ ...chatDeps, gateway }),
     handover,
+    moderation: new ModerationService(chatDeps),
     push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),

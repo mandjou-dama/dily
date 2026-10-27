@@ -13,6 +13,7 @@ import { Prisma, type PrismaClient } from "../../generated/prisma/client.js";
 import { decodeCursor, encodeCursor, toPage } from "../../lib/cursor.js";
 import { AppError, notFound } from "../../lib/errors.js";
 import type { RateLimiter, RateLimitRule } from "../../lib/rate-limit.js";
+import { assertCanWrite, reachableBy } from "../moderation/visibility.js";
 import type { PushService } from "../notifications/push.service.js";
 import { toOffer, toOrder } from "../offers/offer-rows.js";
 import type { UserNotifier } from "../realtime/notifier.js";
@@ -36,6 +37,20 @@ const PERSON_SELECT = {
   neighbourhood: true,
   city: true,
 } satisfies Prisma.UserSelect;
+
+/** A participant, and whether they and the viewer blocked each other. */
+const participantSelect = (viewerId: string) =>
+  ({
+    ...PERSON_SELECT,
+    suspendedAt: true,
+    // They blocked the viewer
+    blocksMade: { where: { blockedId: viewerId }, select: { blockedId: true } },
+    // The viewer blocked them
+    blocksReceived: {
+      where: { blockerId: viewerId },
+      select: { blockerId: true },
+    },
+  }) satisfies Prisma.UserSelect;
 
 /** "Badalabougou, Bamako", or just the city. */
 const locationOf = (person: { neighbourhood: string | null; city: string }) =>
@@ -94,8 +109,8 @@ const conversationSelect = (userId: string) =>
         },
       },
     },
-    buyer: { select: PERSON_SELECT },
-    seller: { select: PERSON_SELECT },
+    buyer: { select: participantSelect(userId) },
+    seller: { select: participantSelect(userId) },
     messages: { orderBy: NEWEST_FIRST, take: 1, include: MESSAGE_INCLUDE },
     offers: { orderBy: NEWEST_FIRST, take: 1 },
     orders: { orderBy: NEWEST_FIRST, take: 1 },
@@ -131,6 +146,7 @@ function toConversation(
   const heldElsewhere = row.product.orders.find(
     (o) => o.conversationId !== row.id && o.reservedUntil > now,
   );
+  const blockedByMe = other.blocksReceived.length > 0;
   return {
     id: row.id,
     product: {
@@ -158,6 +174,9 @@ function toConversation(
       reservedElsewhereUntil:
         heldElsewhere?.reservedUntil.toISOString() ?? null,
     },
+    blockedByMe,
+    canWrite:
+      !blockedByMe && other.blocksMade.length === 0 && !other.suspendedAt,
   };
 }
 
@@ -208,11 +227,18 @@ export class ChatService {
     }
 
     const existing = await this.findByProduct(userId, productId);
-    // Sold or hidden later: the conversation already started goes on
+    // Sold, hidden or blocked later: the conversation already started stays
     if (existing) return existing;
     if (product.status === "archived") {
       throw notFound("This listing isn't available.");
     }
+    // Blocked either way, or the seller suspended: the listing is hidden
+    // from this buyer
+    const seller = await this.prisma.user.findFirst({
+      where: { id: product.sellerId, ...reachableBy(userId) },
+      select: { id: true },
+    });
+    if (!seller) throw notFound("This listing isn't available.");
     if (product.status === "sold") {
       throw new AppError(403, "forbidden", "This item is already sold.");
     }
@@ -327,6 +353,8 @@ export class ChatService {
       userId,
       conversationId,
     );
+    const recipientId = buyerId === userId ? sellerId : buyerId;
+    await assertCanWrite(this.prisma, userId, recipientId);
     await this.deps.rateLimiter.consume(
       `chat:message:user:${userId}`,
       MESSAGE_RATE_LIMIT,
@@ -360,7 +388,6 @@ export class ChatService {
     }
 
     const chatMessage = toChatMessage(message, this.now());
-    const recipientId = buyerId === userId ? sellerId : buyerId;
     for (const id of [recipientId, userId]) {
       this.deps.notifier.send(id, "message:new", { message: chatMessage });
     }

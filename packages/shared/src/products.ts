@@ -6,6 +6,7 @@ export const productConditions = ["new", "like_new", "good", "used"] as const;
 export const productConditionSchema = z.enum(productConditions);
 export type ProductCondition = z.infer<typeof productConditionSchema>;
 
+// archived: removed by Dily (moderation), only its seller still sees it
 export const productStatuses = ["active", "sold", "archived"] as const;
 export const productStatusSchema = z.enum(productStatuses);
 export type ProductStatus = z.infer<typeof productStatusSchema>;

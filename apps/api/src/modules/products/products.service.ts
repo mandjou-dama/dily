@@ -13,6 +13,7 @@ import {
   toPage as toKeysetPage,
 } from "../../lib/cursor.js";
 import { notFound } from "../../lib/errors.js";
+import { listingVisibleTo, reachableBy } from "../moderation/visibility.js";
 
 // Only what a card shows: the cover image, the seller's name, a Sold badge
 const FEED_SELECT = {
@@ -69,11 +70,6 @@ const escapeLike = (term: string) => term.replace(/[\\%_]/g, "\\$&");
 const PICKS_COUNT = 5;
 const PICKS_WINDOW_DAYS = 14;
 
-/** A product is visible unless archived, in which case only its seller sees it. */
-const visibleTo = (viewerId: string): Prisma.ProductWhereInput => ({
-  OR: [{ status: { not: "archived" } }, { sellerId: viewerId }],
-});
-
 export interface ProductsServiceDeps {
   prisma: PrismaClient;
   now?: () => Date;
@@ -94,13 +90,18 @@ export class ProductsService {
   }
 
   /**
-   * Active listings, newest first. Keyset pagination: stays right when new
-   * listings arrive while scrolling, unlike offsets.
+   * Active listings, newest first, without those of people out of the
+   * viewer's reach (blocked, suspended). Keyset pagination: stays right when
+   * new listings arrive while scrolling, unlike offsets.
    */
-  async feed({ category, search, cursor }: FeedQuery): Promise<FeedPage> {
+  async feed(
+    viewerId: string,
+    { category, search, cursor }: FeedQuery,
+  ): Promise<FeedPage> {
     const rows = await this.prisma.product.findMany({
       where: {
         status: "active",
+        seller: reachableBy(viewerId),
         ...(category ? { category: { slug: category } } : {}),
         // ILIKE, served by the pg_trgm index on title
         ...(search
@@ -132,7 +133,7 @@ export class ProductsService {
     const rows = await this.prisma.like.findMany({
       where: {
         userId,
-        product: visibleTo(userId),
+        product: listingVisibleTo(userId),
         ...(after
           ? {
               OR: [
@@ -162,7 +163,7 @@ export class ProductsService {
    * the banner stays fresh. Falls back to the most liked ever while the
    * catalog is small.
    */
-  async picks(): Promise<FeedProduct[]> {
+  async picks(viewerId: string): Promise<FeedProduct[]> {
     const since = new Date(
       this.now().getTime() - PICKS_WINDOW_DAYS * 24 * 3600 * 1000,
     );
@@ -170,6 +171,7 @@ export class ProductsService {
       const rows = await this.prisma.product.findMany({
         where: {
           status: "active",
+          seller: reachableBy(viewerId),
           likesCount: { gt: 0 },
           // A pick without a photo would leave the banner empty
           images: { some: {} },
@@ -189,7 +191,7 @@ export class ProductsService {
   /** One listing with everything the details screen shows. */
   async product(viewerId: string, id: string): Promise<Product> {
     const row = await this.prisma.product.findFirst({
-      where: { id, ...visibleTo(viewerId) },
+      where: { id, ...listingVisibleTo(viewerId) },
       include: {
         category: { select: { name: true } },
         seller: {
@@ -244,7 +246,7 @@ export class ProductsService {
   /** Idempotent. `likes_count` follows through the database trigger. */
   async like(userId: string, productId: string): Promise<void> {
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, ...visibleTo(userId) },
+      where: { id: productId, ...listingVisibleTo(userId) },
       select: { id: true },
     });
     if (!product) throw notFound("This listing isn't available.");

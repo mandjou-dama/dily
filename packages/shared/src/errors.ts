@@ -18,6 +18,11 @@ export const apiErrorCodes = [
   "unsupported_image",
   // The handover code doesn't match
   "handover_code_invalid",
+  // One of the two people blocked the other, or the other's account is
+  // suspended: no more messages, offers or purchases between them
+  "blocked",
+  // Dily suspended the account (moderation): it can't sign in
+  "account_suspended",
   "internal_error",
 ] as const;
 

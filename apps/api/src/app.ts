@@ -13,6 +13,8 @@ import type { AuthService } from "./modules/auth/auth.service.js";
 import { chatRoutes } from "./modules/chat/chat.routes.js";
 import type { ChatService } from "./modules/chat/chat.service.js";
 import { mediaRoutes } from "./modules/media/media.routes.js";
+import { moderationRoutes } from "./modules/moderation/moderation.routes.js";
+import type { ModerationService } from "./modules/moderation/moderation.service.js";
 import { offersRoutes } from "./modules/offers/offers.routes.js";
 import type { OffersService } from "./modules/offers/offers.service.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
@@ -40,6 +42,7 @@ export interface AppDeps {
   offers: OffersService;
   orders: OrdersService;
   handover: HandoverService;
+  moderation: ModerationService;
   push: PushService;
   rateLimiter: RateLimiter;
   requireAuth: preHandlerAsyncHookHandler;
@@ -119,6 +122,7 @@ export function buildApp(
     handover: deps.handover,
     requireAuth,
   });
+  app.register(moderationRoutes, { moderation: deps.moderation, requireAuth });
   app.register(pushRoutes, { push: deps.push, requireAuth });
   return app;
 }

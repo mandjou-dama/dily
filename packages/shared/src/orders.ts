@@ -28,7 +28,8 @@ export type Fulfilment = z.infer<typeof fulfilmentSchema>;
 export const orderStatuses = [
   "awaiting_payment",
   "paid",
-  // The buyer made a new offer instead of paying
+  // The buyer made a new offer instead of paying, or one of the two
+  // blocked the other
   "cancelled",
   // Not paid in time: the listing is free again
   "expired",

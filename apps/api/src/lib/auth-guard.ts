@@ -36,8 +36,9 @@ export type Authenticate = (
 ) => Promise<AuthenticatedUser>;
 
 /**
- * Verifies an access JWT, then checks the account still exists: a deleted
- * account loses access at once, without waiting for the JWT to expire.
+ * Verifies an access JWT, then checks the account still exists and isn't
+ * suspended: a deleted or suspended account loses access at once, without
+ * waiting for the JWT to expire.
  */
 export function createAuthenticator(deps: {
   prisma: PrismaClient;
@@ -50,8 +51,8 @@ export function createAuthenticator(deps: {
     if (!token) throw new AppError(401, "unauthorized", "Sign in required.");
 
     const userId = await deps.accessTokens.verify(token, now());
-    const user = await deps.prisma.user.findUnique({
-      where: { id: userId },
+    const user = await deps.prisma.user.findFirst({
+      where: { id: userId, suspendedAt: null },
       select: { id: true },
     });
     if (!user) throw new AppError(401, "unauthorized", "Invalid session.");

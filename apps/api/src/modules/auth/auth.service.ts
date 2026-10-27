@@ -82,6 +82,13 @@ export class AuthService {
     await this.deps.otp.verify(phone, code);
 
     const { user, isNewUser } = await this.findOrCreateUser(phone);
+    if (user.suspendedAt) {
+      throw new AppError(
+        403,
+        "account_suspended",
+        "This account was suspended for breaking Dily's rules.",
+      );
+    }
     const tokens = await this.issueTokens(user.id, deviceId);
     return { ...tokens, isNewUser };
   }

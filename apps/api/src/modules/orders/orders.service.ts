@@ -26,6 +26,7 @@ import {
   participantOf,
   toChatMessage,
 } from "../chat/chat.service.js";
+import { assertCanWrite } from "../moderation/visibility.js";
 import type { PushService } from "../notifications/push.service.js";
 import {
   offerStatusAt,
@@ -132,6 +133,7 @@ export class OrdersService {
     if (conversation.buyerId !== userId) {
       throw new AppError(403, "forbidden", "This is your own listing.");
     }
+    await assertCanWrite(this.prisma, userId, conversation.sellerId);
     await this.deps.rateLimiter.consume(
       `order:user:${userId}`,
       DIRECT_BUY_RATE_LIMIT,
@@ -278,6 +280,7 @@ export class OrdersService {
       if (saved.orderId === orderId) return toPayment(saved, this.now());
       throw new AppError(400, "validation_error", "Invalid payment id.");
     }
+    await assertCanWrite(this.prisma, userId, order.sellerId);
     await this.deps.rateLimiter.consume(
       `payment:user:${userId}`,
       PAYMENT_RATE_LIMIT,

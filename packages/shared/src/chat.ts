@@ -81,6 +81,12 @@ export const conversationSchema = z.object({
   // Messages from the other person not read yet
   unreadCount: z.number().int(),
   deal: conversationDealSchema,
+  // The signed-in user blocked the other person: they can unblock
+  blockedByMe: z.boolean(),
+  // False once either blocked the other, or the other's account is
+  // suspended: no messages, offers or purchases, but a paid order still
+  // goes to its end (code, report, refund)
+  canWrite: z.boolean(),
 });
 export type Conversation = z.infer<typeof conversationSchema>;
 

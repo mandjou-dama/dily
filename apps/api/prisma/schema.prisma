@@ -4,8 +4,9 @@
 // is an external URL (seed data only).
 //
 // Not expressed here, so only in migrations: the pg_trgm extension, CHECK
-// constraints, the partial unique indexes on offers, orders and payments, and the
-// triggers that keep `likes_count` and `last_message_at` up to date.
+// constraints, the partial unique indexes on offers, orders, payments and
+// reports, and the triggers that keep `likes_count` and `last_message_at` up
+// to date.
 
 generator client {
   provider = "prisma-client"
@@ -34,6 +35,9 @@ model User {
   payoutProvider PaymentProvider? @map("payout_provider")
   /// E.164: the mobile money account money is sent to
   payoutPhone    String?          @map("payout_phone")
+  /// Set by Dily's moderation: the account can't sign in, and its listings
+  /// are hidden from everyone
+  suspendedAt    DateTime?        @map("suspended_at") @db.Timestamptz(3)
   createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -48,6 +52,10 @@ model User {
   ordersAsBuyer         Order[]        @relation("OrderBuyer")
   ordersAsSeller        Order[]        @relation("OrderSeller")
   transfers             Transfer[]
+  blocksMade            Block[]        @relation("Blocker")
+  blocksReceived        Block[]        @relation("Blocked")
+  reportsMade           Report[]       @relation("Reporter")
+  reportsReceived       Report[]       @relation("ReportedUser")
 
   @@map("users")
 }
@@ -106,6 +114,8 @@ model Category {
 enum ProductStatus {
   active
   sold
+  /// Removed by Dily (moderation): only its seller still sees it, and can't
+  /// put it back on sale
   archived
 
   @@map("product_status")
@@ -147,6 +157,7 @@ model Product {
   likes         Like[]
   conversations Conversation[]
   orders        Order[]
+  reports       Report[]
 
   @@index([status, createdAt(sort: Desc)], map: "products_feed_idx")
   @@index([categoryId, status, createdAt(sort: Desc)], map: "products_category_feed_idx")
@@ -197,6 +208,7 @@ model Conversation {
   messages Message[]
   offers   Offer[]
   orders   Order[]
+  reports  Report[]
 
   @@unique([productId, buyerId])
   @@index([buyerId, lastMessageAt(sort: Desc)])
@@ -307,7 +319,8 @@ model Offer {
 enum OrderStatus {
   awaiting_payment
   paid
-  /// The buyer made a new offer instead of paying
+  /// The buyer made a new offer instead of paying, or one of the two
+  /// blocked the other
   cancelled
   expired
   /// The item changed hands: the money goes to the seller
@@ -509,4 +522,83 @@ model Transfer {
   @@index([status, nextAttemptAt])
   @@index([recipientId, status])
   @@map("transfers")
+}
+
+/// One person blocking another: neither sees the other's listings, nor can
+/// write to, make an offer to or buy from the other. A paid order between
+/// them still goes to its end (handover code, report, refund).
+model Block {
+  blockerId String   @map("blocker_id") @db.Uuid
+  blockedId String   @map("blocked_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("blocks")
+}
+
+enum ReportKind {
+  listing
+  /// The other person of a conversation
+  user
+
+  @@map("report_kind")
+}
+
+enum ReportReason {
+  prohibited
+  counterfeit
+  scam
+  harassment
+  offensive
+  spam
+  other
+
+  @@map("report_reason")
+}
+
+enum ReportStatus {
+  open
+  /// Nothing against the rules
+  dismissed
+  /// Dily acted: the listing removed, or the account suspended
+  actioned
+
+  @@map("report_status")
+}
+
+/// A listing or a person reported to Dily, which answers within 24 hours
+/// (App Store guideline 1.2), through a script until an admin screen
+/// exists. One open report per reporter and listing or person (partial
+/// unique indexes).
+model Report {
+  id             String       @id @default(uuid()) @db.Uuid
+  kind           ReportKind
+  /// Null once the reporter deleted their account: the report stays
+  reporterId     String?      @map("reporter_id") @db.Uuid
+  /// The person reported: the listing's seller for a listing
+  reportedUserId String       @map("reported_user_id") @db.Uuid
+  /// The listing reported; null for a person, or once the seller deleted it
+  productId      String?      @map("product_id") @db.Uuid
+  /// Where the person was reported from: Dily reads it to check
+  conversationId String?      @map("conversation_id") @db.Uuid
+  reason         ReportReason
+  /// What the reporter wrote, up to 500 characters
+  note           String?
+  status         ReportStatus @default(open)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  resolvedAt     DateTime?    @map("resolved_at") @db.Timestamptz(3)
+
+  reporter     User?         @relation("Reporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  reportedUser User          @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  product      Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([reportedUserId])
+  @@index([productId])
+  @@map("reports")
 }

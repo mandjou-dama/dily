@@ -86,11 +86,14 @@ export class SellService {
     );
   }
 
-  /** Sold listings stay visible (with a Sold badge) but leave the feed. */
+  /**
+   * Sold listings stay visible (with a Sold badge) but leave the feed. One
+   * Dily removed can't go back on sale.
+   */
   async setSold(sellerId: string, id: string, sold: boolean): Promise<void> {
     await this.assertNoOpenOrder(id);
     const { count } = await this.prisma.product.updateMany({
-      where: { id, sellerId },
+      where: { id, sellerId, status: { not: "archived" } },
       data: { status: sold ? "sold" : "active" },
     });
     if (count === 0) throw listingNotFound();

@@ -14,7 +14,9 @@
     "db:generate": "prisma generate",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "dispute:resolve": "tsx --env-file-if-exists=../../.env src/scripts/resolve-dispute.ts"
+    "dispute:resolve": "tsx --env-file-if-exists=../../.env src/scripts/resolve-dispute.ts",
+    "reports:list": "tsx --env-file-if-exists=../../.env src/scripts/reports.ts list",
+    "reports:resolve": "tsx --env-file-if-exists=../../.env src/scripts/reports.ts resolve"
   },
   "dependencies": {
     "@dily/shared": "workspace:*",

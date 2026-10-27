@@ -18,10 +18,15 @@ export const productsRoutes: FastifyPluginAsync<ProductsRoutesOptions> = async (
   app.get("/categories", async () => products.categories());
 
   app.get("/products", async (request) =>
-    products.feed(parseInput(feedQuerySchema, request.query)),
+    products.feed(
+      authUser(request).id,
+      parseInput(feedQuerySchema, request.query),
+    ),
   );
 
-  app.get("/products/picks", async () => products.picks());
+  app.get("/products/picks", async (request) =>
+    products.picks(authUser(request).id),
+  );
 
   app.get("/products/:id", async (request) => {
     const { id } = parseInput(uuidParamSchema, request.params);

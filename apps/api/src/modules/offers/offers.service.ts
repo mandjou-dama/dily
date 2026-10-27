@@ -26,6 +26,7 @@ import {
   participantOf,
   toChatMessage,
 } from "../chat/chat.service.js";
+import { assertCanWrite } from "../moderation/visibility.js";
 import type { PushService } from "../notifications/push.service.js";
 import type { UserNotifier } from "../realtime/notifier.js";
 import { offerStatusAt, toOffer, toOrder } from "./offer-rows.js";
@@ -132,14 +133,15 @@ export class OffersService {
       throw new AppError(400, "validation_error", "Invalid offer id.");
     }
 
+    const { buyerId, sellerId, productId, product } = conversation;
+    const isBuyer = userId === buyerId;
+    await assertCanWrite(this.prisma, userId, isBuyer ? sellerId : buyerId);
     await this.deps.rateLimiter.consume(
       `offer:user:${userId}`,
       OFFER_RATE_LIMIT,
     );
 
     const now = this.now();
-    const { buyerId, sellerId, productId, product } = conversation;
-    const isBuyer = userId === buyerId;
     if (product.status !== "active") throw unavailable();
 
     const [pending, openOrders] = await Promise.all([
@@ -286,6 +288,7 @@ export class OffersService {
   async accept(userId: string, offerId: string): Promise<AcceptedOffer> {
     const offer = await this.answerable(userId, offerId);
     const { conversation } = offer;
+    await assertCanWrite(this.prisma, userId, offer.authorId);
     if (conversation.product.status !== "active") throw unavailable();
 
     const now = this.now();
