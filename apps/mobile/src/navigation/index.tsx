@@ -11,6 +11,7 @@ import SearchScreen from "../screens/search/SearchScreen";
 import EditProductScreen from "../screens/product/EditProductScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import { PayoutAccountScreen } from "../screens/profile/PayoutAccountScreen";
+import { BlockedUsersScreen } from "../screens/profile/BlockedUsersScreen";
 import { ConversationScreen } from "../screens/chat/ConversationScreen";
 import { CheckoutScreen } from "../screens/checkout/CheckoutScreen";
 import { CheckoutPayScreen } from "../screens/checkout/CheckoutPayScreen";
@@ -54,6 +55,9 @@ const RootStack = createNativeStackNavigator({
         // Where the seller receives what buyers paid
         PayoutAccount: {
           screen: PayoutAccountScreen,
+        },
+        BlockedUsers: {
+          screen: BlockedUsersScreen,
         },
         Conversation: {
           screen: ConversationScreen,

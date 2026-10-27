@@ -1,8 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  ActionSheetIOS,
   Alert,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -32,6 +30,7 @@ import {
 import { TOP_TABS_HEIGHT, TopTabs } from "@/components/top-tab";
 import { useNotify } from "@/components/notify";
 import { productKeyExtractor, useProductGrid } from "@/hooks/use-product-grid";
+import { showActionMenu } from "@/lib/action-menu";
 import { apiErrorMessage } from "@/lib/api";
 import { formatPhone } from "@/lib/format";
 import { imageUrl } from "@/lib/image";
@@ -155,31 +154,23 @@ export const ProfileScreen = () => {
       ],
     );
 
-  const onMore = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
+  const onMore = () =>
+    showActionMenu(
+      "Account",
+      [
         {
-          options: ["Sign out", "Delete account", "Cancel"],
-          destructiveButtonIndex: 1,
-          cancelButtonIndex: 2,
+          label: t("moderation.blockedAccounts"),
+          onPress: () => navigation.navigate("BlockedUsers"),
         },
-        (index) => {
-          if (index === 0) confirmSignOut();
-          if (index === 1) confirmDeleteAccount();
-        },
-      );
-    } else {
-      Alert.alert("Account", undefined, [
-        { text: "Sign out", onPress: confirmSignOut },
+        { label: "Sign out", onPress: confirmSignOut },
         {
-          text: "Delete account",
-          style: "destructive",
+          label: "Delete account",
+          destructive: true,
           onPress: confirmDeleteAccount,
         },
-        { text: "Cancel", style: "cancel" },
-      ]);
-    }
-  };
+      ],
+      "Cancel",
+    );
 
   const name = profile?.fullName ?? "";
   const location = [profile?.neighbourhood, profile?.city]

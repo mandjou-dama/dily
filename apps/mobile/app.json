@@ -49,7 +49,8 @@
       ],
       "expo-image",
       "./plugins/with-min-pod-deployment-target",
-      "./plugins/with-scene-lifecycle"
+      "./plugins/with-scene-lifecycle",
+      "expo-font"
     ],
     "experiments": {
       "reactCompiler": true

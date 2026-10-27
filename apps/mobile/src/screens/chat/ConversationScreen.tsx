@@ -34,11 +34,13 @@ import {
   ArrowUp,
   CircleAlert,
   Clock,
+  MoreHorizontal,
   ShieldCheck,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { MESSAGE_MAX_LENGTH, type Offer } from "@dily/shared";
 
+import { ActionButton } from "@/components/action-button";
 import {
   EnterCodeSheet,
   type EnterCodeSheetRef,
@@ -52,6 +54,10 @@ import {
   ReportSheet,
   type ReportSheetRef,
 } from "@/components/handover/report-sheet";
+import {
+  ModerationReportSheet,
+  type ModerationReportSheetRef,
+} from "@/components/moderation/report-sheet";
 import { DealHeader } from "@/components/offers/deal-header";
 import { DealMessage } from "@/components/offers/deal-message";
 import { OfferMessage } from "@/components/offers/offer-message";
@@ -60,7 +66,9 @@ import {
   type OfferSheetRef,
 } from "@/components/offers/offer-sheet";
 import { Spinner } from "@/components/spinner";
+import { useBlockUser } from "@/hooks/use-block-user";
 import { useHaptics } from "@/hooks/use-haptics";
+import { showActionMenu } from "@/lib/action-menu";
 import { chatDayLabel, messageMeta } from "@/lib/chat-labels";
 import { isSameDay, messageTime } from "@/lib/format";
 import { dealErrorMessage, firstName } from "@/lib/offers";
@@ -155,7 +163,7 @@ const ConversationView = ({
   const { impact, notification } = useHaptics();
   const { session, profile } = useAuth();
   const userId = session?.user.id;
-  const { otherUser, product, deal } = conversation;
+  const { otherUser, product, deal, canWrite } = conversation;
   const isBuyer = conversation.role === "buyer";
   const otherName = firstName(otherUser.name);
   // Pickup happens at the seller's
@@ -296,6 +304,34 @@ const ConversationView = ({
   );
   // Presenting it replaces the code sheet
   const onReport = useCallback(() => reportSheet.current?.open(), []);
+
+  // "…": report the other person, block or unblock them
+  const moderationSheet = useRef<ModerationReportSheetRef>(null);
+  const { confirmBlock, unblock, isPending: isBlocking } = useBlockUser();
+  const other = { id: otherUser.id, name: otherName };
+  const onMore = () => {
+    void KeyboardController.dismiss();
+    showActionMenu(
+      t("moderation.more"),
+      [
+        {
+          label: t("moderation.reportUser", { name: otherName }),
+          onPress: () => moderationSheet.current?.open(),
+        },
+        conversation.blockedByMe
+          ? {
+              label: t("moderation.unblock", { name: otherName }),
+              onPress: () => unblock(other),
+            }
+          : {
+              label: t("moderation.block", { name: otherName }),
+              destructive: true,
+              onPress: () => confirmBlock(other),
+            },
+      ],
+      t("common.cancel"),
+    );
+  };
   const onPayoutAccount = useCallback(
     () => navigation.navigate("PayoutAccount"),
     [navigation],
@@ -370,6 +406,7 @@ const ConversationView = ({
           role={conversation.role}
           otherName={otherName}
           pickupArea={pickupArea}
+          closed={!canWrite}
           answering={!!item.offer && item.offer.id === answeringId}
           onFailedPress={onFailedPress}
           onAccept={onAccept}
@@ -385,6 +422,7 @@ const ConversationView = ({
       conversation.role,
       otherName,
       pickupArea,
+      canWrite,
       answeringId,
       onFailedPress,
       onAccept,
@@ -401,13 +439,36 @@ const ConversationView = ({
 
   // Before any offer or agreement: where paying safely starts
   const showSafetyNote =
-    isBuyer && product.status === "active" && !deal.offer && !deal.order;
+    isBuyer &&
+    canWrite &&
+    product.status === "active" &&
+    !deal.offer &&
+    !deal.order;
 
   return (
     <View style={styles.screen}>
       {/* Above the chat, which slides under it while the keyboard moves */}
       <View style={styles.top}>
-        <TopBar>
+        <TopBar
+          right={
+            <Pressable
+              onPress={onMore}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t("moderation.more")}
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <MoreHorizontal
+                size={22}
+                color={colors.primary}
+                strokeWidth={1.8}
+              />
+            </Pressable>
+          }
+        >
           <Text style={styles.headerName} numberOfLines={1}>
             {otherUser.name}
           </Text>
@@ -489,7 +550,7 @@ const ConversationView = ({
                 <Text style={styles.emptyText}>
                   {isBuyer ? t("chat.buyerHint") : t("chat.sellerHint")}
                 </Text>
-                {isBuyer && product.status === "active" ? (
+                {isBuyer && canWrite && product.status === "active" ? (
                   <Pressable
                     onPress={() => setText(t("chat.firstQuestion"))}
                     accessibilityRole="button"
@@ -508,40 +569,70 @@ const ConversationView = ({
           </View>
         )}
 
-        <View
-          style={[
-            styles.composer,
-            { paddingBottom: Math.max(insets.bottom, COMPOSER_GAP) },
-          ]}
-        >
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder={t("chat.placeholder")}
-            placeholderTextColor={colors.gray}
-            multiline
-            maxLength={MESSAGE_MAX_LENGTH}
-            style={styles.input}
-            accessibilityLabel={t("chat.message")}
-          />
-          <Pressable
-            onPress={onSend}
-            disabled={!canSend}
-            hitSlop={6}
-            accessibilityRole="button"
-            accessibilityLabel={t("chat.send")}
-            style={({ pressed }) => [
-              styles.sendButton,
-              !canSend && styles.sendButtonDisabled,
-              pressed && styles.pressed,
+        {canWrite ? (
+          <View
+            style={[
+              styles.composer,
+              { paddingBottom: Math.max(insets.bottom, COMPOSER_GAP) },
             ]}
           >
-            <ArrowUp size={20} color={colors.white} strokeWidth={2.4} />
-          </Pressable>
-        </View>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder={t("chat.placeholder")}
+              placeholderTextColor={colors.gray}
+              multiline
+              maxLength={MESSAGE_MAX_LENGTH}
+              style={styles.input}
+              accessibilityLabel={t("chat.message")}
+            />
+            <Pressable
+              onPress={onSend}
+              disabled={!canSend}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={t("chat.send")}
+              style={({ pressed }) => [
+                styles.sendButton,
+                !canSend && styles.sendButtonDisabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <ArrowUp size={20} color={colors.white} strokeWidth={2.4} />
+            </Pressable>
+          </View>
+        ) : (
+          // Blocked either way: no composer, and the way back when it was them
+          <View
+            style={[
+              styles.composer,
+              styles.closed,
+              { paddingBottom: Math.max(insets.bottom, COMPOSER_GAP) },
+            ]}
+          >
+            <Text style={styles.closedText}>
+              {conversation.blockedByMe
+                ? t("moderation.youBlocked", { name: otherName })
+                : t("moderation.cantWrite", { name: otherName })}
+            </Text>
+            {conversation.blockedByMe ? (
+              <ActionButton
+                label={t("moderation.unblockShort")}
+                variant="outline"
+                onPress={() => unblock(other)}
+                isLoading={isBlocking}
+              />
+            ) : null}
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       <OfferSheet ref={offerSheet} conversation={conversation} />
+      <ModerationReportSheet
+        ref={moderationSheet}
+        target={{ kind: "user", conversationId: conversation.id }}
+        name={otherName}
+      />
       {paidOrderId ? (
         isBuyer ? (
           <>
@@ -585,6 +676,8 @@ type MessageRowProps = {
   role: Conversation["role"];
   otherName: string;
   pickupArea: string;
+  /** Blocked either way: offers can't be answered anymore. */
+  closed: boolean;
   answering: boolean;
   onFailedPress: (message: OutgoingMessage) => void;
   onAccept: (offer: Offer) => void;
@@ -603,6 +696,7 @@ const MessageRow = memo(function MessageRow({
   role,
   otherName,
   pickupArea,
+  closed,
   answering,
   onFailedPress,
   onAccept,
@@ -621,6 +715,7 @@ const MessageRow = memo(function MessageRow({
         role={role}
         otherName={otherName}
         pickupArea={pickupArea}
+        closed={closed}
         answering={answering}
         onAccept={onAccept}
         onCounter={onCounter}
@@ -715,8 +810,14 @@ const Bubble = ({
   );
 };
 
-/** Back, then the other person's name and neighbourhood, centered. */
-const TopBar = ({ children }: { children?: React.ReactNode }) => {
+/** Back, then the other person's name and neighbourhood, centered; `right`: the "…" button. */
+const TopBar = ({
+  children,
+  right,
+}: {
+  children?: React.ReactNode;
+  right?: React.ReactNode;
+}) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -733,7 +834,7 @@ const TopBar = ({ children }: { children?: React.ReactNode }) => {
         <ArrowLeft size={22} color={colors.primary} strokeWidth={1.8} />
       </Pressable>
       <View style={styles.headerCenter}>{children}</View>
-      <View style={styles.headerSpacer} />
+      {right ?? <View style={styles.headerSpacer} />}
     </View>
   );
 };
@@ -912,6 +1013,17 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: "#B9BCA9",
+  },
+  closed: {
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  closedText: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   status: {
     flex: 1,

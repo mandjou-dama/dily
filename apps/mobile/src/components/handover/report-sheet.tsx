@@ -12,6 +12,7 @@ import { Camera, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 import { ActionButton } from "@/components/action-button";
+import { RadioOption } from "@/components/radio-option";
 import { Sheet, type SheetRef } from "@/components/sheet";
 import { useHaptics } from "@/hooks/use-haptics";
 import { useImagePicker } from "@/hooks/use-image-picker";
@@ -113,26 +114,17 @@ export const ReportSheet = forwardRef<ReportSheetRef, { orderId: string }>(
           accessibilityRole="radiogroup"
           accessibilityLabel={t("report.reason")}
         >
-          {disputeReasons.map((value) => {
-            const selected = reason === value;
-            return (
-              <Pressable
-                key={value}
-                onPress={() => {
-                  if (!selected) selection();
-                  setReason(value);
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                style={[styles.reason, selected && styles.reasonSelected]}
-              >
-                <View style={[styles.radio, selected && styles.radioSelected]}>
-                  {selected ? <View style={styles.radioDot} /> : null}
-                </View>
-                <Text style={styles.reasonText}>{t(`report.${value}`)}</Text>
-              </Pressable>
-            );
-          })}
+          {disputeReasons.map((value) => (
+            <RadioOption
+              key={value}
+              label={t(`report.${value}`)}
+              selected={reason === value}
+              onPress={() => {
+                if (reason !== value) selection();
+                setReason(value);
+              }}
+            />
+          ))}
         </View>
 
         <View style={styles.section}>
@@ -214,43 +206,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: "600",
-    color: colors.black,
-  },
-  reason: {
-    minHeight: 52,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderCurve: "continuous",
-    borderWidth: 1.5,
-    borderColor: colors.line,
-  },
-  reasonSelected: {
-    borderColor: colors.primary,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: colors.outline,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  radioSelected: {
-    borderColor: colors.primary,
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-  },
-  reasonText: {
-    flex: 1,
-    fontSize: 15,
     color: colors.black,
   },
   note: {

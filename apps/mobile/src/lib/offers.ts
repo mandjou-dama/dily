@@ -141,6 +141,7 @@ export function dealErrorMessage(error: unknown) {
     if (error.code === "network_error") return i18n.t("errors.network");
     if (error.code === "conflict") return i18n.t("errors.conflict");
     if (error.code === "rate_limited") return i18n.t("errors.rateLimited");
+    if (error.code === "blocked") return i18n.t("errors.blocked");
   }
   return i18n.t("errors.generic");
 }

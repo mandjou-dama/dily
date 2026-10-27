@@ -65,6 +65,8 @@ function DealHeaderBase({
   const { t } = useTranslation();
   const { product, deal, otherUser } = conversation;
   const isBuyer = conversation.role === "buyer";
+  // Blocked either way: no new offer, purchase or payment
+  const { canWrite } = conversation;
   const name = firstName(otherUser.name);
   const order =
     deal.order && LIVE_ORDER.includes(deal.order.status) ? deal.order : null;
@@ -182,7 +184,7 @@ function DealHeaderBase({
           : t("deal.reservedForBuyer", { name, time })}
       </Band>
     );
-    if (isBuyer) {
+    if (isBuyer && canWrite) {
       actions = (
         <ActionButton label={t("deal.pay", { amount })} onPress={onPay} />
       );
@@ -206,7 +208,7 @@ function DealHeaderBase({
         })}
       </Band>
     );
-  } else if (isBuyer) {
+  } else if (isBuyer && canWrite) {
     actions = (
       <View style={styles.actions}>
         <ActionButton

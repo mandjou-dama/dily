@@ -1,6 +1,7 @@
 import { Assets as NavigationAssets } from "@react-navigation/elements";
 import { DarkTheme, DefaultTheme } from "@react-navigation/native";
 import { Asset } from "expo-asset";
+import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import * as React from "react";
@@ -21,6 +22,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
 import { ChatProvider } from "@/providers/chat-provider";
 import { notificationUrl, setupNotifications } from "@/lib/push";
+import { fontAssets } from "@/theme/typography";
 
 Asset.loadAsync([...NavigationAssets, require("assets/splash-icon-light.png")]);
 setupNotifications();
@@ -64,10 +66,13 @@ const linking = {
 };
 
 // The `if` hooks of the root stack need the restored session: mounting before
-// it is read would show the auth screens for a frame to signed-in users
+// it is read would show the auth screens for a frame to signed-in users. The
+// fonts too, or a title would switch fonts under the user's eyes (a font that
+// fails to load falls back to the system one)
 function AppNavigation({ theme }: { theme: typeof DefaultTheme }) {
   const { isLoading } = useAuth();
-  if (isLoading) return null;
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  if (isLoading || (!fontsLoaded && !fontError)) return null;
 
   return <Navigation theme={theme} linking={linking} />;
 }

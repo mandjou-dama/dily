@@ -169,7 +169,15 @@ export function useSendMessage(conversationId: string) {
         queryKey: conversationsQueryKey(session?.user.id),
       });
     },
-    onError: (_error, message) => setStatus(message.id, "failed"),
+    onError: (error, message) => {
+      setStatus(message.id, "failed");
+      // Blocked meanwhile: the conversation reloads closed, saying why
+      if (error instanceof ApiRequestError && error.code === "blocked") {
+        queryClient.invalidateQueries({
+          queryKey: conversationQueryKey(conversationId),
+        });
+      }
+    },
   });
 
   const send = (body: string) => {

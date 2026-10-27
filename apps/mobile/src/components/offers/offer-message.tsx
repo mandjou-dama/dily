@@ -22,6 +22,8 @@ type Props = {
   otherName: string;
   /** Where pickup happens: the seller's neighbourhood. */
   pickupArea: string;
+  /** Blocked either way: the offer can't be answered anymore. */
+  closed?: boolean;
   /** This offer's answer is on its way. */
   answering: boolean;
   onAccept: (offer: Offer) => void;
@@ -36,8 +38,10 @@ type Props = {
  * declined or expired, with who accepted or declined underneath.
  */
 function OfferMessageBase(props: Props) {
-  const { offer, mine } = props;
-  if (!mine && offer.status === "pending") return <PendingCard {...props} />;
+  const { offer, mine, closed } = props;
+  if (!mine && !closed && offer.status === "pending") {
+    return <PendingCard {...props} />;
+  }
   return <OfferBubble {...props} />;
 }
 
