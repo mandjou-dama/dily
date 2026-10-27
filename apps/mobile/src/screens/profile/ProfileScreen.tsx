@@ -31,6 +31,7 @@ import { TOP_TABS_HEIGHT, TopTabs } from "@/components/top-tab";
 import { useNotify } from "@/components/notify";
 import { productKeyExtractor, useProductGrid } from "@/hooks/use-product-grid";
 import { showActionMenu } from "@/lib/action-menu";
+import { openSupportChat } from "@/lib/support";
 import { apiErrorMessage } from "@/lib/api";
 import { formatPhone } from "@/lib/format";
 import { imageUrl } from "@/lib/image";
@@ -236,6 +237,23 @@ export const ProfileScreen = () => {
                 : t("payout.profileNone")}
             </Text>
           </Pressable>
+          <View style={styles.links}>
+            <Pressable
+              onPress={openSupportChat}
+              hitSlop={8}
+              accessibilityRole="link"
+            >
+              <Text style={styles.link}>{t("support.help")}</Text>
+            </Pressable>
+            <Text style={styles.linkSeparator}>·</Text>
+            <Pressable
+              onPress={() => navigation.navigate("Terms")}
+              hitSlop={8}
+              accessibilityRole="link"
+            >
+              <Text style={styles.link}>{t("support.terms")}</Text>
+            </Pressable>
+          </View>
         </View>
         {/* Room for the pinned tab bar drawn above the list */}
         <View style={styles.tabsSpacer} />
@@ -375,6 +393,23 @@ const styles = StyleSheet.create({
   },
   payoutButton: {
     marginTop: 8,
+  },
+  // Dily's contact and the terms (App Store guideline 1.2)
+  links: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+  },
+  link: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.muted,
+    textDecorationLine: "underline",
+  },
+  linkSeparator: {
+    fontSize: 13,
+    color: colors.muted,
   },
   editButton: {
     marginTop: 14,

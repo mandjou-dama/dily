@@ -6,6 +6,7 @@ import {
   otpVerifyResponseSchema,
   type Profile,
   profileSchema,
+  TERMS_VERSION,
 } from "@dily/shared";
 
 import { api, apiErrorMessage } from "@/lib/api";
@@ -100,6 +101,26 @@ export function useDeleteAccount() {
       await endSession();
     },
     onSuccess: () => queryClient.clear(),
+  });
+}
+
+/** The user hasn't accepted the terms in force yet (or ever). */
+export const needsTerms = (profile: Profile | null | undefined) =>
+  !!profile && profile.termsVersion !== TERMS_VERSION;
+
+/** "J'accepte": the terms in force, the ones the app shows. */
+export function useAcceptTerms() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      api.request("/me/terms", {
+        method: "PUT",
+        body: { version: TERMS_VERSION },
+        schema: profileSchema,
+      }),
+    onSuccess: (profile) => {
+      queryClient.setQueryData(profileQueryKey(profile.id), profile);
+    },
   });
 }
 

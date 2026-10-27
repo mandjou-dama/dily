@@ -11,6 +11,7 @@ import React, {
 import { restoreSession, type Session, sessionStore } from "@/lib/session";
 import {
   isProfileComplete,
+  needsTerms,
   type Profile,
   useProfile,
 } from "@/services/auth.service";
@@ -67,12 +68,19 @@ export const useUser = () => {
 // Hooks for the `if` of the static root navigator
 export const useIsSignedOut = () => !useAuth().session;
 
+// Signed in: the terms first (new and existing accounts, and each new
+// version), then the profile's name, then the app
+export const useNeedsTerms = () => {
+  const { session, profile } = useAuth();
+  return !!session && needsTerms(profile);
+};
+
 export const useNeedsProfile = () => {
   const { session, profile } = useAuth();
-  return !!session && !isProfileComplete(profile);
+  return !!session && !needsTerms(profile) && !isProfileComplete(profile);
 };
 
 export const useIsSignedIn = () => {
   const { session, profile } = useAuth();
-  return !!session && isProfileComplete(profile);
+  return !!session && !needsTerms(profile) && isProfileComplete(profile);
 };

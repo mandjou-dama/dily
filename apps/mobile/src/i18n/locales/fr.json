@@ -358,5 +358,32 @@
     "trustRefundDetail": "sous {{count}} jours",
     "deliveryBySeller": "{{fee}}, {{name}} envoie un livreur",
     "deliveryByYou": "{{fee}}, tu envoies un livreur"
+  },
+  "terms": {
+    "title": "Conditions d'utilisation",
+    "version": "Version du 27 octobre 2026",
+    "intro": "Dily met en relation des personnes qui vendent et achètent des articles au Mali. En utilisant Dily, tu acceptes ces règles.",
+    "accountTitle": "Ton compte",
+    "accountBody": "Tu te connectes avec ton numéro WhatsApp. Tu es responsable de ce que tu publies et de ce que tu écris dans les discussions. Un compte suspendu ne peut plus être utilisé.",
+    "abuseTitle": "Aucune tolérance pour les abus",
+    "abuseBody": "Sont interdits : les articles illégaux ou dangereux (armes, drogues, médicaments, animaux), les contrefaçons et les objets volés, les arnaques, les contenus choquants, sexuels ou haineux, les insultes, les menaces et le harcèlement, le spam. Dily retire ces contenus et suspend les comptes qui les publient, sans préavis.",
+    "reportTitle": "Signaler et bloquer",
+    "reportBody": "Depuis le menu « … » d'une annonce ou d'une discussion, tu peux signaler une annonce ou une personne, et bloquer quelqu'un : vous ne verrez plus vos annonces et ne pourrez plus vous écrire. Dily examine chaque signalement sous 24 heures.",
+    "payTitle": "Payer et recevoir",
+    "payBody": "Le paiement se fait dans Dily, par Orange Money ou Moov Money. Dily garde l'argent jusqu'à la remise de l'article, confirmée par le code de remise. Sans remise sous {{days}} jours, l'acheteur est remboursé. Si un problème est signalé, Dily décide du remboursement ou du versement au vendeur.",
+    "changesTitle": "Si ces règles changent",
+    "changesBody": "Dily te demandera de les accepter à nouveau avant de continuer.",
+    "contactTitle": "Nous contacter",
+    "contactBody": "Une question, un problème ? Écris à Dily sur WhatsApp.",
+    "accept": "J'accepte",
+    "signOut": "Me déconnecter",
+    "notAccepted": "Conditions pas enregistrées"
+  },
+  "support": {
+    "whatsapp": "WhatsApp",
+    "write": "Écrire",
+    "greeting": "Bonjour Dily, ",
+    "help": "Aide sur WhatsApp",
+    "terms": "Conditions d'utilisation"
   }
 }

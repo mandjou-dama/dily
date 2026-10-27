@@ -12,6 +12,7 @@ import EditProductScreen from "../screens/product/EditProductScreen";
 import EditProfileScreen from "../screens/profile/EditProfileScreen";
 import { PayoutAccountScreen } from "../screens/profile/PayoutAccountScreen";
 import { BlockedUsersScreen } from "../screens/profile/BlockedUsersScreen";
+import { AcceptTermsScreen, TermsScreen } from "../screens/terms/TermsScreen";
 import { ConversationScreen } from "../screens/chat/ConversationScreen";
 import { CheckoutScreen } from "../screens/checkout/CheckoutScreen";
 import { CheckoutPayScreen } from "../screens/checkout/CheckoutPayScreen";
@@ -22,6 +23,7 @@ import {
   useIsSignedIn,
   useIsSignedOut,
   useNeedsProfile,
+  useNeedsTerms,
 } from "@/providers/auth-provider";
 
 // The session picks the group: signing in or out swaps the screens, so no
@@ -59,6 +61,9 @@ const RootStack = createNativeStackNavigator({
         BlockedUsers: {
           screen: BlockedUsersScreen,
         },
+        Terms: {
+          screen: TermsScreen,
+        },
         Conversation: {
           screen: ConversationScreen,
           // dily://chat/<uuid>, also what a message notification opens
@@ -78,6 +83,16 @@ const RootStack = createNativeStackNavigator({
         },
         PaymentDone: {
           screen: PaymentDoneScreen,
+        },
+      },
+    },
+    // Signed in, but the terms in force aren't accepted yet
+    NeedsTerms: {
+      if: useNeedsTerms,
+      screens: {
+        AcceptTerms: {
+          screen: AcceptTermsScreen,
+          options: { gestureEnabled: false },
         },
       },
     },
