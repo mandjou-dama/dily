@@ -25,12 +25,12 @@
     "plugins": [
       "expo-asset",
       [
-        "react-native-bootsplash",
+        "expo-splash-screen",
         {
-          "logo": "./assets/splash-icon-light.png",
-          "logoWidth": 210,
-          "background": "#f7f5ed",
-          "assetsOutput": "assets/bootsplash"
+          "image": "./assets/splash-icon-light.png",
+          "imageWidth": 210,
+          "resizeMode": "contain",
+          "backgroundColor": "#f7f5ed"
         }
       ],
       [

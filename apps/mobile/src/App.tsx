@@ -4,6 +4,7 @@ import { Asset } from "expo-asset";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { Platform, StatusBar, useColorScheme } from "react-native";
@@ -15,8 +16,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "@/i18n";
 import { Navigation } from "@/navigation";
-import { AnimatedBootSplash } from "@/components/animated-boot-splash";
-import BootSplash from "react-native-bootsplash";
+import { AnimatedSplash } from "./components/animated-splash";
 import { NotifyProvider } from "./components/notify";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
@@ -26,6 +26,9 @@ import { fontAssets } from "@/theme/typography";
 
 Asset.loadAsync([...NavigationAssets, require("assets/splash-icon-light.png")]);
 setupNotifications();
+// The native splash stays up until the first screen is ready, then
+// AnimatedSplash takes over from it, see AppNavigation
+SplashScreen.preventAutoHideAsync();
 
 const prefix = Linking.createURL("/");
 
@@ -72,14 +75,22 @@ const linking = {
 function AppNavigation({ theme }: { theme: typeof DefaultTheme }) {
   const { isLoading } = useAuth();
   const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const [navigationReady, setNavigationReady] = useState(false);
   if (isLoading || (!fontsLoaded && !fontError)) return null;
 
-  return <Navigation theme={theme} linking={linking} />;
+  return (
+    <AnimatedSplash ready={navigationReady}>
+      <Navigation
+        theme={theme}
+        linking={linking}
+        onReady={() => setNavigationReady(true)}
+      />
+    </AnimatedSplash>
+  );
 }
 
 export function App() {
   const colorScheme = useColorScheme();
-  const [splashVisible, setSplashVisible] = useState(true);
 
   const theme = colorScheme === "dark" ? DarkTheme : DefaultTheme;
 
@@ -109,16 +120,6 @@ export function App() {
                   </BottomSheetModalProvider>
                 </ChatProvider>
               </AuthProvider>
-
-              {/* Splash overlay */}
-              {splashVisible && (
-                <AnimatedBootSplash
-                  onAnimationEnd={async () => {
-                    setSplashVisible(false);
-                    await BootSplash.hide({ fade: true });
-                  }}
-                />
-              )}
             </NotifyProvider>
           </KeyboardProvider>
         </QueryClientProvider>
