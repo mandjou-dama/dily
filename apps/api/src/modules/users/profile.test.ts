@@ -1,6 +1,11 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { FEED_PAGE_SIZE, type FeedPage, type Profile } from "@dily/shared";
+import {
+  FEED_PAGE_SIZE,
+  type FeedPage,
+  type Profile,
+  TERMS_VERSION,
+} from "@dily/shared";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import {
   createCategory,
@@ -204,5 +209,30 @@ describe.skipIf(!hasTestServices)("profile tabs and account deletion", () => {
     ).json<{ path: string }>().path;
     await t.authed(me.token, { method: "DELETE", url: "/me" });
     expect(existsSync(join(t.mediaDir, `${theirPhoto}-sm.webp`))).toBe(true);
+  });
+  it("records the terms the user accepted, only the version in force", async () => {
+    const before = await t.authed(me.token, { method: "GET", url: "/me" });
+    expect(before.json<Profile>().termsVersion).toBeNull();
+
+    const old = await t.authed(me.token, {
+      method: "PUT",
+      url: "/me/terms",
+      payload: { version: "2020-01-01" },
+    });
+    expect(old.statusCode).toBe(409);
+
+    const res = await t.authed(me.token, {
+      method: "PUT",
+      url: "/me/terms",
+      payload: { version: TERMS_VERSION },
+    });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json<Profile>().termsVersion).toBe(TERMS_VERSION);
+    expect(
+      await prisma.user.findUniqueOrThrow({ where: { id: me.id } }),
+    ).toMatchObject({
+      termsVersion: TERMS_VERSION,
+      termsAcceptedAt: expect.any(Date),
+    });
   });
 });

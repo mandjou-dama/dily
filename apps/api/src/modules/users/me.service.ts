@@ -1,4 +1,9 @@
-import type { PayoutAccount, Profile, ProfileUpdate } from "@dily/shared";
+import {
+  type PayoutAccount,
+  type Profile,
+  type ProfileUpdate,
+  TERMS_VERSION,
+} from "@dily/shared";
 import type { PrismaClient, User } from "../../generated/prisma/client.js";
 import { AppError } from "../../lib/errors.js";
 import type { MediaService } from "../media/media.service.js";
@@ -14,6 +19,7 @@ export const toProfile = (user: User): Profile => ({
     user.payoutProvider && user.payoutPhone
       ? { provider: user.payoutProvider, phone: user.payoutPhone }
       : null,
+  termsVersion: user.termsVersion,
 });
 
 export interface MeServiceDeps {
@@ -59,6 +65,21 @@ export class MeService {
       data: { payoutProvider: account.provider, payoutPhone: account.phone },
     });
     await this.deps.onPayoutAccountChange?.(userId);
+    return toProfile(user);
+  }
+
+  /**
+   * The user accepted the terms shown to them. Only the version in force
+   * counts: an app showing older terms has the user accept again.
+   */
+  async acceptTerms(userId: string, version: string): Promise<Profile> {
+    if (version !== TERMS_VERSION) {
+      throw new AppError(409, "conflict", "These terms are out of date.");
+    }
+    const user = await this.deps.prisma.user.update({
+      where: { id: userId },
+      data: { termsVersion: version, termsAcceptedAt: new Date() },
+    });
     return toProfile(user);
   }
 

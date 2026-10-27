@@ -31,6 +31,11 @@ import {
   type PushSender,
 } from "./modules/notifications/push.service.js";
 import { ModerationService } from "./modules/moderation/moderation.service.js";
+import {
+  DiscordReportAlerter,
+  LogReportAlerter,
+  type ReportAlerter,
+} from "./modules/moderation/report-alerter.js";
 import { OffersService } from "./modules/offers/offers.service.js";
 import { HandoverService } from "./modules/orders/handover.service.js";
 import { OrdersService } from "./modules/orders/orders.service.js";
@@ -61,6 +66,7 @@ type ServicesConfig = Pick<
   | "EXPO_ACCESS_TOKEN"
   | "PAYMENT_GATEWAY"
   | "PAYMENT_SIMULATED_DELAY_MS"
+  | "MODERATION_DISCORD_WEBHOOK_URL"
 >;
 
 export interface ServicesInput {
@@ -76,6 +82,8 @@ export interface ServicesInput {
   pushSender?: PushSender;
   /** Replaces the mobile money operators (tests). */
   paymentGateway?: PaymentGateway;
+  /** Replaces the report alerts (tests). */
+  reportAlerter?: ReportAlerter;
   now?: () => Date;
 }
 
@@ -156,7 +164,10 @@ export function createServices(input: ServicesInput): Services {
     offers: new OffersService(chatDeps),
     orders: new OrdersService({ ...chatDeps, gateway }),
     handover,
-    moderation: new ModerationService(chatDeps),
+    moderation: new ModerationService({
+      ...chatDeps,
+      alerter: input.reportAlerter ?? createReportAlerter(config, input.logger),
+    }),
     push,
     rateLimiter,
     requireAuth: createRequireAuth(authenticate, rateLimiter),
@@ -164,6 +175,15 @@ export function createServices(input: ServicesInput): Services {
     notifier,
     mediaDir,
   };
+}
+
+function createReportAlerter(
+  config: ServicesConfig,
+  logger: FastifyBaseLogger,
+): ReportAlerter {
+  return config.MODERATION_DISCORD_WEBHOOK_URL
+    ? new DiscordReportAlerter(config.MODERATION_DISCORD_WEBHOOK_URL, logger)
+    : new LogReportAlerter(logger);
 }
 
 function createPaymentGateway(

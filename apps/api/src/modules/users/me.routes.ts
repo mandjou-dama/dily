@@ -1,4 +1,8 @@
-import { payoutAccountSchema, profileUpdateBodySchema } from "@dily/shared";
+import {
+  acceptTermsBodySchema,
+  payoutAccountSchema,
+  profileUpdateBodySchema,
+} from "@dily/shared";
 import type { FastifyPluginAsync, preHandlerAsyncHookHandler } from "fastify";
 import { authUser } from "../../lib/auth-guard.js";
 import type { RateLimiter } from "../../lib/rate-limit.js";
@@ -28,6 +32,11 @@ export const meRoutes: FastifyPluginAsync<MeRoutesOptions> = async (
   app.put("/me/payout-account", async (request) => {
     const body = parseInput(payoutAccountSchema, request.body);
     return me.setPayoutAccount(authUser(request).id, body);
+  });
+
+  app.put("/me/terms", async (request) => {
+    const { version } = parseInput(acceptTermsBodySchema, request.body);
+    return me.acceptTerms(authUser(request).id, version);
   });
 
   app.put("/me/avatar", async (request) => {

@@ -14,6 +14,7 @@ import {
 } from "../chat/chat.service.js";
 import { toOrder } from "../offers/offer-rows.js";
 import type { UserNotifier } from "../realtime/notifier.js";
+import type { ReportAlerter } from "./report-alerter.js";
 import { listingVisibleTo } from "./visibility.js";
 
 /** Reports per user, far above what an honest user sends: bounds abuse of the queue. */
@@ -54,6 +55,8 @@ export interface ModerationServiceDeps {
   prisma: PrismaClient;
   notifier: UserNotifier;
   rateLimiter: RateLimiter;
+  /** Tells Dily a report came in (Discord, or the logs). */
+  alerter: ReportAlerter;
   logger: FastifyBaseLogger;
   now?: () => Date;
 }
@@ -113,6 +116,7 @@ export class ModerationService {
       };
     }
 
+    let reportId: string;
     try {
       const report = await this.prisma.report.create({
         data: {
@@ -122,15 +126,51 @@ export class ModerationService {
           note: input.note,
           createdAt: this.now(),
         },
+        select: { id: true },
       });
-      // What Dily watches until reports reach an admin screen
-      this.deps.logger.warn(
-        { reportId: report.id, kind: report.kind, reason: report.reason },
-        "moderation: new report to review",
-      );
+      reportId = report.id;
     } catch (error) {
-      // Already reported, and still open
-      if (!isUniqueViolation(error)) throw error;
+      // Already reported, and still open: Dily already knows
+      if (isUniqueViolation(error)) return;
+      throw error;
+    }
+    // The reporter doesn't wait for Discord
+    void this.alertNewReport(reportId);
+  }
+
+  private async alertNewReport(reportId: string): Promise<void> {
+    try {
+      const report = await this.prisma.report.findUniqueOrThrow({
+        where: { id: reportId },
+        include: {
+          reporter: { select: { fullName: true } },
+          reportedUser: {
+            select: {
+              fullName: true,
+              _count: {
+                select: { reportsReceived: { where: { status: "open" } } },
+              },
+            },
+          },
+          product: { select: { title: true } },
+        },
+      });
+      await this.deps.alerter.alert({
+        reportId,
+        kind: report.kind,
+        reason: report.reason,
+        note: report.note,
+        reportedName: report.reportedUser.fullName ?? "?",
+        openReports: report.reportedUser._count.reportsReceived,
+        reporterName: report.reporter?.fullName ?? "?",
+        listingTitle: report.product?.title ?? null,
+        conversationId: report.conversationId,
+      });
+    } catch (error) {
+      this.deps.logger.error(
+        { err: error, reportId },
+        "moderation: alert failed",
+      );
     }
   }
 

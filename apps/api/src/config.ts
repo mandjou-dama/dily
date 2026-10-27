@@ -95,6 +95,11 @@ const envSchema = z
      */
     PAYMENT_GATEWAY: z.enum(["simulated"]).default("simulated"),
     PAYMENT_SIMULATED_DELAY_MS: z.coerce.number().int().min(0).default(4000),
+    /**
+     * Discord webhook told of every new report, so Dily answers within 24 h
+     * (App Store guideline 1.2). Without it, reports only reach the logs.
+     */
+    MODERATION_DISCORD_WEBHOOK_URL: optional(z.url()),
   })
   .refine(
     (env) => !(env.NODE_ENV === "production" && env.OTP_SENDER === "console"),

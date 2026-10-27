@@ -22,6 +22,10 @@ import type {
   TransferOutcomeHandler,
   TransferRequest,
 } from "../src/modules/orders/payment-gateway.js";
+import type {
+  ReportAlert,
+  ReportAlerter,
+} from "../src/modules/moderation/report-alerter.js";
 import { attachRealtime } from "../src/modules/realtime/realtime.js";
 import { createServices } from "../src/services.js";
 
@@ -97,6 +101,15 @@ export class FakePaymentGateway implements PaymentGateway {
   }
 }
 
+/** Captures report alerts instead of posting them to Discord. */
+export class FakeReportAlerter implements ReportAlerter {
+  readonly alerts: ReportAlert[] = [];
+
+  async alert(report: ReportAlert): Promise<void> {
+    this.alerts.push(report);
+  }
+}
+
 /** Full app on the test Postgres and Redis, with captured codes and a controllable clock. */
 export async function createTestApp(
   prisma: PrismaClient,
@@ -111,6 +124,7 @@ export async function createTestApp(
   const otp = new FakeOtpSender();
   const push = new FakePushSender();
   const payments = new FakePaymentGateway();
+  const reportAlerts = new FakeReportAlerter();
   const mediaDir = await mkdtemp(join(tmpdir(), "dily-media-"));
   let now = new Date();
   const services = createServices({
@@ -131,6 +145,7 @@ export async function createTestApp(
       EXPO_ACCESS_TOKEN: undefined,
       PAYMENT_GATEWAY: "simulated",
       PAYMENT_SIMULATED_DELAY_MS: 0,
+      MODERATION_DISCORD_WEBHOOK_URL: undefined,
     },
     prisma,
     redis,
@@ -138,6 +153,7 @@ export async function createTestApp(
     otpSender: otp,
     pushSender: push,
     ...(options.simulatedPayments ? {} : { paymentGateway: payments }),
+    reportAlerter: reportAlerts,
     now: () => now,
   });
   const app = buildApp(services);
@@ -151,6 +167,7 @@ export async function createTestApp(
     otp,
     push,
     payments,
+    reportAlerts,
     mediaDir,
     /** Listens on a free port, for Socket.IO clients; returns the server's URL. */
     async listen() {

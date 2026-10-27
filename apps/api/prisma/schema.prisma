@@ -18,28 +18,31 @@ datasource db {
 }
 
 model User {
-  id             String           @id @default(uuid()) @db.Uuid
+  id              String           @id @default(uuid()) @db.Uuid
   /// E.164, e.g. "+22370000000"
-  phoneE164      String           @unique @map("phone_e164")
+  phoneE164       String           @unique @map("phone_e164")
   /// HMAC-SHA256 of the number (src/lib/phone-hash.ts): finds the account
   /// without looking the number up in clear
-  phoneHash      String           @unique @map("phone_hash")
-  fullName       String?          @map("full_name")
-  avatarPath     String?          @map("avatar_path")
+  phoneHash       String           @unique @map("phone_hash")
+  fullName        String?          @map("full_name")
+  avatarPath      String?          @map("avatar_path")
   /// Where the seller meets buyers: "Hamdallaye ACI"
-  neighbourhood  String?
-  city           String           @default("Bamako")
+  neighbourhood   String?
+  city            String           @default("Bamako")
   /// Test number (TEST_PHONES): set at sign-in, never by the app
-  isTester       Boolean          @default(false) @map("is_tester")
+  isTester        Boolean          @default(false) @map("is_tester")
   /// Where the seller receives what buyers paid: both set or both null (CHECK)
-  payoutProvider PaymentProvider? @map("payout_provider")
+  payoutProvider  PaymentProvider? @map("payout_provider")
   /// E.164: the mobile money account money is sent to
-  payoutPhone    String?          @map("payout_phone")
+  payoutPhone     String?          @map("payout_phone")
   /// Set by Dily's moderation: the account can't sign in, and its listings
   /// are hidden from everyone
-  suspendedAt    DateTime?        @map("suspended_at") @db.Timestamptz(3)
-  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  suspendedAt     DateTime?        @map("suspended_at") @db.Timestamptz(3)
+  /// The terms of use accepted (TERMS_VERSION, a date), and when
+  termsVersion    String?          @map("terms_version")
+  termsAcceptedAt DateTime?        @map("terms_accepted_at") @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   refreshTokens         RefreshToken[]
   products              Product[]

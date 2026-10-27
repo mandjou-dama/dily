@@ -165,6 +165,32 @@ describe.skipIf(!hasTestServices)("moderation", () => {
       ]);
     });
 
+    it("tells Dily once per report, with what to look at", async () => {
+      const listing = await createListing();
+      const body: ReportBody = {
+        kind: "listing",
+        productId: listing.id,
+        reason: "counterfeit",
+        note: "Faux logo",
+      };
+      await report(buyer.token, body);
+      await report(buyer.token, body);
+
+      await vi.waitFor(() => expect(t.reportAlerts.alerts).toHaveLength(1));
+      const reportId = (await prisma.report.findFirstOrThrow()).id;
+      expect(t.reportAlerts.alerts[0]).toEqual({
+        reportId,
+        kind: "listing",
+        reason: "counterfeit",
+        note: "Faux logo",
+        reportedName: "Mamadou Diallo",
+        openReports: 1,
+        reporterName: "Awa Diarra",
+        listingTitle: "Nike Air Force 1",
+        conversationId: null,
+      });
+    });
+
     it("records a person reported from a conversation", async () => {
       const listing = await createListing();
       const conversation = await openConversation(listing.id);
