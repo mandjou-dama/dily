@@ -29,6 +29,9 @@ setupNotifications();
 // The native splash stays up until the first screen is ready, then
 // AnimatedSplash takes over from it, see AppNavigation
 SplashScreen.preventAutoHideAsync();
+// Android fades its splash out over 400 ms by default: on top of the overlay,
+// the dot would show twice as it jumps
+SplashScreen.setOptions({ duration: 0 });
 
 const prefix = Linking.createURL("/");
 
