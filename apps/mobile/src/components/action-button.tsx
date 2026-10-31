@@ -10,12 +10,15 @@ import {
 import { Spinner } from "@/components/spinner";
 import { colors } from "@/theme/colors";
 
-type Variant = "primary" | "outline" | "quiet";
+type Variant = "primary" | "outline" | "soft" | "quiet";
 
 type Props = {
   label: string;
   onPress: () => void;
-  /** Primary: filled green; outline: green border; quiet: grey border ("Non merci"). */
+  /**
+   * Primary: filled green; outline: green border; soft: beige like the
+   * screen, on a white card; quiet: grey border ("Non merci").
+   */
   variant?: Variant;
   disabled?: boolean;
   isLoading?: boolean;
@@ -25,7 +28,7 @@ type Props = {
   accessibilityHint?: string;
 };
 
-/** The design's buttons: 12 pt corners, 14 pt label. */
+/** The design's buttons: 13 pt continuous corners, like the onboarding ones; 14 pt label. */
 function ActionButtonBase({
   label,
   onPress,
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 13,
     borderCurve: "continuous",
   },
   large: {
@@ -99,6 +102,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.primary,
     backgroundColor: colors.white,
+  },
+  soft: {
+    backgroundColor: colors.background,
   },
   quiet: {
     borderWidth: 1.5,
@@ -119,6 +125,9 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   outlineLabel: {
+    color: colors.primary,
+  },
+  softLabel: {
     color: colors.primary,
   },
   quietLabel: {

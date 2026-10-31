@@ -213,7 +213,7 @@ function DealHeaderBase({
       <View style={styles.actions}>
         <ActionButton
           label={t("deal.makeOffer")}
-          variant="outline"
+          variant="soft"
           onPress={onMakeOffer}
           style={styles.flex}
         />

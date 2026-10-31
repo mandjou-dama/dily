@@ -883,7 +883,8 @@ const styles = StyleSheet.create({
   roundButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 13,
+    borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.white,

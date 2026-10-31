@@ -864,7 +864,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: 15,
+    borderRadius: 13,
     borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",
@@ -1058,9 +1058,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    borderRadius: 13,
+    borderCurve: "continuous",
+    backgroundColor: colors.white,
   },
   suggestionText: {
     fontSize: 14,

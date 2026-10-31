@@ -564,7 +564,8 @@ const styles = StyleSheet.create({
   },
   submit: {
     height: 54,
-    borderRadius: 999,
+    borderRadius: 13,
+    borderCurve: "continuous",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

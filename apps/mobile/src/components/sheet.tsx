@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     height: CLOSE_SIZE,
     // Centered on the title's line
     marginTop: (TITLE_LINE - CLOSE_SIZE) / 2,
-    borderRadius: 15,
+    borderRadius: 13,
     borderCurve: "continuous",
     alignItems: "center",
     justifyContent: "center",

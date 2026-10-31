@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   smallButton: {
     height: 36,
     paddingHorizontal: 12,
-    borderRadius: 12,
+    borderRadius: 13,
     borderCurve: "continuous",
     borderWidth: 1.5,
     borderColor: colors.primary,
