@@ -80,7 +80,7 @@ const SCREEN_WIDTH = spacing.SCREEN_WIDTH;
 const PHOTO_WIDTH = Math.round(SCREEN_WIDTH * 2);
 // Icons in the cards, as in the payment steps
 const ICON = 20;
-const MESSAGE_BUTTON_WIDTH = 210;
+const MESSAGE_BUTTON_WIDTH = 196;
 
 const NO_LIKES = new Set<string>();
 
@@ -165,6 +165,14 @@ const ProductView = ({ product }: { product: Product }) => {
   const sellerName = firstName(product.seller.name);
   // "Hamdallaye ACI, Bamako": the neighbourhood is enough under the title
   const area = product.seller.location.split(",")[0] ?? "";
+  // Under the price in the bottom bar: how the buyer gets the item
+  const footerDetail = product.pickup
+    ? t("checkout.pickupAt", { area })
+    : product.deliveryFee !== null
+      ? `${t("checkout.delivery")} ${t("checkout.deliveryFee", {
+          fee: amountLabel(product.deliveryFee),
+        })}`
+      : null;
 
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {
@@ -484,24 +492,31 @@ const ProductView = ({ product }: { product: Product }) => {
       <View
         style={[
           styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, 16) },
+          // The bar's foot shares the home indicator's space
+          { paddingBottom: Math.max(insets.bottom - 12, 12) },
         ]}
       >
-        <Text
-          style={styles.price}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.8}
-        >
-          {amountLabel(product.price)}
-        </Text>
+        <View style={styles.priceBlock}>
+          <Text
+            style={styles.price}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            {amountLabel(product.price)}
+          </Text>
+          {footerDetail ? (
+            <Text style={styles.priceDetail} numberOfLines={1}>
+              {footerDetail}
+            </Text>
+          ) : null}
+        </View>
         {isOwnListing ? (
           <>
             <ActionButton
               label={t("product.edit")}
               variant="outline"
               onPress={onEdit}
-              size="large"
               style={styles.ownerButton}
             />
             {isRemoved ? null : (
@@ -509,7 +524,6 @@ const ProductView = ({ product }: { product: Product }) => {
                 label={isSold ? t("product.relist") : t("product.markSold")}
                 onPress={onToggleSold}
                 isLoading={setSold.isPending}
-                size="large"
                 style={styles.ownerButton}
                 accessibilityHint={
                   isSold ? t("product.relistHint") : t("product.markSoldHint")
@@ -527,7 +541,6 @@ const ProductView = ({ product }: { product: Product }) => {
             onPress={onMessage}
             disabled={isSold}
             isLoading={openConversation.isPending}
-            size="large"
             style={styles.messageButton}
           />
         )}
@@ -893,19 +906,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingTop: 12,
+    paddingTop: 8,
     paddingHorizontal: 16,
     backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.divider,
+  },
+  priceBlock: {
+    flex: 1,
+    marginRight: 4,
+    gap: 1,
   },
   price: {
-    flex: 1,
-    marginRight: 6,
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.black,
     fontVariant: ["tabular-nums"],
+  },
+  priceDetail: {
+    fontSize: 12,
+    color: colors.muted,
   },
   messageButton: {
     width: MESSAGE_BUTTON_WIDTH,
