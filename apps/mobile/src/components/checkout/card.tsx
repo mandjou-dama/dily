@@ -110,9 +110,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.hairline,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
-    color: colors.black,
+    color: colors.muted,
   },
   row: {
     minHeight: 60,
