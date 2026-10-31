@@ -576,8 +576,7 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   submitText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
     color: colors.white,
   },
 });

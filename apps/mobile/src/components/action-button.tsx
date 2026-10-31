@@ -28,7 +28,10 @@ type Props = {
   accessibilityHint?: string;
 };
 
-/** The design's buttons: 13 pt continuous corners, like the onboarding ones; 14 pt label. */
+/**
+ * The design's buttons: 13 pt continuous corners and a 14 pt regular label,
+ * like the onboarding's sign-in buttons.
+ */
 function ActionButtonBase({
   label,
   onPress,
@@ -62,14 +65,7 @@ function ActionButtonBase({
           color={variant === "primary" ? colors.white : colors.primary}
         />
       ) : null}
-      <Text
-        style={[
-          styles.label,
-          size === "large" && styles.largeLabel,
-          styles[`${variant}Label`],
-        ]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.label, styles[`${variant}Label`]]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -114,12 +110,10 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.75,
   },
+  // As the onboarding's sign-in buttons: 14 pt, regular weight
   label: {
     fontSize: 14,
-    fontWeight: "500",
-  },
-  largeLabel: {
-    fontWeight: "600",
+    fontWeight: "400",
   },
   primaryLabel: {
     color: colors.white,

@@ -424,8 +424,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 14,
     color: colors.primary,
   },
   pressed: {

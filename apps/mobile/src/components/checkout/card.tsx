@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
   },
   smallButtonLabel: {
     fontSize: 14,
-    fontWeight: "500",
     color: colors.primary,
   },
   pressed: {

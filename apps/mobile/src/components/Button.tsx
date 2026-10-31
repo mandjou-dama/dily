@@ -55,7 +55,6 @@ const styles = StyleSheet.create({
   text: {
     ...typography.body,
     color: colors.white,
-    fontWeight: "600",
   },
   disabled: {
     opacity: 0.6,
